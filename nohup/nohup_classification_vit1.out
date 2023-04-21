@@ -1,0 +1,10 @@
+nohup: ignoring input
+模型总大小为：45.129MB
+(47282584, 11820646, 38560, 9620, 45.12895965576172)
+Using GPU
+load model
+train set testing...
+Accuracy of the network on the 50000 train images: 99.9360 %
+testing...
+testing...
+Accuracy of the network on the test images: 99.0100 %
