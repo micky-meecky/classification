@@ -72,7 +72,7 @@ def mnist_loader():
 def breast_loader():
     train_path_m = './train_path/fold/fold'
     fold_id = 1
-    batch_size = 10
+    batch_size = 30
     distance_type = "dist_mask"
     normal_flag = False
     train_path = train_path_m + str(fold_id) + '/train/images/'  # train_path是指训练集图片路径
@@ -203,7 +203,7 @@ def Train_Mnist():
 
 def Train_breast():
     project = 'z12only'
-    epoch_num = 100
+    epoch_num = 200
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = UNETR()
 
