@@ -16,6 +16,8 @@ import random
 import shutil
 import time
 
+# 导入torch的F
+import torch.nn.functional as F
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -28,6 +30,7 @@ from dataset import DatasetImageMaskContourDist
 from unetr import UNETR
 from tensorboardX import SummaryWriter
 from utils.BackupCode import *
+from mymodels.resnet import resnet18
 
 
 def getModelSize(model):
@@ -72,7 +75,7 @@ def mnist_loader():
 def breast_loader():
     train_path_m = './train_path/fold/fold'
     fold_id = 1
-    batch_size = 30
+    batch_size = 10     # -------------------------------------------------------
     distance_type = "dist_mask"
     normal_flag = False
     train_path = train_path_m + str(fold_id) + '/train/images/'  # train_path是指训练集图片路径
@@ -202,10 +205,10 @@ def Train_Mnist():
         print('Accuracy of the network on the test images: %.4f %%' % (100 * accuracy))
 
 def Train_breast():
-    project = 'z12only'
-    epoch_num = 200
+    project = 'resnet'   # -----------------------------------------------------
+    epoch_num = 200     # -----------------------------------------------------
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = UNETR()
+    model = resnet18()     # -----------------------------------------------------
 
     print(getModelSize(model))
 
@@ -220,8 +223,9 @@ def Train_breast():
 
     train_loader, test_loader, valid_loader = breast_loader()
 
-    criterion = nn.NLLLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.0001)
+    # criterion = nn.NLLLoss()    # -----------------------------------------------------
+    criterion = nn.CrossEntropyLoss()    # -----------------------------------------------------
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)   # -----------------------------------------------------
 
     is_train = True
     is_test = True
@@ -236,7 +240,7 @@ def Train_breast():
         tempacc = 0.4
         Iter = 0
         log_dir = './log/log'
-        model_dir = './model'
+        model_dir = './savemodel'
         save_model_dir = os.path.join(model_dir, project)
         if not os.path.exists(save_model_dir):
             os.makedirs(save_model_dir)
@@ -300,7 +304,8 @@ def Train_breast():
                             images = images.to(device)
                             targets4 = targets4.to(device)
                         outputs = model(images)
-                        outputs = torch.exp(outputs)
+                        outputs = F.softmax(outputs, dim=1)     # -----------------------------------------------------
+                        # outputs = torch.exp(outputs)  # -----------------------------------------------------
                         _, predicted = torch.max(outputs.data, 1)
                         total += targets4.size(0)
                         correct += (predicted == targets4).sum().item()
@@ -317,7 +322,8 @@ def Train_breast():
                             images = images.to(device)
                             targets4 = targets4.to(device)
                         outputs = model(images)
-                        outputs = torch.exp(outputs)
+                        outputs = F.softmax(outputs, dim=1)    # -----------------------------------------------------
+                        # outputs = torch.exp(outputs)    # -----------------------------------------------------
                         _, predicted = torch.max(outputs.data, 1)
                         total += targets4.size(0)
                         correct += (predicted == targets4).sum().item()
