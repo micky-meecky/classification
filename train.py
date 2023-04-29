@@ -162,7 +162,7 @@ def breast_loader():
     fold_k = 5
     fold_idx = 1
     fold_id = 1
-    batch_size = 18     # -------------------------------------------------------
+    batch_size = 15     # -------------------------------------------------------
     distance_type = "dist_mask"
     normal_flag = False
     image_size = 256
