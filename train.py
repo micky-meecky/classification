@@ -297,7 +297,7 @@ def Train_Mnist():
         print('Accuracy of the network on the test images: %.4f %%' % (100 * accuracy))
 
 def Train_breast():
-    project = 'resnet34dropout'   # -----------------------------------------------------
+    project = 'resnet50'   # -----------------------------------------------------
     epoch_num = 600     # -----------------------------------------------------
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = resnet50()     # -----------------------------------------------------
@@ -319,7 +319,7 @@ def Train_breast():
 
     # criterion = nn.NLLLoss()    # -----------------------------------------------------
     criterion = nn.CrossEntropyLoss()    # -----------------------------------------------------
-    optimizer = optim.Adam(model.parameters(), lr=0.00005)   # -----------------------------------------------------
+    optimizer = optim.Adam(model.parameters(), lr=0.00001)   # -----------------------------------------------------
 
     is_train = True
     is_test = True
