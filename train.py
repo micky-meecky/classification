@@ -75,7 +75,7 @@ def mnist_loader():
 def breast_loader():
     train_path_m = './train_path/fold/fold'
     fold_id = 1
-    batch_size = 10     # -------------------------------------------------------
+    batch_size = 40     # -------------------------------------------------------
     distance_type = "dist_mask"
     normal_flag = False
     train_path = train_path_m + str(fold_id) + '/train/images/'  # train_path是指训练集图片路径
@@ -206,10 +206,12 @@ def Train_Mnist():
 
 def Train_breast():
     project = 'resnet'   # -----------------------------------------------------
-    epoch_num = 200     # -----------------------------------------------------
+    epoch_num = 300     # -----------------------------------------------------
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = resnet18()     # -----------------------------------------------------
-
+    log_dir = './log/log'
+    model_dir = './savemodel'
+    save_model_dir = os.path.join(model_dir, project)
     print(getModelSize(model))
 
     if torch.cuda.is_available():
@@ -225,7 +227,7 @@ def Train_breast():
 
     # criterion = nn.NLLLoss()    # -----------------------------------------------------
     criterion = nn.CrossEntropyLoss()    # -----------------------------------------------------
-    optimizer = optim.Adam(model.parameters(), lr=0.0001)   # -----------------------------------------------------
+    optimizer = optim.Adam(model.parameters(), lr=0.00005)   # -----------------------------------------------------
 
     is_train = True
     is_test = True
@@ -239,9 +241,7 @@ def Train_breast():
         temploss = 100.0
         tempacc = 0.4
         Iter = 0
-        log_dir = './log/log'
-        model_dir = './savemodel'
-        save_model_dir = os.path.join(model_dir, project)
+
         if not os.path.exists(save_model_dir):
             os.makedirs(save_model_dir)
         else:
@@ -287,7 +287,7 @@ def Train_breast():
                 print('save model')
             if temploss > epoch_loss:
                 temploss = epoch_loss
-                torch.save(model.state_dict(), save_model_dir + '/miniloss' + str(epoch) + '.pth')
+                torch.save(model.state_dict(), save_model_dir + '/miniloss' + '.pth')
                 print('save model')
                 print('epoch_loss = ', temploss)
 
@@ -339,7 +339,8 @@ def Train_breast():
 
 
     if is_test:
-        model.load_state_dict(torch.load('loss_minimum_model.pth'))
+        mini_loss_model = save_model_dir + '/miniloss' + '.pth'
+        model.load_state_dict(torch.load(mini_loss_model))
         # 测试模型
         correct = 0
         total = 0
