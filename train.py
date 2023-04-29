@@ -206,7 +206,7 @@ def Train_Mnist():
         print('Accuracy of the network on the test images: %.4f %%' % (100 * accuracy))
 
 def Train_breast():
-    project = 'resnet34'   # -----------------------------------------------------
+    project = 'resnet34dropout'   # -----------------------------------------------------
     epoch_num = 300     # -----------------------------------------------------
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = resnet34()     # -----------------------------------------------------
