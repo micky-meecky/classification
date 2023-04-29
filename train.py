@@ -320,6 +320,7 @@ def Train_breast():
                         correct += (predicted == targets4).sum().item()
                     print('train set上的准确率: %.3f %%' % (100 * correct / total))
                 writer.add_scalars('Accuracy', {'Train_accuracy': correct / total}, Iter)
+
                 # 验证集上测试
                 correct = 0
                 total = 0
