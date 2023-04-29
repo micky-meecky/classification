@@ -220,8 +220,8 @@ def Train_breast():
 
     train_loader, test_loader, valid_loader = breast_loader()
 
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.00005)
+    criterion = nn.NLLLoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
     is_train = True
     is_test = True
@@ -257,7 +257,7 @@ def Train_breast():
         for epoch in range(epoch_num):
             running_loss = 0.0
             print('epoch: %d' % epoch)
-            for i, data in tqdm(enumerate(test_loader, 0), total=len(test_loader)):
+            for i, data in tqdm(enumerate(train_loader, 0), total=len(train_loader)):
                 (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
                 if torch.cuda.is_available():
                     inputs = inputs.to(device)
@@ -276,6 +276,7 @@ def Train_breast():
                 writer.add_scalars('Loss', {'running_loss': running_loss}, Iter)
             # 计算平均loss
             epoch_loss = running_loss / len(train_loader)  # len(train_loader)是batch的个数
+            writer.add_scalars('Loss', {'epoch_loss': epoch_loss}, epoch)
             print('epoch_loss = ', epoch_loss)
             if epoch % 10 == 0:
                 torch.save(model.state_dict(), save_model_dir + '/model' + str(epoch) + '.pth')
@@ -299,6 +300,7 @@ def Train_breast():
                             images = images.to(device)
                             targets4 = targets4.to(device)
                         outputs = model(images)
+                        outputs = torch.exp(outputs)
                         _, predicted = torch.max(outputs.data, 1)
                         total += targets4.size(0)
                         correct += (predicted == targets4).sum().item()
@@ -315,6 +317,7 @@ def Train_breast():
                             images = images.to(device)
                             targets4 = targets4.to(device)
                         outputs = model(images)
+                        outputs = torch.exp(outputs)
                         _, predicted = torch.max(outputs.data, 1)
                         total += targets4.size(0)
                         correct += (predicted == targets4).sum().item()

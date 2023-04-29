@@ -206,6 +206,7 @@ class UNETR(nn.Module):
         self.num_layers = 12
         self.ext_layers = [3, 6, 9, 12]
         self.linear = nn.Linear(embed_dim * 1, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
+        self.log_softmax = nn.LogSoftmax(dim=1)
         # self.fc1 = nn.Linear(embed_dim * 1, 512)
         # self.dropout1 = nn.Dropout(0.2)
         # self.fc2 = nn.Linear(512, 256)
@@ -298,7 +299,7 @@ class UNETR(nn.Module):
         # linear
         z12 = self.linear(z12)  # shape: (batch_size, 3)
         # softmax
-        label = F.softmax(z12, dim=1)  # shape: (batch_size, 3)
+        label = self.log_softmax(z12)  # shape: (batch_size, 3)
 
 
         # z3 = torch.mean(z3.view(z3.size(0), z3.size(1), -1), dim=2)  # shape: (batch_size, 768)
