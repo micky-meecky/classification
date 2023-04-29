@@ -382,7 +382,6 @@ def Train_breast():
                 torch.save(model.state_dict(), save_model_dir + '/miniloss' + '.pth')
                 print('save model')
                 print('epoch_loss = ', temploss)
-
             # valid
             if epoch % 5 == 0:
                 # 训练集上测试
