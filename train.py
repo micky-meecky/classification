@@ -10,11 +10,8 @@
 @datatime: 4/21/2023 10:16 AM
 """
 
-import os
 import glob
 import random
-import shutil
-import time
 
 # 导入torch的F
 import torch.nn.functional as F
@@ -26,13 +23,14 @@ from torch.utils.data import DataLoader, SubsetRandomSampler
 from models import Net
 from torch.nn.parallel import DataParallel
 from tqdm import tqdm
-from dataset import DatasetImageMaskContourDist
-from unetr import UNETR
+from dataset.dataset import DatasetImageMaskContourDist
 from tensorboardX import SummaryWriter
 from utils.BackupCode import *
-from mymodels.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
+from mymodels.resnet import resnet34, resnet50, resnet101, resnet152
+from dataset.class_divide import get_fold_filelist
+from dataset.data_loader import get_loader, get_loader_difficult
 
-
+sep = os.sep  # os.sep根据你所处的平台，自动采用相应的分隔符号
 
 def getModelSize(model):
     param_size = 0
@@ -72,46 +70,137 @@ def mnist_loader():
     val_loader = DataLoader(train_dataset, batch_size=1024, sampler=val_sampler)
     return train_loader, val_loader, test_loader
 
+def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, num_workers):
+    augmentation_prob = 1.0
+    train, valid, test = get_fold_filelist(csv_file, K=fold_K, fold=fold_idx, validation=True)
+    filepath_img = './class_out/stage1/p_image'
+    filepath_mask = './class_out/stage1/p_mask'
+    filepath_contour = './class_out/stage1/p_contour'
+    filepath_dist = './class_out/stage1/p_distance_D1'
+
+    # 将train, valid, test保存到一个txt文件中
+    train_fold_txt = './foldinfo/train_fold_' + str(fold_idx) + '.txt'
+    valid_fold_txt = './foldinfo/valid_fold_' + str(fold_idx) + '.txt'
+    test_fold_txt = './foldinfo/test_fold_' + str(fold_idx) + '.txt'
+    with open(train_fold_txt, 'w') as f:
+        for i in train:
+            f.write(i[0] + '\n')
+    with open(valid_fold_txt, 'w') as f:
+        for i in valid:
+            f.write(i[0] + '\n')
+    with open(test_fold_txt, 'w') as f:
+        for i in test:
+            f.write(i[0] + '\n')
+
+    train_list = [filepath_img + sep + i[0] for i in train]
+    train_list_GT = [filepath_mask + sep + i[0] for i in train]
+    trian_list_contour = [filepath_contour + sep + i[0] for i in train]
+    train_list_dist = [filepath_dist + sep + i[0] for i in train]
+    train_class_list_GT = [i[1] for i in train]
+
+    valid_list = [filepath_img + sep + i[0] for i in valid]
+    valid_list_GT = [filepath_mask + sep + i[0] for i in valid]
+    valid_list_contour = [filepath_contour + sep + i[0] for i in valid]
+    valid_list_dist = [filepath_dist + sep + i[0] for i in valid]
+    valid_class_list_GT = [i[1] for i in valid]
+
+    test_list = [filepath_img + sep + i[0] for i in test]
+    test_list_GT = [filepath_mask + sep + i[0] for i in test]
+    test_list_contour = [filepath_contour + sep + i[0] for i in test]
+    test_list_dist = [filepath_dist + sep + i[0] for i in test]
+    test_class_list_GT = [i[1] for i in test]
+
+    print("images count in train:{}".format(len(train_list)))
+    print("images count in valid:{}".format(len(valid_list)))
+    print("images count in test :{}".format(len(test_list)))
+
+
+    train_loader = get_loader_difficult(seg_list=None,
+                                        GT_list=train_list_GT,
+                                        class_list=train_class_list_GT,
+                                        image_list=train_list,
+                                        contour_list=trian_list_contour,
+                                        dist_list=train_list_dist,
+                                        image_size=image_size,
+                                        batch_size=batch_size,
+                                        num_workers=num_workers,
+                                        mode='train',
+                                        augmentation_prob=augmentation_prob, )
+
+    valid_loader = get_loader_difficult(seg_list=None,
+                                        GT_list=valid_list_GT,
+                                        class_list=valid_class_list_GT,
+                                        image_list=valid_list,
+                                        contour_list=valid_list_contour,
+                                        dist_list=valid_list_dist,
+                                        image_size=image_size,
+                                        batch_size=batch_size,
+                                        num_workers=num_workers,
+                                        mode='val',
+                                        augmentation_prob=augmentation_prob, )
+
+    test_loader = get_loader_difficult(seg_list=None,
+                                        GT_list=test_list_GT,
+                                        class_list=test_class_list_GT,
+                                        image_list=test_list,
+                                        contour_list=test_list_contour,
+                                        dist_list=test_list_dist,
+                                        image_size=image_size,
+                                        batch_size=batch_size,
+                                        num_workers=num_workers,
+                                        mode='test',
+                                        augmentation_prob=augmentation_prob, )
+
+    return train_loader, valid_loader, test_loader
+
 
 def breast_loader():
     train_path_m = './train_path/fold/fold'
+    csv_path = './class_out/train.csv'
+    fold_k = 5
+    fold_idx = 1
     fold_id = 1
-    batch_size = 40     # -------------------------------------------------------
+    batch_size = 30     # -------------------------------------------------------
     distance_type = "dist_mask"
     normal_flag = False
-    train_path = train_path_m + str(fold_id) + '/train/images/'  # train_path是指训练集图片路径
-    val_path = train_path_m + str(fold_id) + '/validation/images/'  # val_path是指验证集图片路径
-    test_path = train_path_m + str(fold_id) + '/test/images/'  # test_path是指测试集图片路径
-    train_file_names = glob.glob(train_path + "*.png")  # 获取训练集图片路径
+    image_size = 256
+    num_workers = 5
 
-    # 为了避免模型只记住了数据的顺序，而非真正的特征，代码使用了 random.shuffle() 函数对 train_file_names
-    # 变量中存储的图片路径进行了随机打乱操作，从而增加了数据的随机性，更有助于训练出鲁棒性更强的模型。
-    random.shuffle(train_file_names)  # 打乱训练集图片路径
-    val_file_names = glob.glob(val_path + "*.png")  # 获取验证集图片路径
-    test_file_names = glob.glob(test_path + "*.png")  # 获取测试集图片路径
+    train_loader, valid_loader, test_loader = getdataset(csv_path, fold_k, fold_idx, image_size, batch_size, num_workers)
 
-    # todo: add TTA here
+    # train_path = train_path_m + str(fold_id) + '/train/images/'  # train_path是指训练集图片路径
+    # val_path = train_path_m + str(fold_id) + '/validation/images/'  # val_path是指验证集图片路径
+    # test_path = train_path_m + str(fold_id) + '/test/images/'  # test_path是指测试集图片路径
+    # train_file_names = glob.glob(train_path + "*.png")  # 获取训练集图片路径
+    #
+    # # 为了避免模型只记住了数据的顺序，而非真正的特征，代码使用了 random.shuffle() 函数对 train_file_names
+    # # 变量中存储的图片路径进行了随机打乱操作，从而增加了数据的随机性，更有助于训练出鲁棒性更强的模型。
+    # random.shuffle(train_file_names)  # 打乱训练集图片路径
+    # val_file_names = glob.glob(val_path + "*.png")  # 获取验证集图片路径
+    # test_file_names = glob.glob(test_path + "*.png")  # 获取测试集图片路径
+    #
+    # # todo: add TTA here
+    #
+    # trainLoader = DataLoader(
+    #     DatasetImageMaskContourDist(train_file_names, distance_type, normal_flag),
+    #     batch_size=batch_size,
+    #     shuffle=True,
+    #     num_workers=5,
+    # )
+    # validLoader = DataLoader(
+    #     DatasetImageMaskContourDist(val_file_names, distance_type, normal_flag),
+    #     batch_size=batch_size,
+    #     shuffle=True,
+    #     num_workers=5,
+    # )
+    # testLoader = DataLoader(
+    #     DatasetImageMaskContourDist(test_file_names, distance_type, normal_flag),
+    #     num_workers=1,
+    #     batch_size=10,
+    #     shuffle=True,
+    # )
 
-    trainLoader = DataLoader(
-        DatasetImageMaskContourDist(train_file_names, distance_type, normal_flag),
-        batch_size=batch_size,
-        shuffle=True,
-        num_workers=5,
-    )
-    validLoader = DataLoader(
-        DatasetImageMaskContourDist(val_file_names, distance_type, normal_flag),
-        batch_size=batch_size,
-        shuffle=True,
-        num_workers=5,
-    )
-    testLoader = DataLoader(
-        DatasetImageMaskContourDist(test_file_names, distance_type, normal_flag),
-        num_workers=1,
-        batch_size=10,
-        shuffle=True,
-    )
-
-    return trainLoader, testLoader, validLoader
+    return train_loader, valid_loader, test_loader
 
 
 def Train_Mnist():
@@ -207,9 +296,9 @@ def Train_Mnist():
 
 def Train_breast():
     project = 'resnet34dropout'   # -----------------------------------------------------
-    epoch_num = 300     # -----------------------------------------------------
+    epoch_num = 600     # -----------------------------------------------------
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = resnet34()     # -----------------------------------------------------
+    model = resnet50()     # -----------------------------------------------------
     log_dir = './log/log'
     model_dir = './savemodel'
     save_model_dir = os.path.join(model_dir, project)
@@ -262,7 +351,7 @@ def Train_breast():
         for epoch in range(epoch_num):
             running_loss = 0.0
             print('epoch: %d' % epoch)
-            for i, data in tqdm(enumerate(train_loader, 0), total=len(train_loader)):
+            for i, data in tqdm(enumerate(test_loader, 0), total=len(test_loader)):
                 (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
                 if torch.cuda.is_available():
                     inputs = inputs.to(device)

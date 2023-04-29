@@ -36,7 +36,7 @@ class DatasetImageMaskContourDist(Dataset):
         mask_file_path = img_file_name.replace("images", "mask")
         contour_file_path = img_file_name.replace("images", "contour")
         dist_file_path = img_file_name.replace("images", self.distance_type)
-        cls_path = r'./train_path/train.csv'
+        cls_path = r'../train_path/train.csv'
 
         image = load_image(img_file_name, normal_flag=self.normal_flag)
         mask = load_mask(mask_file_path)
@@ -140,3 +140,5 @@ def load_distance(path, distance_type):
     #     dist = io.loadmat(path)["dist_norm"]
 
     return torch.from_numpy(np.expand_dims(distance_array, 0)).float()
+
+
