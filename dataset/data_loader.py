@@ -5,7 +5,9 @@ from PIL import Image
 from torch.utils import data
 from torchvision import transforms as T
 from torchvision.transforms import functional as F
-from torchvision.transforms import InterpolationMode
+import warnings
+warnings.filterwarnings('ignore', message='Argument \'interpolation\' of type int is deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.')
+# from torchvision.transforms import InterpolationMode
 
 
 from dataset.img_mask_aug import data_aug
@@ -64,9 +66,9 @@ class ImageFolder_new(data.Dataset):
 
         if (self.mode == 'train') and p_transform <= self.augmentation_prob:
             Transform.append(
-                T.Resize((int(ResizeRange * aspect_ratio), ResizeRange), interpolation=InterpolationMode.BICUBIC))  # 双三次
+                T.Resize((int(ResizeRange * aspect_ratio), ResizeRange), interpolation=Image.BICUBIC))  # 双三次
             Transform_GT.append(
-                T.Resize((int(ResizeRange * aspect_ratio), ResizeRange), interpolation=InterpolationMode.NEAREST))  # 最近邻
+                T.Resize((int(ResizeRange * aspect_ratio), ResizeRange), interpolation=Image.NEAREST))  # 最近邻
 
             RotationDegree = random.randint(0, 3)
             RotationDegree = self.RotationDegree[RotationDegree]
@@ -134,8 +136,8 @@ class ImageFolder_new(data.Dataset):
         # plt.show()
 
         final_size = self.image_size
-        Transform.append(T.Resize((final_size, final_size), interpolation=InterpolationMode.BICUBIC))
-        Transform_GT.append(T.Resize((final_size, final_size), interpolation=InterpolationMode.NEAREST))
+        Transform.append(T.Resize((final_size, final_size), interpolation=Image.BICUBIC))
+        Transform_GT.append(T.Resize((final_size, final_size), interpolation=Image.NEAREST))
 
         Transform.append(T.ToTensor())
         Transform_GT.append(T.ToTensor())
@@ -241,10 +243,10 @@ class ImageFolder_new_difficult(data.Dataset):
                 seg = Image.fromarray(seg)
 
         final_size = self.image_size
-        Transform.append(T.Resize((final_size, final_size), interpolation=InterpolationMode.BICUBIC))
-        Transform_GT.append(T.Resize((final_size, final_size), interpolation=InterpolationMode.NEAREST))
-        Transform_contour.append(T.Resize((final_size, final_size), interpolation=InterpolationMode.NEAREST))
-        Transform_dist.append(T.Resize((final_size, final_size), interpolation=InterpolationMode.NEAREST))
+        Transform.append(T.Resize((final_size, final_size), interpolation=Image.BICUBIC))
+        Transform_GT.append(T.Resize((final_size, final_size), interpolation=Image.NEAREST))
+        Transform_contour.append(T.Resize((final_size, final_size), interpolation=Image.NEAREST))
+        Transform_dist.append(T.Resize((final_size, final_size), interpolation=Image.NEAREST))
 
         Transform.append(T.ToTensor())
         Transform_GT.append(T.ToTensor())

@@ -29,6 +29,8 @@ from utils.BackupCode import *
 from mymodels.resnet import resnet34, resnet50, resnet101, resnet152
 from dataset.class_divide import get_fold_filelist
 from dataset.data_loader import get_loader, get_loader_difficult
+import warnings
+warnings.filterwarnings('ignore', message='Argument \'interpolation\' of type int is deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.')
 
 sep = os.sep  # os.sep根据你所处的平台，自动采用相应的分隔符号
 
