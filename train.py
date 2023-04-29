@@ -326,7 +326,7 @@ def Train_breast():
                 i = 0
                 with torch.no_grad():
                     print('valid set testing...')
-                    for data in testLoader:
+                    for data in test_loader:
                         (img_file_name, images, targets1, targets2, targets3, targets4) = data
                         if torch.cuda.is_available():
                             images = images.to(device)
