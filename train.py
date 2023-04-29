@@ -162,12 +162,13 @@ def breast_loader():
     fold_k = 5
     fold_idx = 1
     fold_id = 1
-    batch_size = 20     # -------------------------------------------------------
+    batch_size = 18     # -------------------------------------------------------
     distance_type = "dist_mask"
     normal_flag = False
     image_size = 256
     num_workers = 5
 
+    print('batch_size: ', batch_size)
     train_loader, valid_loader, test_loader = getdataset(csv_path, fold_k, fold_idx, image_size, batch_size, num_workers)
 
     # train_path = train_path_m + str(fold_id) + '/train/images/'  # train_path是指训练集图片路径
