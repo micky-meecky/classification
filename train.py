@@ -73,7 +73,7 @@ def mnist_loader():
     return train_loader, val_loader, test_loader
 
 def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, num_workers):
-    augmentation_prob = 1.0
+    augmentation_prob = 0.8
     train, valid, test = get_fold_filelist(csv_file, K=fold_K, fold=fold_idx, validation=True)
     filepath_img = './class_out/stage1/p_image'
     filepath_mask = './class_out/stage1/p_mask'
@@ -139,7 +139,7 @@ def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, num_workers):
                                         batch_size=batch_size,
                                         num_workers=num_workers,
                                         mode='val',
-                                        augmentation_prob=augmentation_prob, )
+                                        augmentation_prob=0., )
 
     test_loader = get_loader_difficult(seg_list=None,
                                         GT_list=test_list_GT,
@@ -151,7 +151,7 @@ def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, num_workers):
                                         batch_size=batch_size,
                                         num_workers=num_workers,
                                         mode='test',
-                                        augmentation_prob=augmentation_prob, )
+                                        augmentation_prob=0., )
 
     return train_loader, valid_loader, test_loader
 
@@ -299,7 +299,7 @@ def Train_Mnist():
 
 def Train_breast():
     project = 'resnet50'   # -----------------------------------------------------
-    epoch_num = 600     # -----------------------------------------------------
+    epoch_num = 1400     # -----------------------------------------------------
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = resnet50()     # -----------------------------------------------------
     log_dir = './log/log'
@@ -320,7 +320,7 @@ def Train_breast():
 
     # criterion = nn.NLLLoss()    # -----------------------------------------------------
     criterion = nn.CrossEntropyLoss()    # -----------------------------------------------------
-    optimizer = optim.Adam(model.parameters(), lr=0.00001)   # -----------------------------------------------------
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)   # -----------------------------------------------------
 
     is_train = True
     is_test = True

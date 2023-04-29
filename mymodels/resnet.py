@@ -117,7 +117,7 @@ class ResNet(nn.Module):
         output = self.conv5_x(output)
         output = self.avg_pool(output)
         output = output.view(output.size(0), -1)
-        output = F.dropout(output, p=0.5)
+        output = F.dropout(output, p=0.3)
         output = self.fc(output)
 
         return output
