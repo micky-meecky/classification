@@ -73,7 +73,7 @@ def mnist_loader():
     return train_loader, val_loader, test_loader
 
 def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, num_workers):
-    augmentation_prob = 0.8
+    augmentation_prob = 1.0
     train, valid, test = get_fold_filelist(csv_file, K=fold_K, fold=fold_idx, validation=True)
     filepath_img = './class_out/stage1/p_image'
     filepath_mask = './class_out/stage1/p_mask'
@@ -320,7 +320,7 @@ def Train_breast():
 
     # criterion = nn.NLLLoss()    # -----------------------------------------------------
     criterion = nn.CrossEntropyLoss()    # -----------------------------------------------------
-    optimizer = optim.Adam(model.parameters(), lr=0.0001)   # -----------------------------------------------------
+    optimizer = optim.Adam(model.parameters(), lr=0.00001)   # -----------------------------------------------------
 
     is_train = True
     is_test = True
