@@ -75,7 +75,7 @@ def mnist_loader():
 def breast_loader():
     train_path_m = './train_path/fold/fold'
     fold_id = 1
-    batch_size = 40     # -------------------------------------------------------
+    batch_size = 20     # -------------------------------------------------------
     distance_type = "dist_mask"
     normal_flag = False
     train_path = train_path_m + str(fold_id) + '/train/images/'  # train_path是指训练集图片路径
@@ -307,6 +307,11 @@ def Train_breast():
                         outputs = F.softmax(outputs, dim=1)     # -----------------------------------------------------
                         # outputs = torch.exp(outputs)  # -----------------------------------------------------
                         _, predicted = torch.max(outputs.data, 1)
+                        # 将predicted和targets4都转换成cpu的数据类型
+                        predicted = predicted.cpu()
+                        targets4 = targets4.cpu()
+                        print('predicted = ', predicted)
+                        print('targets4 = ', targets4)
                         total += targets4.size(0)
                         correct += (predicted == targets4).sum().item()
                     print('train set上的准确率: %.3f %%' % (100 * correct / total))
@@ -325,6 +330,11 @@ def Train_breast():
                         outputs = F.softmax(outputs, dim=1)    # -----------------------------------------------------
                         # outputs = torch.exp(outputs)    # -----------------------------------------------------
                         _, predicted = torch.max(outputs.data, 1)
+                        # 将predicted和targets4都转换成cpu的数据类型
+                        predicted = predicted.cpu()
+                        targets4 = targets4.cpu()
+                        print('predicted = ', predicted)
+                        print('targets4 = ', targets4)
                         total += targets4.size(0)
                         correct += (predicted == targets4).sum().item()
                     print('valid set上的准确率: %.3f %%' % (100 * correct / total))
