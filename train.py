@@ -296,6 +296,7 @@ def Train_breast():
                 # 训练集上测试
                 correct = 0
                 total = 0
+                i = 0
                 with torch.no_grad():
                     print('train set testing...')
                     for data in train_loader:
@@ -308,10 +309,12 @@ def Train_breast():
                         # outputs = torch.exp(outputs)  # -----------------------------------------------------
                         _, predicted = torch.max(outputs.data, 1)
                         # 将predicted和targets4都转换成cpu的数据类型
-                        predicted = predicted.cpu()
-                        targets4 = targets4.cpu()
-                        print('predicted = ', predicted)
-                        print('targets4 = ', targets4)
+                        if i == 0:
+                            predicted = predicted.cpu()
+                            targets4 = targets4.cpu()
+                            print('predicted = ', predicted)
+                            print('targets4 = ', targets4)
+                            i += 1
                         total += targets4.size(0)
                         correct += (predicted == targets4).sum().item()
                     print('train set上的准确率: %.3f %%' % (100 * correct / total))
@@ -319,6 +322,7 @@ def Train_breast():
                 # 验证集上测试
                 correct = 0
                 total = 0
+                i = 0
                 with torch.no_grad():
                     print('valid set testing...')
                     for data in valid_loader:
@@ -330,11 +334,13 @@ def Train_breast():
                         outputs = F.softmax(outputs, dim=1)    # -----------------------------------------------------
                         # outputs = torch.exp(outputs)    # -----------------------------------------------------
                         _, predicted = torch.max(outputs.data, 1)
-                        # 将predicted和targets4都转换成cpu的数据类型
-                        predicted = predicted.cpu()
-                        targets4 = targets4.cpu()
-                        print('predicted = ', predicted)
-                        print('targets4 = ', targets4)
+                        #
+                        if i == 0:
+                            predicted = predicted.cpu()
+                            targets4 = targets4.cpu()
+                            print('predicted = ', predicted)
+                            print('targets4 = ', targets4)
+                            i += 1
                         total += targets4.size(0)
                         correct += (predicted == targets4).sum().item()
                     print('valid set上的准确率: %.3f %%' % (100 * correct / total))
