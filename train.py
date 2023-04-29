@@ -354,7 +354,7 @@ def Train_breast():
         for epoch in range(epoch_num):
             running_loss = 0.0
             print('epoch: %d' % epoch)
-            for i, data in tqdm(enumerate(test_loader, 0), total=len(test_loader)):
+            for i, data in tqdm(enumerate(train_loader, 0), total=len(train_loader)):
                 (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
                 if torch.cuda.is_available():
                     inputs = inputs.to(device)
