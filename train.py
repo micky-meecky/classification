@@ -293,7 +293,7 @@ def Train_breast():
                 print('epoch_loss = ', temploss)
 
             # valid
-            if epoch % 1 == 0:
+            if epoch % 5 == 0:
                 # 训练集上测试
                 correct = 0
                 total = 0
