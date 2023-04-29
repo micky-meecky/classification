@@ -30,7 +30,8 @@ from dataset import DatasetImageMaskContourDist
 from unetr import UNETR
 from tensorboardX import SummaryWriter
 from utils.BackupCode import *
-from mymodels.resnet import resnet18
+from mymodels.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
+
 
 
 def getModelSize(model):
@@ -205,10 +206,10 @@ def Train_Mnist():
         print('Accuracy of the network on the test images: %.4f %%' % (100 * accuracy))
 
 def Train_breast():
-    project = 'resnet'   # -----------------------------------------------------
+    project = 'resnet34'   # -----------------------------------------------------
     epoch_num = 300     # -----------------------------------------------------
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = resnet18()     # -----------------------------------------------------
+    model = resnet34()     # -----------------------------------------------------
     log_dir = './log/log'
     model_dir = './savemodel'
     save_model_dir = os.path.join(model_dir, project)
@@ -292,7 +293,7 @@ def Train_breast():
                 print('epoch_loss = ', temploss)
 
             # valid
-            if epoch % 10 == 0:
+            if epoch % 1 == 0:
                 # 训练集上测试
                 correct = 0
                 total = 0
@@ -325,7 +326,7 @@ def Train_breast():
                 i = 0
                 with torch.no_grad():
                     print('valid set testing...')
-                    for data in valid_loader:
+                    for data in testLoader:
                         (img_file_name, images, targets1, targets2, targets3, targets4) = data
                         if torch.cuda.is_available():
                             images = images.to(device)
@@ -334,7 +335,6 @@ def Train_breast():
                         outputs = F.softmax(outputs, dim=1)    # -----------------------------------------------------
                         # outputs = torch.exp(outputs)    # -----------------------------------------------------
                         _, predicted = torch.max(outputs.data, 1)
-                        #
                         if i == 0:
                             predicted = predicted.cpu()
                             targets4 = targets4.cpu()
