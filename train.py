@@ -76,7 +76,7 @@ def mnist_loader():
 def breast_loader():
     train_path_m = './train_path/fold/fold'
     fold_id = 1
-    batch_size = 20     # -------------------------------------------------------
+    batch_size = 40     # -------------------------------------------------------
     distance_type = "dist_mask"
     normal_flag = False
     train_path = train_path_m + str(fold_id) + '/train/images/'  # train_path是指训练集图片路径
