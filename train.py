@@ -12,6 +12,7 @@
 
 import glob
 import random
+import datetime
 
 # 导入torch的F
 import torch.nn.functional as F
@@ -351,7 +352,10 @@ def Train_breast():
 
         writer = SummaryWriter(log_dir=log_dir)
 
+        total_time = 0
         for epoch in range(epoch_num):
+            tic = datetime.datetime.now()
+            epochtic = datetime.datetime.now()
             running_loss = 0.0
             print('epoch: %d / %d' % (epoch + 1, epoch_num))
             for i, data in tqdm(enumerate(train_loader, 0), total=len(train_loader)):
@@ -371,6 +375,15 @@ def Train_breast():
                 #     running_loss = 0.0  # 每100个batch，running_loss清零,重新计算100个batch的loss
                 Iter += 1
                 writer.add_scalars('Loss', {'running_loss': running_loss}, Iter)
+
+            # 计时结束
+            toc = datetime.datetime.now()
+            h, remainder = divmod((toc - tic).seconds, 3600)
+            m, s = divmod(remainder, 60)
+            time_str = "per epoch training cost Time %02d h:%02d m:%02d s" % (h, m, s)
+            print(time_str)
+            tic = datetime.datetime.now()
+
             # 计算平均loss
             epoch_loss = running_loss / len(train_loader)  # len(train_loader)是batch的个数
             writer.add_scalars('Loss', {'epoch_loss': epoch_loss}, epoch)
@@ -443,6 +456,27 @@ def Train_breast():
                     torch.save(model.state_dict(), 'acc_maxmum_model.pth')
                     print('save model')
                     print('valid_accuracy = ', tempacc)
+
+            toc = datetime.datetime.now()
+            h, remainder = divmod((toc - tic).seconds, 3600)
+            m, s = divmod(remainder, 60)
+            time_str = "per epoch testing&vlidation cost Time %02d h:%02d m:%02d s" % (h, m, s)
+            print(time_str)
+
+            epochtoc = datetime.datetime.now()
+            time_seconds = (epochtoc - epochtic).seconds
+            total_time = total_time + time_seconds
+            per_epoch_time = total_time / (epoch + 1)
+            h, remainder = divmod(time_seconds, 3600)
+            m, s = divmod(remainder, 60)
+            time_str = "per whole epoch cost Time %02d h:%02d m:%02d s" % (h, m, s)
+            print(time_str)
+            remain_time_sec = (1400 - epoch - 1) * per_epoch_time
+            h, remainder = divmod(remain_time_sec, 3600)
+            m, s = divmod(remainder, 60)
+            time_str = "perhaps need Time %02d h:%02d m:%02d s" % (h, m, s)
+            print(time_str)
+
         torch.save(model.state_dict(), 'model.pth')
 
 
