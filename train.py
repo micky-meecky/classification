@@ -13,6 +13,9 @@
 import os
 import glob
 import random
+import shutil
+import time
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -24,6 +27,7 @@ from tqdm import tqdm
 from dataset import DatasetImageMaskContourDist
 from unetr import UNETR
 from tensorboardX import SummaryWriter
+from utils.BackupCode import *
 
 
 def getModelSize(model):
@@ -68,7 +72,7 @@ def mnist_loader():
 def breast_loader():
     train_path_m = './train_path/fold/fold'
     fold_id = 1
-    batch_size = 40
+    batch_size = 10
     distance_type = "dist_mask"
     normal_flag = False
     train_path = train_path_m + str(fold_id) + '/train/images/'  # train_path是指训练集图片路径
@@ -197,11 +201,12 @@ def Train_Mnist():
         accuracy = correct / total
         print('Accuracy of the network on the test images: %.4f %%' % (100 * accuracy))
 
-
 def Train_breast():
-    epoch_num = 200
+    project = 'z12only'
+    epoch_num = 100
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = UNETR()
+
     print(getModelSize(model))
 
     if torch.cuda.is_available():
@@ -231,7 +236,20 @@ def Train_breast():
         tempacc = 0.4
         Iter = 0
         log_dir = './log/log'
+        model_dir = './model'
+        save_model_dir = os.path.join(model_dir, project)
+        if not os.path.exists(save_model_dir):
+            os.makedirs(save_model_dir)
+        else:
+            # 删掉原来的model文件
+            shutil.rmtree(save_model_dir)
+            os.makedirs(save_model_dir)
+        log_dir = os.path.join(log_dir, project)
         if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        else:
+            # 删掉原来的log文件
+            shutil.rmtree(log_dir)
             os.makedirs(log_dir)
 
         writer = SummaryWriter(log_dir=log_dir)
@@ -239,7 +257,7 @@ def Train_breast():
         for epoch in range(epoch_num):
             running_loss = 0.0
             print('epoch: %d' % epoch)
-            for i, data in tqdm(enumerate(train_loader, 0), total=len(train_loader)):
+            for i, data in tqdm(enumerate(test_loader, 0), total=len(test_loader)):
                 (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
                 if torch.cuda.is_available():
                     inputs = inputs.to(device)
@@ -256,18 +274,20 @@ def Train_breast():
                 #     running_loss = 0.0  # 每100个batch，running_loss清零,重新计算100个batch的loss
                 Iter += 1
                 writer.add_scalars('Loss', {'running_loss': running_loss}, Iter)
-            if epoch % 5 == 0:
-                torch.save(model.state_dict(), 'model.pth')
+            # 计算平均loss
+            epoch_loss = running_loss / len(train_loader)  # len(train_loader)是batch的个数
+            print('epoch_loss = ', epoch_loss)
+            if epoch % 10 == 0:
+                torch.save(model.state_dict(), save_model_dir + '/model' + str(epoch) + '.pth')
                 print('save model')
-                print('running_loss = ', running_loss)
-            if temploss > running_loss:
-                temploss = running_loss
-                torch.save(model.state_dict(), 'loss_minimum_model.pth')
+            if temploss > epoch_loss:
+                temploss = epoch_loss
+                torch.save(model.state_dict(), save_model_dir + '/miniloss' + str(epoch) + '.pth')
                 print('save model')
-                print('running_loss = ', temploss)
+                print('epoch_loss = ', temploss)
 
             # valid
-            if Iter % 10 == 0:
+            if epoch % 10 == 0:
                 # 训练集上测试
                 correct = 0
                 total = 0
@@ -306,7 +326,6 @@ def Train_breast():
                     torch.save(model.state_dict(), 'acc_maxmum_model.pth')
                     print('save model')
                     print('valid_accuracy = ', tempacc)
-
         torch.save(model.state_dict(), 'model.pth')
 
 
@@ -321,8 +340,8 @@ def Train_breast():
                 (img_file_name, images, targets1, targets2, targets3, targets4) = data
                 if torch.cuda.is_available():
                     images = images.to(device)
-
                     targets4 = targets4.to(device)
+
                 outputs = model(images)
                 _, predicted = torch.max(outputs.data, 1)
                 total += targets4.size(0)
@@ -332,9 +351,6 @@ def Train_breast():
         # 计算准确率
         accuracy = correct / total
         print('Accuracy of the network on the test images: %.4f %%' % (100 * accuracy))
-
-
-
 
 if __name__ == '__main__':
     # Train_Mnist()

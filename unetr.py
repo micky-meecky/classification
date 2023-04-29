@@ -194,7 +194,7 @@ class Transformer(nn.Module):
 
 class UNETR(nn.Module):
     def __init__(self, img_shape=(256, 256), input_dim=3, output_dim=3, embed_dim=768, patch_size=16, num_heads=12,
-                 dropout=0.1, batch_size=10):
+                 dropout=0.2, batch_size=10):
         super().__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -205,11 +205,12 @@ class UNETR(nn.Module):
         self.dropout = dropout
         self.num_layers = 12
         self.ext_layers = [3, 6, 9, 12]
-        self.fc1 = nn.Linear(embed_dim * 4, 512)
-        self.dropout1 = nn.Dropout(0.2)
-        self.fc2 = nn.Linear(512, 256)
-        self.dropout2 = nn.Dropout(0.2)
-        self.fc4 = nn.Linear(256, 3)
+        self.linear = nn.Linear(embed_dim * 1, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
+        # self.fc1 = nn.Linear(embed_dim * 1, 512)
+        # self.dropout1 = nn.Dropout(0.2)
+        # self.fc2 = nn.Linear(512, 256)
+        # self.dropout2 = nn.Dropout(0.2)
+        # self.fc4 = nn.Linear(256, 3)
 
         self.patch_dim = [int(x / patch_size) for x in img_shape]
 
@@ -284,20 +285,28 @@ class UNETR(nn.Module):
     def forward(self, x):
         z = self.transformer(x)
         z0, z3, z6, z9, z12 = x, *z
-        z3 = z3.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
-        z6 = z6.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
-        z9 = z9.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
-        z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
+        # z3 = z3.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
+        # z6 = z6.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
+        # z9 = z9.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
+        z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)   # shape: (batch_size, 768, 16, 16)
+        # 将z12用nn.AdaptiveAvgPool2d(1)降维
+        z12 = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
+        # flatten
+        z12 = z12.view(z12.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
+        # dropout
+        z12 = F.dropout(z12, p=self.dropout, training=self.training)
+        # linear
+        z12 = self.linear(z12)  # shape: (batch_size, 3)
+        # softmax
+        label = F.softmax(z12, dim=1)  # shape: (batch_size, 3)
 
-        z3 = torch.mean(z3.view(z3.size(0), z3.size(1), -1), dim=2)  # shape: (batch_size, 768)
-        z6 = torch.mean(z6.view(z6.size(0), z6.size(1), -1), dim=2)  # shape: (batch_size, 768)
-        z9 = torch.mean(z9.view(z9.size(0), z9.size(1), -1), dim=2)  # shape: (batch_size, 768)
-        z12 = torch.mean(z12.view(z12.size(0), z12.size(1), -1), dim=2)  # shape: (batch_size, 768)
 
-        features = torch.cat((z3, z6, z9, z12), dim=1)  # shape: (batch_size, 768*4)
-
-
-        input_size = features.size(1)
+        # z3 = torch.mean(z3.view(z3.size(0), z3.size(1), -1), dim=2)  # shape: (batch_size, 768)
+        # z6 = torch.mean(z6.view(z6.size(0), z6.size(1), -1), dim=2)  # shape: (batch_size, 768)
+        # z9 = torch.mean(z9.view(z9.size(0), z9.size(1), -1), dim=2)  # shape: (batch_size, 768)
+        # z12 = torch.mean(z12.view(z12.size(0), z12.size(1), -1), dim=2)  # shape: (batch_size, 768)
+        # features = torch.cat((z3, z6, z9, z12), dim=1)  # shape: (batch_size, 768*4)
+        # input_size = features.size(1)
         # print('input_size is ', input_size)
 
 
@@ -311,9 +320,4 @@ class UNETR(nn.Module):
         # z0 = self.decoder0(z0)
         # output = self.decoder0_header(torch.cat([z0, z3], dim=1))
 
-        x = self.fc1(features)
-        x = self.dropout1(x)
-        x = self.fc2(x)
-        x = self.dropout2(x)
-        output = self.fc4(x)
-        return output
+        return label
