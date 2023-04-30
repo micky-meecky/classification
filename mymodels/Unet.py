@@ -97,19 +97,45 @@ class UNet(nn.Module):
         self.up3 = (Up(256, 128 // factor, bilinear))
         self.up4 = (Up(128, 64, bilinear))
         self.outc = (OutConv(64, n_classes))
+        self.activation = nn.Sigmoid()
+
+        # classification head
+        self.linear = nn.Linear(1024, 3)
+        self.logsoftmax = nn.LogSoftmax(dim=1)
+
+
 
     def forward(self, x):
+        # encoder
         x1 = self.inc(x)
         x2 = self.down1(x1)
         x3 = self.down2(x2)
         x4 = self.down3(x3)
         x5 = self.down4(x4)
+
+        print('x5.shape', x5.shape)
+        print('x4.shape', x4.shape)
+        print('x3.shape', x3.shape)
+        print('x2.shape', x2.shape)
+        print('x1.shape', x1.shape)
+
+
+        # decoder
         x = self.up1(x5, x4)
         x = self.up2(x, x3)
         x = self.up3(x, x2)
         x = self.up4(x, x1)
+
+        # segmentation head
         logits = self.outc(x)
-        return logits
+
+        # classification head
+        clsx = F.adaptive_avg_pool2d(x5, (1, 1))  # 这里是在x5上做的avgpool，目的是为了得到一个全局的特征，维度变化为[batch_size, 1024, 1, 1]
+        clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
+        clsx = self.linear(clsx)  # [batch_size, 3]
+        label = self.logsoftmax(clsx)  # [batch_size, 3]
+
+        return [logits, label]
 
     def use_checkpointing(self):
         self.inc = torch.utils.checkpoint(self.inc)
@@ -122,3 +148,4 @@ class UNet(nn.Module):
         self.up3 = torch.utils.checkpoint(self.up3)
         self.up4 = torch.utils.checkpoint(self.up4)
         self.outc = torch.utils.checkpoint(self.outc)
+

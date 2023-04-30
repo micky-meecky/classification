@@ -27,11 +27,15 @@ from dataset.class_divide import get_fold_filelist
 from dataset.data_loader import get_loader_difficult
 from utils.tictoc import TicToc
 from mymodels.unetr import UNETR
+from mymodels.Unet import UNet
+import utils.evaluation as ue
+from utils.myloss import SoftDiceLoss, JaccardLoss
 
 import warnings
 warnings.filterwarnings('ignore', message='Argument \'interpolation\' of type int is deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.')
 
 sep = os.sep  # os.sep根据你所处的平台，自动采用相应的分隔符号
+
 
 def getModelSize(model):
     param_size = 0
@@ -70,6 +74,7 @@ def mnist_loader():
     train_loader = DataLoader(train_dataset, batch_size=4096, sampler=train_sampler)
     val_loader = DataLoader(train_dataset, batch_size=1024, sampler=val_sampler)
     return train_loader, val_loader, test_loader
+
 
 def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, num_workers):
     augmentation_prob = 1.0
@@ -203,7 +208,220 @@ def breast_loader():
     # )
 
     return train_loader, valid_loader, test_loader
+def Train_breast():
+    project = 'UNet'   # -----------------------------------------------------
+    epoch_num = 1400     # -----------------------------------------------------
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model = UNet(1, 1)     # -----------------------------------------------------
+    log_dir = './log/log'
+    model_dir = './savemodel'
+    save_model_dir = os.path.join(model_dir, project)
+    t = TicToc()
+    te = TicToc()
+    content = "per epoch Time: "
+    contentvalid = "per epoch training&vlidation test Time: "
+    contentwholeepoch = "whole epoch Time: "
+    contenttotal = "total cost: "
 
+    print(getModelSize(model))
+
+    if torch.cuda.is_available():
+        print("Using GPU")
+        model = DataParallel(model)
+        model.to(device)
+    else:
+        print("Using CPU")
+        # model = DataParallel(model)
+        model.to(device)
+
+    train_loader, test_loader, valid_loader = breast_loader()
+
+    criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
+    # criterion_cls = nn.CrossEntropyLoss()    # -----------------------------------------------------
+    criterion_seg = SoftDiceLoss()    # -----------------------------------------------------
+    optimizer = optim.Adam(model.parameters(), lr=0.00001)   # -----------------------------------------------------
+
+    is_train = True
+    is_test = True
+    is_continue_train = False
+
+    if is_continue_train:
+        model.load_state_dict(torch.load('model.pth'))
+        print('load model')
+
+    if is_train:
+        temploss = 100.0
+        tempacc = 0.4
+        Iter = 0
+
+        if not os.path.exists(save_model_dir):
+            os.makedirs(save_model_dir)
+        else:
+            # 删掉原来的model文件
+            shutil.rmtree(save_model_dir)
+            os.makedirs(save_model_dir)
+        log_dir = os.path.join(log_dir, project)
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        else:
+            # 删掉原来的log文件
+            shutil.rmtree(log_dir)
+            os.makedirs(log_dir)
+
+        writer = SummaryWriter(log_dir=log_dir)
+
+        for epoch in range(epoch_num):
+            t.ticbegin()
+            te.ticbegin()
+            running_loss = 0.0
+            seg_running_loss = 0.0
+            print('epoch: %d / %d' % (epoch + 1, epoch_num))
+            for i, data in tqdm(enumerate(test_loader, 0), total=len(test_loader)):
+                (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
+                if torch.cuda.is_available():
+                    inputs = inputs.to(device)
+                    targets1 = targets1.to(device)
+                    targets4 = targets4.to(device)
+
+                optimizer.zero_grad()
+                segout, outputs = model(inputs)
+                seg_loss = criterion_seg(segout, targets1)
+                cls_loss = criterion_cls(outputs, targets4)
+                loss = 0.2 * seg_loss + 0.8 * cls_loss
+                loss.backward()
+                optimizer.step()
+                running_loss += cls_loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
+                seg_running_loss += seg_loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
+                # if i % 100 == 99:   # 每100个batch打印一次loss
+                #     print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 100))
+                #     running_loss = 0.0  # 每100个batch，running_loss清零,重新计算100个batch的loss
+                Iter += 1
+                writer.add_scalars('Loss', {'running_loss': running_loss}, Iter)
+                writer.add_scalars('Loss', {'seg_running_loss': seg_running_loss}, Iter)
+
+            # 计时结束
+            t.ticend()
+            t.printtime(content)
+            t.ticbegin()
+
+
+            # 计算平均epoch_cls_loss
+            epoch_cls_loss = running_loss / len(train_loader)  # len(train_loader)是batch的个数
+            writer.add_scalars('Loss', {'epoch_loss': epoch_cls_loss}, epoch)
+            print('epoch_loss = ', epoch_cls_loss)
+
+            # 保存模型策略
+            if epoch % 10 == 0:  # 每10个epoch保存一次模型
+                torch.save(model.state_dict(), save_model_dir + '/model' + str(epoch) + '.pth')
+                print('save model')
+            if temploss > epoch_cls_loss:
+                temploss = epoch_cls_loss
+                torch.save(model.state_dict(), save_model_dir + '/miniloss' + '.pth')
+                print('save model')
+                print('epoch_loss = ', temploss)
+            # valid
+            if epoch % 5 == 0:
+                # 训练集上测试
+                correct = 0
+                total = 0
+                i = 0
+                with torch.no_grad():
+                    print('train set testing...')
+                    for data in train_loader:
+                        (img_file_name, images, targets1, targets2, targets3, targets4) = data
+                        if torch.cuda.is_available():
+                            images = images.to(device)
+                            targets1 = targets1.to(device)
+                            targets4 = targets4.to(device)
+                        segout, outputs = model(images)
+                        SR = F.sigmoid(segout)
+                        # outputs = F.softmax(outputs, dim=1)     # -----------------------------------------------------
+                        outputs = torch.exp(outputs)  # -----------------------------------------------------
+                        _, predicted = torch.max(outputs.data, 1)
+                        SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(SR, targets1)
+                        # 一次性输出所有指标到一行
+                        print('SE = %.3f, PC = %.3f, F1 = %.3f, JS = %.3f, DC = %.3f, IOU = %.3f, Acc = %.3f' % (
+                            SE, PC, F1, JS, DC, IOU, Acc))
+                        # 输出第一批的预测结果
+                        if i == 0:
+                            predicted = predicted.cpu()
+                            targets4 = targets4.cpu()
+                            print('predicted = ', predicted)
+                            print('targets4 = ', targets4)
+                            i += 1
+
+                        # total += targets4.size(0)
+                        # correct += (predicted == targets4).sum().item()
+                    print('train set上的准确率: %.3f %%' % (100 * correct / total))
+                writer.add_scalars('Accuracy', {'Train_accuracy': correct / total}, Iter)
+
+                # 验证集上测试
+                correct = 0
+                total = 0
+                i = 0
+                with torch.no_grad():
+                    print('valid set testing...')
+                    for data in test_loader:
+                        (img_file_name, images, targets1, targets2, targets3, targets4) = data
+                        if torch.cuda.is_available():
+                            images = images.to(device)
+                            targets1 = targets1.to(device)
+                            targets4 = targets4.to(device)
+                        outputs = model(images)
+                        # outputs = F.softmax(outputs, dim=1)    # -----------------------------------------------------
+                        outputs = torch.exp(outputs)    # -----------------------------------------------------
+                        _, predicted = torch.max(outputs.data, 1)
+                        if i == 0:
+                            predicted = predicted.cpu()
+                            targets4 = targets4.cpu()
+                            print('predicted = ', predicted)
+                            print('targets4 = ', targets4)
+                            i += 1
+                        total += targets4.size(0)
+                        correct += (predicted == targets4).sum().item()
+                    print('valid set上的准确率: %.3f %%' % (100 * correct / total))
+                writer.add_scalars('Accuracy', {'valid_accuracy': correct / total}, Iter)
+
+                if tempacc > correct / total:
+                    tempacc = correct / total
+                    torch.save(model.state_dict(), 'acc_maxmum_model.pth')
+                    print('save model')
+                    print('valid_accuracy = ', tempacc)
+
+            t.ticend()
+            t.printtime(contentvalid)
+            te.ticend()
+            te.printtime(contentwholeepoch)
+            te.printlefttime(epoch, epoch_num)
+        t.printtime(contenttotal, True)
+
+
+        torch.save(model.state_dict(), 'model.pth')
+
+
+    if is_test:
+        mini_loss_model = save_model_dir + '/miniloss' + '.pth'
+        model.load_state_dict(torch.load(mini_loss_model))
+        # 测试模型
+        correct = 0
+        total = 0
+        with torch.no_grad():
+            print('testing...')
+            for i, data in enumerate(test_loader, 0):
+                (img_file_name, images, targets1, targets2, targets3, targets4) = data
+                if torch.cuda.is_available():
+                    images = images.to(device)
+                    targets4 = targets4.to(device)
+
+                outputs = model(images)
+                _, predicted = torch.max(outputs.data, 1)
+                total += targets4.size(0)
+                correct += (predicted == targets4).sum().item()
+                # print('测试集上的准确率: %.3f %%' % (100 * correct / total))
+
+        # 计算准确率
+        accuracy = correct / total
+        print('Accuracy of the network on the test images: %.4f %%' % (100 * accuracy))
 
 def Train_Mnist():
 
@@ -296,208 +514,6 @@ def Train_Mnist():
         accuracy = correct / total
         print('Accuracy of the network on the test images: %.4f %%' % (100 * accuracy))
 
-def Train_breast():
-    project = 'resnet18'   # -----------------------------------------------------
-    epoch_num = 1400     # -----------------------------------------------------
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = resnet18()     # -----------------------------------------------------
-    log_dir = './log/log'
-    model_dir = './savemodel'
-    save_model_dir = os.path.join(model_dir, project)
-    t = TicToc()
-    te = TicToc()
-    content = "per epoch Time: "
-    contentvalid = "per epoch training&vlidation test Time: "
-    contentwholeepoch = "whole epoch Time: "
-    contenttotal = "total cost: "
-
-    print(getModelSize(model))
-
-    if torch.cuda.is_available():
-        print("Using GPU")
-        model = DataParallel(model)
-        model.to(device)
-    else:
-        print("Using CPU")
-        # model = DataParallel(model)
-        model.to(device)
-
-    train_loader, test_loader, valid_loader = breast_loader()
-
-    # criterion = nn.NLLLoss()    # -----------------------------------------------------
-    criterion = nn.CrossEntropyLoss()    # -----------------------------------------------------
-    optimizer = optim.Adam(model.parameters(), lr=0.00001)   # -----------------------------------------------------
-
-    is_train = True
-    is_test = True
-    is_continue_train = False
-
-    if is_continue_train:
-        model.load_state_dict(torch.load('model.pth'))
-        print('load model')
-
-    if is_train:
-        temploss = 100.0
-        tempacc = 0.4
-        Iter = 0
-
-        if not os.path.exists(save_model_dir):
-            os.makedirs(save_model_dir)
-        else:
-            # 删掉原来的model文件
-            shutil.rmtree(save_model_dir)
-            os.makedirs(save_model_dir)
-        log_dir = os.path.join(log_dir, project)
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        else:
-            # 删掉原来的log文件
-            shutil.rmtree(log_dir)
-            os.makedirs(log_dir)
-
-        writer = SummaryWriter(log_dir=log_dir)
-
-        total_time = 0
-        for epoch in range(epoch_num):
-            t.ticbegin()
-            te.ticbegin()
-            running_loss = 0.0
-            print('epoch: %d / %d' % (epoch + 1, epoch_num))
-            for i, data in tqdm(enumerate(test_loader, 0), total=len(test_loader)):
-                (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
-                if torch.cuda.is_available():
-                    inputs = inputs.to(device)
-                    targets4 = targets4.to(device)
-
-                optimizer.zero_grad()
-                outputs = model(inputs)
-                loss = criterion(outputs, targets4)
-                loss.backward()
-                optimizer.step()
-                running_loss += loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
-                # if i % 100 == 99:   # 每100个batch打印一次loss
-                #     print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 100))
-                #     running_loss = 0.0  # 每100个batch，running_loss清零,重新计算100个batch的loss
-                Iter += 1
-                writer.add_scalars('Loss', {'running_loss': running_loss}, Iter)
-
-            # 计时结束
-            t.ticend()
-            t.printtime(content)
-            t.ticbegin()
-
-
-            # 计算平均loss
-            epoch_loss = running_loss / len(train_loader)  # len(train_loader)是batch的个数
-            writer.add_scalars('Loss', {'epoch_loss': epoch_loss}, epoch)
-            print('epoch_loss = ', epoch_loss)
-            if epoch % 10 == 0:
-                torch.save(model.state_dict(), save_model_dir + '/model' + str(epoch) + '.pth')
-                print('save model')
-            if temploss > epoch_loss:
-                temploss = epoch_loss
-                torch.save(model.state_dict(), save_model_dir + '/miniloss' + '.pth')
-                print('save model')
-                print('epoch_loss = ', temploss)
-            # valid
-            if epoch % 5 == 0:
-                # 训练集上测试
-                correct = 0
-                total = 0
-                i = 0
-                with torch.no_grad():
-                    print('train set testing...')
-                    for data in train_loader:
-                        (img_file_name, images, targets1, targets2, targets3, targets4) = data
-                        if torch.cuda.is_available():
-                            images = images.to(device)
-                            targets4 = targets4.to(device)
-                        outputs = model(images)
-                        outputs = F.softmax(outputs, dim=1)     # -----------------------------------------------------
-                        # outputs = torch.exp(outputs)  # -----------------------------------------------------
-                        _, predicted = torch.max(outputs.data, 1)
-                        # 将predicted和targets4都转换成cpu的数据类型
-                        if i == 0:
-                            predicted = predicted.cpu()
-                            targets4 = targets4.cpu()
-                            print('predicted = ', predicted)
-                            print('targets4 = ', targets4)
-                            i += 1
-                        total += targets4.size(0)
-                        correct += (predicted == targets4).sum().item()
-                    print('train set上的准确率: %.3f %%' % (100 * correct / total))
-                writer.add_scalars('Accuracy', {'Train_accuracy': correct / total}, Iter)
-
-                # 验证集上测试
-                correct = 0
-                total = 0
-                i = 0
-                with torch.no_grad():
-                    print('valid set testing...')
-                    for data in test_loader:
-                        (img_file_name, images, targets1, targets2, targets3, targets4) = data
-                        if torch.cuda.is_available():
-                            images = images.to(device)
-                            targets4 = targets4.to(device)
-                        outputs = model(images)
-                        outputs = F.softmax(outputs, dim=1)    # -----------------------------------------------------
-                        # outputs = torch.exp(outputs)    # -----------------------------------------------------
-                        _, predicted = torch.max(outputs.data, 1)
-                        if i == 0:
-                            predicted = predicted.cpu()
-                            targets4 = targets4.cpu()
-                            print('predicted = ', predicted)
-                            print('targets4 = ', targets4)
-                            i += 1
-                        total += targets4.size(0)
-                        correct += (predicted == targets4).sum().item()
-                    print('valid set上的准确率: %.3f %%' % (100 * correct / total))
-                writer.add_scalars('Accuracy', {'valid_accuracy': correct / total}, Iter)
-
-                if tempacc > correct / total:
-                    tempacc = correct / total
-                    torch.save(model.state_dict(), 'acc_maxmum_model.pth')
-                    print('save model')
-                    print('valid_accuracy = ', tempacc)
-
-            t.ticend()
-            t.printtime(contentvalid)
-
-
-            te.ticend()
-            te.printtime(contentwholeepoch)
-
-
-            te.printlefttime(epoch, epoch_num)
-        t.printtime(contenttotal, True)
-
-
-        torch.save(model.state_dict(), 'model.pth')
-
-
-    if is_test:
-        mini_loss_model = save_model_dir + '/miniloss' + '.pth'
-        model.load_state_dict(torch.load(mini_loss_model))
-        # 测试模型
-        correct = 0
-        total = 0
-        with torch.no_grad():
-            print('testing...')
-            for i, data in enumerate(test_loader, 0):
-                (img_file_name, images, targets1, targets2, targets3, targets4) = data
-                if torch.cuda.is_available():
-                    images = images.to(device)
-                    targets4 = targets4.to(device)
-
-                outputs = model(images)
-                _, predicted = torch.max(outputs.data, 1)
-                total += targets4.size(0)
-                correct += (predicted == targets4).sum().item()
-                # print('测试集上的准确率: %.3f %%' % (100 * correct / total))
-
-        # 计算准确率
-        accuracy = correct / total
-        print('Accuracy of the network on the test images: %.4f %%' % (100 * accuracy))
 
 if __name__ == '__main__':
     # Train_Mnist()

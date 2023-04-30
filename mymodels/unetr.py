@@ -216,8 +216,7 @@ class UNETR(nn.Module):
         self.patch_dim = [int(x / patch_size) for x in img_shape]
 
         # Transformer Encoder
-        self.transformer = \
-            Transformer(
+        self.transformer = Transformer(
                 input_dim,
                 embed_dim,
                 img_shape,
@@ -229,55 +228,46 @@ class UNETR(nn.Module):
             )
 
         # U-Net Decoder
-        self.decoder0 = \
-            nn.Sequential(
+        self.decoder0 = nn.Sequential(
                 Conv2DBlock(input_dim, 32, 3),
                 Conv2DBlock(32, 64, 3)
             )
 
-        self.decoder3 = \
-            nn.Sequential(
+        self.decoder3 = nn.Sequential(
                 Deconv2DBlock(embed_dim, 512),
                 Deconv2DBlock(512, 256),
                 Deconv2DBlock(256, 128)
             )
 
-        self.decoder6 = \
-            nn.Sequential(
+        self.decoder6 = nn.Sequential(
                 Deconv2DBlock(embed_dim, 512),
                 Deconv2DBlock(512, 256),
             )
 
-        self.decoder9 = \
-            Deconv2DBlock(embed_dim, 512)
+        self.decoder9 = Deconv2DBlock(embed_dim, 512)
 
-        self.decoder12_upsampler = \
-            SingleDeconv2DBlock(embed_dim, 512)
+        self.decoder12_upsampler = SingleDeconv2DBlock(embed_dim, 512)
 
-        self.decoder9_upsampler = \
-            nn.Sequential(
+        self.decoder9_upsampler = nn.Sequential(
                 Conv2DBlock(1024, 512),
                 Conv2DBlock(512, 512),
                 Conv2DBlock(512, 512),
                 SingleDeconv2DBlock(512, 256)
             )
 
-        self.decoder6_upsampler = \
-            nn.Sequential(
+        self.decoder6_upsampler = nn.Sequential(
                 Conv2DBlock(512, 256),
                 Conv2DBlock(256, 256),
                 SingleDeconv2DBlock(256, 128)
             )
 
-        self.decoder3_upsampler = \
-            nn.Sequential(
+        self.decoder3_upsampler = nn.Sequential(
                 Conv2DBlock(256, 128),
                 Conv2DBlock(128, 128),
                 SingleDeconv2DBlock(128, 64)
             )
 
-        self.decoder0_header = \
-            nn.Sequential(
+        self.decoder0_header = nn.Sequential(
                 Conv2DBlock(128, 64),
                 Conv2DBlock(64, 64),
                 SingleConv2DBlock(64, output_dim, 1)
