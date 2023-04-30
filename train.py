@@ -161,13 +161,12 @@ def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, num_workers):
     return train_loader, valid_loader, test_loader
 
 
-def breast_loader():
+def breast_loader(batch_size):
     train_path_m = './train_path/fold/fold'
     csv_path = './class_out/train.csv'
     fold_k = 5
     fold_idx = 1
     fold_id = 1
-    batch_size = 20     # -------------------------------------------------------
     distance_type = "dist_mask"
     normal_flag = False
     image_size = 256
@@ -210,8 +209,10 @@ def breast_loader():
 
     return train_loader, valid_loader, test_loader
 def Train_breast():
-    project = 'UNet2'   # -----------------------------------------------------
-    epoch_num = 1500     # -----------------------------------------------------
+    project = 'UNet2'   # project name-----------------------------------------------------
+    epoch_num = 1500     # epoch_num -----------------------------------------------------
+    lr = 0.00005  # 学习率 -----------------------------------------------------
+    bs = 20  # batch_size -----------------------------------------------------
     L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = UNet(1, 1)     # -----------------------------------------------------
@@ -236,12 +237,12 @@ def Train_breast():
         # model = DataParallel(model)
         model.to(device)
 
-    train_loader, test_loader, valid_loader = breast_loader()
+    train_loader, test_loader, valid_loader = breast_loader(bs)
 
     criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
     # criterion_cls = nn.CrossEntropyLoss()    # -----------------------------------------------------
     criterion_seg = SoftDiceLoss()    # -----------------------------------------------------
-    optimizer = optim.Adam(model.parameters(), lr=0.0001)   # -----------------------------------------------------
+    optimizer = optim.Adam(model.parameters(), lr)   # -----------------------------------------------------
 
     is_train = True
     is_test = True
