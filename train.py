@@ -167,7 +167,7 @@ def breast_loader():
     fold_k = 5
     fold_idx = 1
     fold_id = 1
-    batch_size = 5     # -------------------------------------------------------
+    batch_size = 15     # -------------------------------------------------------
     distance_type = "dist_mask"
     normal_flag = False
     image_size = 256
@@ -270,7 +270,7 @@ def Train_breast():
             os.makedirs(log_dir)
 
         writer = SummaryWriter(log_dir=log_dir)
-        datas = test_loader     # -----------------------------------------------------
+        datas = train_loader     # -----------------------------------------------------
         for epoch in range(epoch_num):
             t.ticbegin()
             te.ticbegin()
@@ -322,6 +322,7 @@ def Train_breast():
                 torch.save(model.state_dict(), save_model_dir + '/miniloss' + '.pth')
                 print('save model，and epoch_cls_loss = ', temploss, '\n')
 
+            print('Iter = ', Iter)
             if Iter % 3 == 0:
                 test.trainvalid('train', datas, model, device, writer, Iter)
                 test.trainvalid('valid', valid_loader, model, device, writer, Iter)
