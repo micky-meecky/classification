@@ -29,6 +29,7 @@ class TicToc:
         else:
             self.toc_list.append(self.toc - self.tic)
             self.single_seconds = self.toc - self.tic
+            self.wholetime += (self.toc - self.tic).total_seconds()
 
     def cleartotal(self):
         self.tic = 0
@@ -49,7 +50,6 @@ class TicToc:
         # 时分秒的总秒数，然后再转换成时分秒的形式
         for i in self.toc_list:
             self.total_seconds = i.total_seconds()
-        self.wholetime += self.total_seconds
         self.hours = int(self.total_seconds // 3600)
         self.minutes = int((self.total_seconds - self.hours * 3600) // 60)
         self.seconds = int(self.total_seconds - self.hours * 3600 - self.minutes * 60)
@@ -77,7 +77,11 @@ class TicToc:
     def printlefttime(self, epoch: int, total_epoch: int):
         self.caculatetime()
         left_epoch = total_epoch - epoch
+        # 应该用left_epoch乘以过去五轮的平均时间；
+        # 但是由于这里的时间差是每一轮的时间差，所以直接用这个时间差乘以剩余轮数
         left_seconds = self.total_seconds * left_epoch
+
+
         left_hours = int(left_seconds // 3600)
         left_minutes = int((left_seconds - left_hours * 3600) // 60)
         left_seconds = int(left_seconds - left_hours * 3600 - left_minutes * 60)
@@ -111,20 +115,17 @@ if __name__ == '__main__':
     # 双循环测试
     t1 = TicToc()
     te = TicToc()
-    for i in range(5):
+    for i in range(10):
         t1.ticbegin()
         te.ticbegin()
-        for j in range(2):
+        for j in range(1):
             time.sleep(1)
         t1.ticend()
-        t1.printtime("The per epoch time is: ")
-        t1.ticbegin()
 
         te.ticend()
         te.printtime("The whole epoch time is: ")
 
-        t1.printlefttime(i, 5)
-
+        te.printlefttime(i, 10)
 
     t1.printtime("The total epoch time is: ", iswhole=True)
 

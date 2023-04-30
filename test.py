@@ -11,12 +11,9 @@
 """
 
 import torch
-import torch.nn as nn
-import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, SubsetRandomSampler
-from torchvision.datasets import MNIST
 from torchvision import datasets, transforms
-from models import Net
+from mymodels.models import Net
 # 定义数据转换
 transform = transforms.Compose([
     transforms.Resize((32, 32)),

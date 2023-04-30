@@ -10,10 +10,6 @@
 @datatime: 4/21/2023 10:16 AM
 """
 
-import glob
-import random
-import datetime
-
 # 导入torch的F
 import torch.nn.functional as F
 import torch
@@ -21,16 +17,17 @@ import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, SubsetRandomSampler
-from models import Net
+from mymodels.models import Net
 from torch.nn.parallel import DataParallel
 from tqdm import tqdm
-from dataset.dataset import DatasetImageMaskContourDist
 from tensorboardX import SummaryWriter
 from utils.BackupCode import *
-from mymodels.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
+from mymodels.resnet import resnet18
 from dataset.class_divide import get_fold_filelist
-from dataset.data_loader import get_loader, get_loader_difficult
+from dataset.data_loader import get_loader_difficult
 from utils.tictoc import TicToc
+from mymodels.unetr import UNETR
+
 import warnings
 warnings.filterwarnings('ignore', message='Argument \'interpolation\' of type int is deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.')
 
@@ -366,7 +363,7 @@ def Train_breast():
             te.ticbegin()
             running_loss = 0.0
             print('epoch: %d / %d' % (epoch + 1, epoch_num))
-            for i, data in tqdm(enumerate(train_loader, 0), total=len(train_loader)):
+            for i, data in tqdm(enumerate(test_loader, 0), total=len(test_loader)):
                 (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
                 if torch.cuda.is_available():
                     inputs = inputs.to(device)
@@ -465,13 +462,13 @@ def Train_breast():
 
             t.ticend()
             t.printtime(contentvalid)
-            t.cleartotals()
+
 
             te.ticend()
             te.printtime(contentwholeepoch)
-            te.cleartotals()
 
-            t.printlefttime(epoch, epoch_num)
+
+            te.printlefttime(epoch, epoch_num)
         t.printtime(contenttotal, True)
 
 
