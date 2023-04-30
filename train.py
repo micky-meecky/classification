@@ -27,9 +27,10 @@ from tqdm import tqdm
 from dataset.dataset import DatasetImageMaskContourDist
 from tensorboardX import SummaryWriter
 from utils.BackupCode import *
-from mymodels.resnet import resnet34, resnet50, resnet101, resnet152
+from mymodels.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 from dataset.class_divide import get_fold_filelist
 from dataset.data_loader import get_loader, get_loader_difficult
+from utils.tictoc import TicToc
 import warnings
 warnings.filterwarnings('ignore', message='Argument \'interpolation\' of type int is deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.')
 
@@ -163,7 +164,7 @@ def breast_loader():
     fold_k = 5
     fold_idx = 1
     fold_id = 1
-    batch_size = 15     # -------------------------------------------------------
+    batch_size = 5     # -------------------------------------------------------
     distance_type = "dist_mask"
     normal_flag = False
     image_size = 256
@@ -299,13 +300,20 @@ def Train_Mnist():
         print('Accuracy of the network on the test images: %.4f %%' % (100 * accuracy))
 
 def Train_breast():
-    project = 'resnet50'   # -----------------------------------------------------
+    project = 'resnet18'   # -----------------------------------------------------
     epoch_num = 1400     # -----------------------------------------------------
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = resnet50()     # -----------------------------------------------------
+    model = resnet18()     # -----------------------------------------------------
     log_dir = './log/log'
     model_dir = './savemodel'
     save_model_dir = os.path.join(model_dir, project)
+    t = TicToc()
+    te = TicToc()
+    content = "per epoch Time: "
+    contentvalid = "per epoch training&vlidation test Time: "
+    contentwholeepoch = "whole epoch Time: "
+    contenttotal = "total cost: "
+
     print(getModelSize(model))
 
     if torch.cuda.is_available():
@@ -354,8 +362,8 @@ def Train_breast():
 
         total_time = 0
         for epoch in range(epoch_num):
-            tic = datetime.datetime.now()
-            epochtic = datetime.datetime.now()
+            t.ticbegin()
+            te.ticbegin()
             running_loss = 0.0
             print('epoch: %d / %d' % (epoch + 1, epoch_num))
             for i, data in tqdm(enumerate(train_loader, 0), total=len(train_loader)):
@@ -377,12 +385,10 @@ def Train_breast():
                 writer.add_scalars('Loss', {'running_loss': running_loss}, Iter)
 
             # 计时结束
-            toc = datetime.datetime.now()
-            h, remainder = divmod((toc - tic).seconds, 3600)
-            m, s = divmod(remainder, 60)
-            time_str = "per epoch training cost Time %02d h:%02d m:%02d s" % (h, m, s)
-            print(time_str)
-            tic = datetime.datetime.now()
+            t.ticend()
+            t.printtime(content)
+            t.ticbegin()
+
 
             # 计算平均loss
             epoch_loss = running_loss / len(train_loader)  # len(train_loader)是batch的个数
@@ -457,25 +463,17 @@ def Train_breast():
                     print('save model')
                     print('valid_accuracy = ', tempacc)
 
-            toc = datetime.datetime.now()
-            h, remainder = divmod((toc - tic).seconds, 3600)
-            m, s = divmod(remainder, 60)
-            time_str = "per epoch testing&vlidation cost Time %02d h:%02d m:%02d s" % (h, m, s)
-            print(time_str)
+            t.ticend()
+            t.printtime(contentvalid)
+            t.cleartotals()
 
-            epochtoc = datetime.datetime.now()
-            time_seconds = (epochtoc - epochtic).seconds
-            total_time = total_time + time_seconds
-            per_epoch_time = total_time / (epoch + 1)
-            h, remainder = divmod(time_seconds, 3600)
-            m, s = divmod(remainder, 60)
-            time_str = "per whole epoch cost Time %02d h:%02d m:%02d s" % (h, m, s)
-            print(time_str)
-            remain_time_sec = (1400 - epoch - 1) * per_epoch_time
-            h, remainder = divmod(remain_time_sec, 3600)
-            m, s = divmod(remainder, 60)
-            time_str = "perhaps need Time %02d h:%02d m:%02d s" % (h, m, s)
-            print(time_str)
+            te.ticend()
+            te.printtime(contentwholeepoch)
+            te.cleartotals()
+
+            t.printlefttime(epoch, epoch_num)
+        t.printtime(contenttotal, True)
+
 
         torch.save(model.state_dict(), 'model.pth')
 
