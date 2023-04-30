@@ -323,7 +323,7 @@ def Train_breast():
                 print('save model，and epoch_cls_loss = ', temploss, '\n')
 
             print('Iter = ', Iter)
-            if Iter % 3 == 0:
+            if epoch % 3 == 0:
                 test.trainvalid('train', datas, model, device, writer, Iter)
                 test.trainvalid('valid', valid_loader, model, device, writer, Iter)
 
