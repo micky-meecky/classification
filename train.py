@@ -272,7 +272,7 @@ def Train_breast():
             os.makedirs(log_dir)
 
         writer = SummaryWriter(log_dir=log_dir)
-        datas = test_loader     # -----------------------------------------------------
+        datas = train_loader     # -----------------------------------------------------
         for epoch in range(epoch_num):
             t.ticbegin()
             te.ticbegin()
