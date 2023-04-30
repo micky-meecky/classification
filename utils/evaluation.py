@@ -139,7 +139,11 @@ def get_F1(SR, GT, threshold=0.5):
     # Sensitivity == Recall F度量
     SE = get_sensitivity(SR, GT, threshold=threshold)
     PC = get_precision(SR, GT, threshold=threshold)
+    SR = SR.view(-1)
+    GT = GT.view(-1)
 
+    SR = SR.data.cpu().numpy()
+    GT = GT.data.cpu().numpy()
     corr = np.sum(SR == GT)
     acc = float(corr) / float(SR.shape[0])
     if acc == 1:
@@ -162,13 +166,13 @@ def get_JS(SR, GT, threshold=0.5):
 
     SR = (SR > threshold).astype(np.float64)
     # GT = (GT == (np.max(GT))).astype(np.float64)
-    if np.any(GT > 0):
+    if np.any(GT > 0):  # 如果GT中有正样本，那么GT中的所有元素都置为1
         GT = (GT == np.max(GT)).astype(np.float64)
     else:
         GT = np.zeros_like(GT, dtype=np.float64)
 
-    Inter = torch.sum((SR + GT) == 2)
-    Union = torch.sum((SR + GT) >= 1)
+    Inter = np.sum((SR + GT) == 2)
+    Union = np.sum((SR + GT) >= 1)
 
     corr = np.sum(SR == GT)
     acc = float(corr) / float(SR.shape[0])

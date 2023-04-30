@@ -13,53 +13,123 @@
 import torch
 from torch.utils.data import DataLoader, SubsetRandomSampler
 from torchvision import datasets, transforms
-from mymodels.models import Net
-# 定义数据转换
-transform = transforms.Compose([
-    transforms.Resize((32, 32)),
-    transforms.ToTensor(),
-    transforms.Normalize((0.5,), (0.5,))
-])
+import utils.evaluation as ue
+import torch.nn.functional as F
 
-# 定义测试集
-# 定义数据集和转换
-train_dataset = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
-test_dataset = datasets.MNIST(root='./data', train=False, download=True, transform=transform)
+def trainvalid(mode: str, dataloader: DataLoader, model, device: torch.device, writer, Iter):
+    printcontent = mode + 'set testing...'
+    print(printcontent)
+    outputcontent = mode + ' set上的准确率: %.3f %%'
+    scalarcontent = mode + ' accuracy'
+    segoutputcontent = mode + ' segmentation output'
 
-# 划分数据集
+    # 训练集上测试
+    i = 0
+    SElist = []
+    PClist = []
+    F1list = []
+    JSlist = []
+    DClist = []
+    IOUlist = []
+    Acclist = []
+    cls_acclist = []
 
-test_indices = torch.arange(len(test_dataset))
+    with torch.no_grad():
+        for data in dataloader:
+            (img_file_name, images, targets1, targets2, targets3, targets4) = data
+            if torch.cuda.is_available():
+                images = images.to(device)
+                targets1 = targets1.to(device)
+                targets4 = targets4.to(device)
+            SR, labels = model(images)
+            # SR = F.sigmoid(segout)
+            # outputs = F.softmax(outputs, dim=1)     # -----------------------------------------------------
+            labels = torch.exp(labels)  # -----------------------------------------------------
+            _, predicted = torch.max(labels.data, 1)
+            SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(SR, targets1)
+            cls_acc = ue.get_clsaccuracy(predicted, targets4)
+            # 将这些指标存到一个list里面，方便后面计算平均值
+            SElist.append(SE)
+            PClist.append(PC)
+            F1list.append(F1)
+            JSlist.append(JS)
+            DClist.append(DC)
+            IOUlist.append(IOU)
+            Acclist.append(Acc)
+            cls_acclist.append(cls_acc)
+
+            # 输出第一批的预测结果
+            if i == 0:
+                predicted = predicted.cpu()
+                targets4 = targets4.cpu()
+                print('predicted = ', predicted)
+                print('targets4 = ', targets4)
+                i += 1
+
+            # total += targets4.size(0)
+            # correct += (predicted == targets4).sum().item()
+        print(outputcontent % (100 * sum(cls_acclist) / len(cls_acclist)))
+        # 输出seg的指标
+        print(segoutputcontent, 'SE = %.3f, PC = %.3f, F1 = %.3f, JS = %.3f, DC = %.3f, IOU = %.3f, Acc = %.3f' % (
+            sum(SElist) / len(SElist), sum(PClist) / len(PClist), sum(F1list) / len(F1list), sum(JSlist) / len(JSlist),
+            sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))
+
+    writer.add_scalars('Accuracy', {scalarcontent: (100 * sum(cls_acclist) / len(cls_acclist))}, Iter)
 
 
-# 定义数据加载器
-train_sampler = SubsetRandomSampler(train_indices)
-val_sampler = SubsetRandomSampler(val_indices)
-test_sampler = SubsetRandomSampler(test_indices)
-train_loader = DataLoader(train_dataset, batch_size=64, sampler=train_sampler)
-val_loader = DataLoader(val_dataset, batch_size=64, sampler=val_sampler)
-test_loader = DataLoader(test_dataset, batch_size=64, sampler=test_sampler)
+def test(mode: str, dataloader: DataLoader, model, device: torch.device):
+    printcontent = mode + 'set testing...'
+    print(printcontent)
+    outputcontent = mode + ' set上的准确率: %.3f %%'
+    segoutputcontent = mode + ' segmentation output'
 
-# 查看测试集
-dataiter = iter(test_loader)
+    # 训练集上测试
+    i = 0
+    SElist = []
+    PClist = []
+    F1list = []
+    JSlist = []
+    DClist = []
+    IOUlist = []
+    Acclist = []
+    cls_acclist = []
 
-# 加载模型
-model = Net()
-model.load_state_dict(torch.load('model.pth'))
+    with torch.no_grad():
+        for data in dataloader:
+            (img_file_name, images, targets1, targets2, targets3, targets4) = data
+            if torch.cuda.is_available():
+                images = images.to(device)
+                targets1 = targets1.to(device)
+                targets4 = targets4.to(device)
+            SR, labels = model(images)
+            # SR = F.sigmoid(segout)
+            # outputs = F.softmax(outputs, dim=1)     # -----------------------------------------------------
+            labels = torch.exp(labels)  # -----------------------------------------------------
+            _, predicted = torch.max(labels.data, 1)
+            SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(SR, targets1)
+            cls_acc = ue.get_clsaccuracy(predicted, targets4)
+            # 将这些指标存到一个list里面，方便后面计算平均值
+            SElist.append(SE)
+            PClist.append(PC)
+            F1list.append(F1)
+            JSlist.append(JS)
+            DClist.append(DC)
+            IOUlist.append(IOU)
+            Acclist.append(Acc)
+            cls_acclist.append(cls_acc)
 
-# 测试模型
-correct = 0
-total = 0
-with torch.no_grad():
-    for data in test_loader:
-        images, labels = data
-        outputs = model(images)
-        _, predicted = torch.max(outputs.data, 1)
-        total += labels.size(0)
-        correct += (predicted == labels).sum().item()
-        print('测试集上的准确率: %.3f %%' % (100 * correct / total))
+            # 输出第一批的预测结果
+            if i == 0:
+                predicted = predicted.cpu()
+                targets4 = targets4.cpu()
+                print('predicted = ', predicted)
+                print('targets4 = ', targets4)
+                i += 1
 
-# 计算准确率
-accuracy = correct / total
-print('Accuracy of the network on the test images: %d %%' % (100 * accuracy))
-
-
+            # total += targets4.size(0)
+            # correct += (predicted == targets4).sum().item()
+        print(outputcontent % (100 * sum(cls_acclist) / len(cls_acclist)))
+        # 输出seg的指标
+        print(segoutputcontent, 'SE = %.3f, PC = %.3f, F1 = %.3f, JS = %.3f, DC = %.3f, IOU = %.3f, Acc = %.3f\n' % (
+            sum(SElist) / len(SElist), sum(PClist) / len(PClist), sum(F1list) / len(F1list), sum(JSlist) / len(JSlist),
+            sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))

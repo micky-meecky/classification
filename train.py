@@ -30,6 +30,7 @@ from mymodels.unetr import UNETR
 from mymodels.Unet import UNet
 import utils.evaluation as ue
 from utils.myloss import SoftDiceLoss, JaccardLoss
+import test
 
 import warnings
 warnings.filterwarnings('ignore', message='Argument \'interpolation\' of type int is deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.')
@@ -210,7 +211,7 @@ def breast_loader():
     return train_loader, valid_loader, test_loader
 def Train_breast():
     project = 'UNet'   # -----------------------------------------------------
-    epoch_num = 1400     # -----------------------------------------------------
+    epoch_num = 1500     # -----------------------------------------------------
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = UNet(1, 1)     # -----------------------------------------------------
     log_dir = './log/log'
@@ -239,7 +240,7 @@ def Train_breast():
     criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
     # criterion_cls = nn.CrossEntropyLoss()    # -----------------------------------------------------
     criterion_seg = SoftDiceLoss()    # -----------------------------------------------------
-    optimizer = optim.Adam(model.parameters(), lr=0.00001)   # -----------------------------------------------------
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)   # -----------------------------------------------------
 
     is_train = True
     is_test = True
@@ -269,14 +270,14 @@ def Train_breast():
             os.makedirs(log_dir)
 
         writer = SummaryWriter(log_dir=log_dir)
-
+        datas = test_loader     # -----------------------------------------------------
         for epoch in range(epoch_num):
             t.ticbegin()
             te.ticbegin()
             running_loss = 0.0
             seg_running_loss = 0.0
             print('epoch: %d / %d' % (epoch + 1, epoch_num))
-            for i, data in tqdm(enumerate(test_loader, 0), total=len(test_loader)):
+            for i, data in tqdm(enumerate(datas, 0), total=len(datas)):
                 (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
                 if torch.cuda.is_available():
                     inputs = inputs.to(device)
@@ -304,11 +305,13 @@ def Train_breast():
             t.printtime(content)
             t.ticbegin()
 
-
             # 计算平均epoch_cls_loss
-            epoch_cls_loss = running_loss / len(train_loader)  # len(train_loader)是batch的个数
-            writer.add_scalars('Loss', {'epoch_loss': epoch_cls_loss}, epoch)
-            print('epoch_loss = ', epoch_cls_loss)
+            epoch_cls_loss = running_loss / len(datas)  # len(train_loader)是batch的个数---------------
+            writer.add_scalars('Loss', {'epoch_cls_loss': epoch_cls_loss}, epoch)
+            epoch_seg_loss = seg_running_loss / len(datas)  # len(train_loader)是batch的个数-----------------
+            writer.add_scalars('Loss', {'epoch_seg_loss': epoch_seg_loss}, epoch)
+            print('epoch_cls_loss = ', epoch_cls_loss)
+            print('epoch_seg_loss = ', epoch_seg_loss, '\n')
 
             # 保存模型策略
             if epoch % 10 == 0:  # 每10个epoch保存一次模型
@@ -317,76 +320,11 @@ def Train_breast():
             if temploss > epoch_cls_loss:
                 temploss = epoch_cls_loss
                 torch.save(model.state_dict(), save_model_dir + '/miniloss' + '.pth')
-                print('save model')
-                print('epoch_loss = ', temploss)
-            # valid
-            if epoch % 5 == 0:
-                # 训练集上测试
-                correct = 0
-                total = 0
-                i = 0
-                with torch.no_grad():
-                    print('train set testing...')
-                    for data in train_loader:
-                        (img_file_name, images, targets1, targets2, targets3, targets4) = data
-                        if torch.cuda.is_available():
-                            images = images.to(device)
-                            targets1 = targets1.to(device)
-                            targets4 = targets4.to(device)
-                        segout, outputs = model(images)
-                        SR = F.sigmoid(segout)
-                        # outputs = F.softmax(outputs, dim=1)     # -----------------------------------------------------
-                        outputs = torch.exp(outputs)  # -----------------------------------------------------
-                        _, predicted = torch.max(outputs.data, 1)
-                        SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(SR, targets1)
-                        # 一次性输出所有指标到一行
-                        print('SE = %.3f, PC = %.3f, F1 = %.3f, JS = %.3f, DC = %.3f, IOU = %.3f, Acc = %.3f' % (
-                            SE, PC, F1, JS, DC, IOU, Acc))
-                        # 输出第一批的预测结果
-                        if i == 0:
-                            predicted = predicted.cpu()
-                            targets4 = targets4.cpu()
-                            print('predicted = ', predicted)
-                            print('targets4 = ', targets4)
-                            i += 1
+                print('save model，and epoch_cls_loss = ', temploss, '\n')
 
-                        # total += targets4.size(0)
-                        # correct += (predicted == targets4).sum().item()
-                    print('train set上的准确率: %.3f %%' % (100 * correct / total))
-                writer.add_scalars('Accuracy', {'Train_accuracy': correct / total}, Iter)
-
-                # 验证集上测试
-                correct = 0
-                total = 0
-                i = 0
-                with torch.no_grad():
-                    print('valid set testing...')
-                    for data in test_loader:
-                        (img_file_name, images, targets1, targets2, targets3, targets4) = data
-                        if torch.cuda.is_available():
-                            images = images.to(device)
-                            targets1 = targets1.to(device)
-                            targets4 = targets4.to(device)
-                        outputs = model(images)
-                        # outputs = F.softmax(outputs, dim=1)    # -----------------------------------------------------
-                        outputs = torch.exp(outputs)    # -----------------------------------------------------
-                        _, predicted = torch.max(outputs.data, 1)
-                        if i == 0:
-                            predicted = predicted.cpu()
-                            targets4 = targets4.cpu()
-                            print('predicted = ', predicted)
-                            print('targets4 = ', targets4)
-                            i += 1
-                        total += targets4.size(0)
-                        correct += (predicted == targets4).sum().item()
-                    print('valid set上的准确率: %.3f %%' % (100 * correct / total))
-                writer.add_scalars('Accuracy', {'valid_accuracy': correct / total}, Iter)
-
-                if tempacc > correct / total:
-                    tempacc = correct / total
-                    torch.save(model.state_dict(), 'acc_maxmum_model.pth')
-                    print('save model')
-                    print('valid_accuracy = ', tempacc)
+            if Iter % 3 == 0:
+                test.trainvalid('train', datas, model, device, writer, Iter)
+                test.trainvalid('valid', valid_loader, model, device, writer, Iter)
 
             t.ticend()
             t.printtime(contentvalid)
@@ -394,34 +332,19 @@ def Train_breast():
             te.printtime(contentwholeepoch)
             te.printlefttime(epoch, epoch_num)
         t.printtime(contenttotal, True)
-
+        writer.close()
 
         torch.save(model.state_dict(), 'model.pth')
 
 
+    print('Finished Training\n')
     if is_test:
         mini_loss_model = save_model_dir + '/miniloss' + '.pth'
         model.load_state_dict(torch.load(mini_loss_model))
-        # 测试模型
-        correct = 0
-        total = 0
-        with torch.no_grad():
-            print('testing...')
-            for i, data in enumerate(test_loader, 0):
-                (img_file_name, images, targets1, targets2, targets3, targets4) = data
-                if torch.cuda.is_available():
-                    images = images.to(device)
-                    targets4 = targets4.to(device)
+        test.test('test', test_loader, model, device)
 
-                outputs = model(images)
-                _, predicted = torch.max(outputs.data, 1)
-                total += targets4.size(0)
-                correct += (predicted == targets4).sum().item()
-                # print('测试集上的准确率: %.3f %%' % (100 * correct / total))
+    print('\nFinished Testing\n')
 
-        # 计算准确率
-        accuracy = correct / total
-        print('Accuracy of the network on the test images: %.4f %%' % (100 * accuracy))
 
 def Train_Mnist():
 
@@ -513,7 +436,6 @@ def Train_Mnist():
         # 计算准确率
         accuracy = correct / total
         print('Accuracy of the network on the test images: %.4f %%' % (100 * accuracy))
-
 
 if __name__ == '__main__':
     # Train_Mnist()

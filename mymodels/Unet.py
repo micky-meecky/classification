@@ -113,11 +113,11 @@ class UNet(nn.Module):
         x4 = self.down3(x3)
         x5 = self.down4(x4)
 
-        print('x5.shape', x5.shape)
-        print('x4.shape', x4.shape)
-        print('x3.shape', x3.shape)
-        print('x2.shape', x2.shape)
-        print('x1.shape', x1.shape)
+        # print('x5.shape', x5.shape)
+        # print('x4.shape', x4.shape)
+        # print('x3.shape', x3.shape)
+        # print('x2.shape', x2.shape)
+        # print('x1.shape', x1.shape)
 
 
         # decoder
@@ -128,6 +128,7 @@ class UNet(nn.Module):
 
         # segmentation head
         logits = self.outc(x)
+        logits = self.activation(logits)
 
         # classification head
         clsx = F.adaptive_avg_pool2d(x5, (1, 1))  # 这里是在x5上做的avgpool，目的是为了得到一个全局的特征，维度变化为[batch_size, 1024, 1, 1]
