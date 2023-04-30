@@ -167,7 +167,7 @@ def breast_loader():
     fold_k = 5
     fold_idx = 1
     fold_id = 1
-    batch_size = 15     # -------------------------------------------------------
+    batch_size = 3     # -------------------------------------------------------
     distance_type = "dist_mask"
     normal_flag = False
     image_size = 256
@@ -210,8 +210,9 @@ def breast_loader():
 
     return train_loader, valid_loader, test_loader
 def Train_breast():
-    project = 'UNet'   # -----------------------------------------------------
+    project = 'UNet2'   # -----------------------------------------------------
     epoch_num = 1500     # -----------------------------------------------------
+    L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = UNet(1, 1)     # -----------------------------------------------------
     log_dir = './log/log'
@@ -270,12 +271,13 @@ def Train_breast():
             os.makedirs(log_dir)
 
         writer = SummaryWriter(log_dir=log_dir)
-        datas = train_loader     # -----------------------------------------------------
+        datas = test_loader     # -----------------------------------------------------
         for epoch in range(epoch_num):
             t.ticbegin()
             te.ticbegin()
-            running_loss = 0.0
+            cls_running_loss = 0.0
             seg_running_loss = 0.0
+            running_loss = 0.0  # running_loss是所有batch的loss之和
             print('epoch: %d / %d' % (epoch + 1, epoch_num))
             for i, data in tqdm(enumerate(datas, 0), total=len(datas)):
                 (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
@@ -288,17 +290,16 @@ def Train_breast():
                 segout, outputs = model(inputs)
                 seg_loss = criterion_seg(segout, targets1)
                 cls_loss = criterion_cls(outputs, targets4)
-                loss = 0.2 * seg_loss + 0.8 * cls_loss
+                loss = L * seg_loss + (1 - L) * cls_loss
                 loss.backward()
                 optimizer.step()
-                running_loss += cls_loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
+                cls_running_loss += cls_loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
                 seg_running_loss += seg_loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
-                # if i % 100 == 99:   # 每100个batch打印一次loss
-                #     print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 100))
-                #     running_loss = 0.0  # 每100个batch，running_loss清零,重新计算100个batch的loss
+                running_loss += loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
                 Iter += 1
-                writer.add_scalars('Loss', {'running_loss': running_loss}, Iter)
+                writer.add_scalars('Loss', {'cls_running_loss': cls_running_loss}, Iter)
                 writer.add_scalars('Loss', {'seg_running_loss': seg_running_loss}, Iter)
+                writer.add_scalars('Loss', {'running_loss': running_loss}, Iter)
 
             # 计时结束
             t.ticend()
@@ -306,12 +307,16 @@ def Train_breast():
             t.ticbegin()
 
             # 计算平均epoch_cls_loss
-            epoch_cls_loss = running_loss / len(datas)  # len(train_loader)是batch的个数---------------
+            epoch_cls_loss = cls_running_loss / len(datas)  # len(train_loader)是batch的个数---------------
             writer.add_scalars('Loss', {'epoch_cls_loss': epoch_cls_loss}, epoch)
             epoch_seg_loss = seg_running_loss / len(datas)  # len(train_loader)是batch的个数-----------------
             writer.add_scalars('Loss', {'epoch_seg_loss': epoch_seg_loss}, epoch)
+            epoch_loss = running_loss / len(datas)  # len(train_loader)是batch的个数-----------------
+            writer.add_scalars('Loss', {'epoch_loss': epoch_loss}, epoch)
+
             print('epoch_cls_loss = ', epoch_cls_loss)
-            print('epoch_seg_loss = ', epoch_seg_loss, '\n')
+            print('epoch_seg_loss = ', epoch_seg_loss)
+            print('epoch_loss = ', epoch_loss, '\n')
 
             # 保存模型策略
             if epoch % 10 == 0:  # 每10个epoch保存一次模型
@@ -319,7 +324,7 @@ def Train_breast():
                 print('save model')
             if temploss > epoch_cls_loss:
                 temploss = epoch_cls_loss
-                torch.save(model.state_dict(), save_model_dir + '/miniloss' + '.pth')
+                torch.save(model.state_dict(), save_model_dir + '/miniclsloss' + '.pth')
                 print('save model，and epoch_cls_loss = ', temploss, '\n')
 
             print('Iter = ', Iter)
@@ -340,7 +345,7 @@ def Train_breast():
 
     print('Finished Training\n')
     if is_test:
-        mini_loss_model = save_model_dir + '/miniloss' + '.pth'
+        mini_loss_model = save_model_dir + '/miniclsloss' + '.pth'
         model.load_state_dict(torch.load(mini_loss_model))
         test.test('test', test_loader, model, device)
 

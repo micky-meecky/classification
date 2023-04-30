@@ -92,6 +92,7 @@ class UNet(nn.Module):
         self.down3 = (Down(256, 512))
         factor = 2 if bilinear else 1
         self.down4 = (Down(512, 1024 // factor))
+        self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
         self.up1 = (Up(1024, 512 // factor, bilinear))
         self.up2 = (Up(512, 256 // factor, bilinear))
         self.up3 = (Up(256, 128 // factor, bilinear))
@@ -100,7 +101,7 @@ class UNet(nn.Module):
         self.activation = nn.Sigmoid()
 
         # classification head
-        self.linear = nn.Linear(1024, 3)
+        self.linear = nn.Linear(1984, 3)
         self.logsoftmax = nn.LogSoftmax(dim=1)
 
 
@@ -113,12 +114,28 @@ class UNet(nn.Module):
         x4 = self.down3(x3)
         x5 = self.down4(x4)
 
+
+
         # print('x5.shape', x5.shape)
         # print('x4.shape', x4.shape)
         # print('x3.shape', x3.shape)
         # print('x2.shape', x2.shape)
         # print('x1.shape', x1.shape)
 
+        x5_upsampled = self.upsample(x5)
+        x4_upsampled = self.upsample(x4)
+        x3_upsampled = self.upsample(x3)
+        x2_upsampled = self.upsample(x2)
+
+        # print('x5_upsampled.shape', x5_upsampled.shape)
+        # print('x4_upsampled.shape', x4_upsampled.shape)
+        # print('x3_upsampled.shape', x3_upsampled.shape)
+        # print('x2_upsampled.shape', x2_upsampled.shape)
+
+
+        # 将特征图cat起来,这样可以捕获多尺度的特征，以获取更好的语义信息
+        features_concatenated = torch.cat([x1, x2_upsampled, x3_upsampled, x4_upsampled, x5_upsampled], dim=1)
+        # print('features_concatenated.shape', features_concatenated.shape)
 
         # decoder
         x = self.up1(x5, x4)
@@ -131,8 +148,8 @@ class UNet(nn.Module):
         logits = self.activation(logits)
 
         # classification head
-        clsx = F.adaptive_avg_pool2d(x5, (1, 1))  # 这里是在x5上做的avgpool，目的是为了得到一个全局的特征，维度变化为[batch_size, 1024, 1, 1]
-        clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
+        clsx = F.adaptive_avg_pool2d(features_concatenated, (1, 1))  # 这里是在x5上做的avgpool，目的是为了得到一个全局的特征，维度变化为[batch_size, 1024, 1, 1]
+        clsx = clsx.view(-1, 1984)  # [batch_size, 1024]
         clsx = self.linear(clsx)  # [batch_size, 3]
         label = self.logsoftmax(clsx)  # [batch_size, 3]
 
