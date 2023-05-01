@@ -15,13 +15,13 @@ def Device(model):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if torch.cuda.is_available():
         print("\n Using GPU \n")
-        model = DataParallel(model, device_ids=['cuda:0', 'cuda:1', 'cuda:2', 'cuda:3'])
+        model = DataParallel(model)
         model.to(device)
     else:
         print("Using CPU")
         # model = DataParallel(model)
         model.to(device)
-    return device
+    return model, device
 
 
 def LossExport(cls_running_loss, seg_running_loss, running_loss, datas, writer, epoch, _have_segtask):
