@@ -15,7 +15,7 @@ def Device(model):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if torch.cuda.is_available():
         print("\n Using GPU \n")
-        model = DataParallel(model)
+        model = DataParallel(model, device_ids=['cuda:0', 'cuda:1', 'cuda:2', 'cuda:3'])
         model.to(device)
     else:
         print("Using CPU")
