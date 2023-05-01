@@ -11,10 +11,10 @@
 """
 
 import torch
-from torch.utils.data import DataLoader, SubsetRandomSampler
-from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
 import utils.evaluation as ue
 import torch.nn.functional as F
+
 
 def trainvalid(mode: str, dataloader: DataLoader, model, device: torch.device, writer, Iter):
     printcontent = mode + 'set testing...'
@@ -94,6 +94,9 @@ def test(mode: str, dataloader: DataLoader, model, device: torch.device):
     Acclist = []
     cls_acclist = []
 
+    pre = []
+    tar = []
+
     with torch.no_grad():
         for data in dataloader:
             (img_file_name, images, targets1, targets2, targets3, targets4) = data
@@ -118,16 +121,14 @@ def test(mode: str, dataloader: DataLoader, model, device: torch.device):
             Acclist.append(Acc)
             cls_acclist.append(cls_acc)
 
-            # 输出第一批的预测结果
-            if i == 0:
+            # 输出预测结果
+            if i % 10 == 0:     # 每10个batch输出一次
                 predicted = predicted.cpu()
                 targets4 = targets4.cpu()
                 print('predicted = ', predicted)
                 print('targets4 = ', targets4)
                 i += 1
 
-            # total += targets4.size(0)
-            # correct += (predicted == targets4).sum().item()
         print(outputcontent % (100 * sum(cls_acclist) / len(cls_acclist)))
         # 输出seg的指标
         print(segoutputcontent, 'SE = %.3f, PC = %.3f, F1 = %.3f, JS = %.3f, DC = %.3f, IOU = %.3f, Acc = %.3f\n' % (
