@@ -223,13 +223,13 @@ def breast_loader(batch_size):
 
     return train_loader, valid_loader, test_loader
 def Train_breast():
-    project = 'resnet50_1'   # project name-----------------------------------------------------
+    project = 'resnet34_1'   # project name-----------------------------------------------------
     epoch_num = 1400     # epoch_num -----------------------------------------------------
     lr = 0.0005  # 学习率 -----------------------------------------------------
     bs = 10  # batch_size -----------------------------------------------------
     L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = False  # 是否使用预训练模型 -----------------------------------------------------
-    model_name = 'resnet50'  # 模型名字 -----------------------------------------------------
+    model_name = 'resnet34'  # 模型名字 -----------------------------------------------------
     model = utils.InitModel(model_name, use_pretrained)    # -----------------------------------------------------
     log_dir = './log/log'
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
