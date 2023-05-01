@@ -5,7 +5,7 @@ from torch.nn.parallel import DataParallel
 import pretrainedmodels
 import pretrainedmodels.utils as utils
 from mymodels.models import Net
-from mymodels.resnet import resnet18
+from mymodels.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 from mymodels.unetr import UNETR
 from mymodels.Unet import UNet
 
@@ -36,6 +36,7 @@ def LossExport(cls_running_loss, seg_running_loss, running_loss, datas, writer, 
 
     return epoch_cls_loss
 
+
 def SaveModel(model, epoch, epoch_cls_loss, save_model_dir):
     temploss = 100.0
     if epoch % 10 == 0:  # 每10个epoch保存一次模型
@@ -52,10 +53,11 @@ def WriteIntoTxt(txtcontent, txtdir):
         for i in txtcontent:
             f.write(i + '\n')
 
+
 def InitModel(modelname, use_pretrained: bool = False):
     model = None
     if use_pretrained:
-        torch.hub.set_dir("../mymodels/downloaded_models")
+        torch.hub.set_dir("./mymodels/downloaded_models")
         model = pretrainedmodels.__dict__[modelname](num_classes=1000, pretrained='imagenet')
         # modelname如果是以resnet开头的，则在他最后一层添加一个softmax激活
         if modelname.startswith('resnet'):
@@ -64,7 +66,6 @@ def InitModel(modelname, use_pretrained: bool = False):
             model.last_linear = nn.Linear(model.last_linear.in_features, num_classes)
             model.conv1 = torch.nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
             pass
-
     else:
         if modelname == 'resnet18':
             model = resnet18()
@@ -74,5 +75,11 @@ def InitModel(modelname, use_pretrained: bool = False):
             model = UNet(1, 1)
         elif modelname == 'Net':
             model = Net()
+        elif modelname == 'resnet34':
+            model = resnet34()
+        elif modelname == 'resnet50':
+            model = resnet50()
+        elif modelname == 'resnet101':
+            model = resnet101()
     return model
 

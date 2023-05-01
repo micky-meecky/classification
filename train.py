@@ -223,12 +223,12 @@ def breast_loader(batch_size):
 
     return train_loader, valid_loader, test_loader
 def Train_breast():
-    project = 'test'   # project name-----------------------------------------------------
-    epoch_num = 100     # epoch_num -----------------------------------------------------
+    project = 'resnet50_1'   # project name-----------------------------------------------------
+    epoch_num = 1400     # epoch_num -----------------------------------------------------
     lr = 0.0005  # 学习率 -----------------------------------------------------
-    bs = 10  # batch_size -----------------------------------------------------
+    bs = 30  # batch_size -----------------------------------------------------
     L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
-    use_pretrained = True  # 是否使用预训练模型 -----------------------------------------------------
+    use_pretrained = False  # 是否使用预训练模型 -----------------------------------------------------
     model_name = 'resnet50'  # 模型名字 -----------------------------------------------------
     model = utils.InitModel(model_name, use_pretrained)    # -----------------------------------------------------
     log_dir = './log/log'
@@ -257,7 +257,7 @@ def Train_breast():
     optimizer = optim.Adam(model.parameters(), lr)   # -----------------------------------------------------
 
     if is_continue_train:
-        model.load_state_dict(torch.load('model.pth'))
+        model.load_state_dict(torch.load('./savemodel/test/miniclsloss.pth'))
         print('load model')
 
     if is_train:
