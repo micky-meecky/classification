@@ -226,7 +226,7 @@ def Train_breast():
     project = 'resnet50_1'   # project name-----------------------------------------------------
     epoch_num = 1400     # epoch_num -----------------------------------------------------
     lr = 0.0005  # 学习率 -----------------------------------------------------
-    bs = 16  # batch_size -----------------------------------------------------
+    bs = 10  # batch_size -----------------------------------------------------
     L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = False  # 是否使用预训练模型 -----------------------------------------------------
     model_name = 'resnet50'  # 模型名字 -----------------------------------------------------
@@ -330,7 +330,7 @@ def Train_breast():
             utils.SaveModel(model, epoch, epoch_cls_loss, save_model_dir)
 
             print('Iter = ', Iter)
-            if epoch % 3 == 0:
+            if epoch % 6 == 0:
                 test.trainvalid('train', datas, model, device, writer, Iter, _have_segtask)
                 test.trainvalid('valid', valid_loader, model, device, writer, Iter, _have_segtask)
 
