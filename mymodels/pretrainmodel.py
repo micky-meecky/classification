@@ -1,8 +1,10 @@
 import torch.nn as nn
 import pretrainedmodels
+import torch
 
 # Load the model
-model_name = 'resnet18'
+torch.hub.set_dir("downloaded_models")
+model_name = 'resnet34'
 model = pretrainedmodels.__dict__[model_name](num_classes=1000, pretrained='imagenet')
 model.eval()
 

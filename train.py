@@ -17,20 +17,17 @@ import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, SubsetRandomSampler
-from mymodels.models import Net
 from torch.nn.parallel import DataParallel
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
 from utils.BackupCode import *
-from mymodels.resnet import resnet18
 from dataset.class_divide import get_fold_filelist
 from dataset.data_loader import get_loader_difficult
 from utils.tictoc import TicToc
-from mymodels.unetr import UNETR
-from mymodels.Unet import UNet
 import utils.evaluation as ue
 from utils.myloss import SoftDiceLoss, JaccardLoss
 import test
+from utils import utils
 
 import warnings
 warnings.filterwarnings('ignore', message='Argument \'interpolation\' of type int is deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.')
@@ -104,27 +101,10 @@ def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, num_workers):
     # 输出test_class_list
     print('test_class_list: ', test_class_list)
 
-
-
-
     filepath_img = './class_out/stage1/p_image'
     filepath_mask = './class_out/stage1/p_mask'
     filepath_contour = './class_out/stage1/p_contour'
     filepath_dist = './class_out/stage1/p_distance_D1'
-
-    # 将train, valid, test保存到一个txt文件中
-    train_fold_txt = './foldinfo/train_fold_' + str(fold_idx) + '.txt'
-    valid_fold_txt = './foldinfo/valid_fold_' + str(fold_idx) + '.txt'
-    test_fold_txt = './foldinfo/test_fold_' + str(fold_idx) + '.txt'
-    with open(train_fold_txt, 'w') as f:
-        for i in train:
-            f.write(i[0] + '\n')
-    with open(valid_fold_txt, 'w') as f:
-        for i in valid:
-            f.write(i[0] + '\n')
-    with open(test_fold_txt, 'w') as f:
-        for i in test:
-            f.write(i[0] + '\n')
 
     train_list = [filepath_img + sep + i[0] for i in train]
     train_list_GT = [filepath_mask + sep + i[0] for i in train]
@@ -148,6 +128,13 @@ def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, num_workers):
     print("images count in valid:{}".format(len(valid_list)))
     print("images count in test :{}".format(len(test_list)))
 
+    # 将train_list, valid_list, test_list保存到一个txt文件中
+    train_list_txt = './foldinfo/train_list_' + str(fold_idx) + '.txt'
+    valid_list_txt = './foldinfo/valid_list_' + str(fold_idx) + '.txt'
+    test_list_txt = './foldinfo/test_list_' + str(fold_idx) + '.txt'
+    utils.WriteIntoTxt(train_list, train_list_txt)
+    utils.WriteIntoTxt(valid_list, valid_list_txt)
+    utils.WriteIntoTxt(test_list, test_list_txt)
 
     train_loader = get_loader_difficult(seg_list=None,
                                         GT_list=train_list_GT,
@@ -236,13 +223,14 @@ def breast_loader(batch_size):
 
     return train_loader, valid_loader, test_loader
 def Train_breast():
-    project = 'UNet2_0'   # project name-----------------------------------------------------
+    project = 'test'   # project name-----------------------------------------------------
     epoch_num = 100     # epoch_num -----------------------------------------------------
     lr = 0.0005  # 学习率 -----------------------------------------------------
-    bs = 5  # batch_size -----------------------------------------------------
+    bs = 10  # batch_size -----------------------------------------------------
     L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
-    use_pretrained = False  # 是否使用预训练模型 -----------------------------------------------------
-    model = UNet(1, 1)     # -----------------------------------------------------
+    use_pretrained = True  # 是否使用预训练模型 -----------------------------------------------------
+    model_name = 'resnet50'  # 模型名字 -----------------------------------------------------
+    model = utils.InitModel(model_name, use_pretrained)    # -----------------------------------------------------
     log_dir = './log/log'
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model_dir = './savemodel'
@@ -256,23 +244,15 @@ def Train_breast():
     is_train = True
     is_test = True  # False
     is_continue_train = False
+    _have_segtask = False
 
     print(getModelSize(model))
 
-    # todo: functionize it
-    if torch.cuda.is_available():
-        print("Using GPU")
-        model = DataParallel(model)
-        model.to(device)
-    else:
-        print("Using CPU")
-        # model = DataParallel(model)
-        model.to(device)
-
+    utils.Device(model, device)
     train_loader, valid_loader, test_loader = breast_loader(bs)
 
-    criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
-    # criterion_cls = nn.CrossEntropyLoss()    # -----------------------------------------------------
+    # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
+    criterion_cls = nn.CrossEntropyLoss()    # -----------------------------------------------------
     criterion_seg = SoftDiceLoss()    # -----------------------------------------------------
     optimizer = optim.Adam(model.parameters(), lr)   # -----------------------------------------------------
 
@@ -316,19 +296,26 @@ def Train_breast():
                     targets4 = targets4.to(device)
 
                 optimizer.zero_grad()
-                segout, outputs = model(inputs)
-                seg_loss = criterion_seg(segout, targets1)
-                cls_loss = criterion_cls(outputs, targets4)
-                loss = L * seg_loss + (1 - L) * cls_loss
-                loss.backward()
-                optimizer.step()
+                if _have_segtask:
+                    segout, outputs = model(inputs)
+                    seg_loss = criterion_seg(segout, targets1)
+                    cls_loss = criterion_cls(outputs, targets4)
+                    loss = L * seg_loss + (1 - L) * cls_loss
+                    loss.backward()
+                    seg_running_loss += seg_loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
+                else:
+                    outputs = model(inputs)
+                    cls_loss = criterion_cls(outputs, targets4)
+                    loss = cls_loss
+                    loss.backward()
 
+                optimizer.step()
                 cls_running_loss += cls_loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
-                seg_running_loss += seg_loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
                 running_loss += loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
                 Iter += 1
                 writer.add_scalars('Loss', {'cls_running_loss': cls_running_loss}, Iter)
-                writer.add_scalars('Loss', {'seg_running_loss': seg_running_loss}, Iter)
+                if _have_segtask:
+                    writer.add_scalars('Loss', {'seg_running_loss': seg_running_loss}, Iter)
                 writer.add_scalars('Loss', {'running_loss': running_loss}, Iter)
 
             # 计时结束
@@ -336,32 +323,16 @@ def Train_breast():
             t.printtime(content)
             t.ticbegin()
 
-            # todo:simplize it
             # 计算平均epoch_cls_loss
-            epoch_cls_loss = cls_running_loss / len(datas)  # len(train_loader)是batch的个数---------------
-            writer.add_scalars('Loss', {'epoch_cls_loss': epoch_cls_loss}, epoch)
-            epoch_seg_loss = seg_running_loss / len(datas)  # len(train_loader)是batch的个数-----------------
-            writer.add_scalars('Loss', {'epoch_seg_loss': epoch_seg_loss}, epoch)
-            epoch_loss = running_loss / len(datas)  # len(train_loader)是batch的个数-----------------
-            writer.add_scalars('Loss', {'epoch_loss': epoch_loss}, epoch)
-
-            print('epoch_cls_loss = ', epoch_cls_loss)
-            print('epoch_seg_loss = ', epoch_seg_loss)
-            print('epoch_loss = ', epoch_loss, '\n')
+            epoch_cls_loss = utils.LossExport(cls_running_loss, seg_running_loss, running_loss, datas, writer, epoch, _have_segtask)
 
             # 保存模型策略
-            if epoch % 10 == 0:  # 每10个epoch保存一次模型
-                torch.save(model.state_dict(), save_model_dir + '/model' + str(epoch) + '.pth')
-                print('save model')
-            if temploss > epoch_cls_loss:
-                temploss = epoch_cls_loss
-                torch.save(model.state_dict(), save_model_dir + '/miniclsloss' + '.pth')
-                print('save model，and epoch_cls_loss = ', temploss, '\n')
+            utils.SaveModel(model, epoch, epoch_cls_loss, save_model_dir)
 
             print('Iter = ', Iter)
             if epoch % 3 == 0:
-                test.trainvalid('train', datas, model, device, writer, Iter)
-                test.trainvalid('valid', valid_loader, model, device, writer, Iter)
+                test.trainvalid('train', datas, model, device, writer, Iter, _have_segtask)
+                test.trainvalid('valid', valid_loader, model, device, writer, Iter, _have_segtask)
 
             t.ticend()
             t.printtime(contentvalid)
@@ -378,15 +349,14 @@ def Train_breast():
     if is_test:
         mini_loss_model = save_model_dir + '/miniclsloss' + '.pth'
         model.load_state_dict(torch.load(mini_loss_model))
-        test.test('test', test_loader, model, device)
-
+        test.test('test', test_loader, model, device, _have_segtask)
     print('\nFinished Testing\n')
 
 
 def Train_Mnist():
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = Net()
+    model = utils.InitModel('Net', False)
     print(getModelSize(model))
 
     if torch.cuda.is_available():

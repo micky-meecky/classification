@@ -16,7 +16,7 @@ import utils.evaluation as ue
 import torch.nn.functional as F
 
 
-def trainvalid(mode: str, dataloader: DataLoader, model, device: torch.device, writer, Iter):
+def trainvalid(mode: str, dataloader: DataLoader, model, device: torch.device, writer, Iter, _have_segtask: bool):
     printcontent = mode + 'set testing...'
     print(printcontent)
     outputcontent = mode + ' set上的准确率: %.3f %%'
@@ -41,22 +41,26 @@ def trainvalid(mode: str, dataloader: DataLoader, model, device: torch.device, w
                 images = images.to(device)
                 targets1 = targets1.to(device)
                 targets4 = targets4.to(device)
-            SR, labels = model(images)
-            # SR = F.sigmoid(segout)
-            # outputs = F.softmax(outputs, dim=1)     # -----------------------------------------------------
-            labels = torch.exp(labels)  # -----------------------------------------------------
-            _, predicted = torch.max(labels.data, 1)
-            SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(SR, targets1)
-            cls_acc = ue.get_clsaccuracy(predicted, targets4)
-            # 将这些指标存到一个list里面，方便后面计算平均值
-            SElist.append(SE)
-            PClist.append(PC)
-            F1list.append(F1)
-            JSlist.append(JS)
-            DClist.append(DC)
-            IOUlist.append(IOU)
-            Acclist.append(Acc)
-            cls_acclist.append(cls_acc)
+            if _have_segtask:
+                SR, labels = model(images)  # -----------------------------------------------------
+                # SR = F.sigmoid(segout)
+                SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(SR, targets1)
+                # 将这些指标存到一个list里面，方便后面计算平均值
+                SElist.append(SE)
+                PClist.append(PC)
+                F1list.append(F1)
+                JSlist.append(JS)
+                DClist.append(DC)
+                IOUlist.append(IOU)
+                Acclist.append(Acc)
+            else:
+                labels = model(images)
+                # labels = torch.exp(labels)  # -----------------------------------------------------
+                labels = F.softmax(labels, dim=1)     # -----------------------------------------------------
+                _, predicted = torch.max(labels.data, 1)
+                cls_acc = ue.get_clsaccuracy(predicted, targets4)
+                labels = model(images)
+                cls_acclist.append(cls_acc)
 
             # 输出第一批的预测结果
             if i == 0:
@@ -70,14 +74,15 @@ def trainvalid(mode: str, dataloader: DataLoader, model, device: torch.device, w
             # correct += (predicted == targets4).sum().item()
         print(outputcontent % (100 * sum(cls_acclist) / len(cls_acclist)))
         # 输出seg的指标
-        print(segoutputcontent, 'SE = %.3f, PC = %.3f, F1 = %.3f, JS = %.3f, DC = %.3f, IOU = %.3f, Acc = %.3f' % (
-            sum(SElist) / len(SElist), sum(PClist) / len(PClist), sum(F1list) / len(F1list), sum(JSlist) / len(JSlist),
-            sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))
+        if _have_segtask:
+            print(segoutputcontent, 'SE = %.3f, PC = %.3f, F1 = %.3f, JS = %.3f, DC = %.3f, IOU = %.3f, Acc = %.3f' % (
+                sum(SElist) / len(SElist), sum(PClist) / len(PClist), sum(F1list) / len(F1list), sum(JSlist) / len(JSlist),
+                sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))
 
     writer.add_scalars('Accuracy', {scalarcontent: (100 * sum(cls_acclist) / len(cls_acclist))}, Iter)
 
 
-def test(mode: str, dataloader: DataLoader, model, device: torch.device):
+def test(mode: str, dataloader: DataLoader, model, device: torch.device, _have_segtask: bool):
     printcontent = mode + 'set testing...'
     print(printcontent)
     outputcontent = mode + ' set上的准确率: %.3f %%'
@@ -94,8 +99,6 @@ def test(mode: str, dataloader: DataLoader, model, device: torch.device):
     Acclist = []
     cls_acclist = []
 
-    pre = []
-    tar = []
 
     with torch.no_grad():
         for data in dataloader:
@@ -104,22 +107,27 @@ def test(mode: str, dataloader: DataLoader, model, device: torch.device):
                 images = images.to(device)
                 targets1 = targets1.to(device)
                 targets4 = targets4.to(device)
-            SR, labels = model(images)
-            # SR = F.sigmoid(segout)
-            # outputs = F.softmax(outputs, dim=1)     # -----------------------------------------------------
-            labels = torch.exp(labels)  # -----------------------------------------------------
-            _, predicted = torch.max(labels.data, 1)
-            SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(SR, targets1)
-            cls_acc = ue.get_clsaccuracy(predicted, targets4)
-            # 将这些指标存到一个list里面，方便后面计算平均值
-            SElist.append(SE)
-            PClist.append(PC)
-            F1list.append(F1)
-            JSlist.append(JS)
-            DClist.append(DC)
-            IOUlist.append(IOU)
-            Acclist.append(Acc)
-            cls_acclist.append(cls_acc)
+            if _have_segtask:
+                SR, labels = model(images)  # -----------------------------------------------------
+                # SR = F.sigmoid(segout)
+                SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(SR, targets1)
+                # 将这些指标存到一个list里面，方便后面计算平均值
+                SElist.append(SE)
+                PClist.append(PC)
+                F1list.append(F1)
+                JSlist.append(JS)
+                DClist.append(DC)
+                IOUlist.append(IOU)
+                Acclist.append(Acc)
+            else:
+                labels = model(images)
+                # labels = torch.exp(labels)  # -----------------------------------------------------
+                labels = F.softmax(labels, dim=1)  # -----------------------------------------------------
+                _, predicted = torch.max(labels.data, 1)
+                cls_acc = ue.get_clsaccuracy(predicted, targets4)
+                labels = model(images)
+                cls_acclist.append(cls_acc)
+
 
             # 输出预测结果
             if i % 10 == 0:     # 每10个batch输出一次
@@ -130,7 +138,10 @@ def test(mode: str, dataloader: DataLoader, model, device: torch.device):
                 i += 1
 
         print(outputcontent % (100 * sum(cls_acclist) / len(cls_acclist)))
-        # 输出seg的指标
-        print(segoutputcontent, 'SE = %.3f, PC = %.3f, F1 = %.3f, JS = %.3f, DC = %.3f, IOU = %.3f, Acc = %.3f\n' % (
-            sum(SElist) / len(SElist), sum(PClist) / len(PClist), sum(F1list) / len(F1list), sum(JSlist) / len(JSlist),
-            sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))
+        if _have_segtask:
+            # 输出seg的指标
+            print(segoutputcontent, 'SE = %.3f, PC = %.3f, F1 = %.3f, JS = %.3f, DC = %.3f, IOU = %.3f, Acc = %.3f\n' % (
+                sum(SElist) / len(SElist), sum(PClist) / len(PClist), sum(F1list) / len(F1list), sum(JSlist) / len(JSlist),
+                sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))
+
+
