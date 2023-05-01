@@ -8,9 +8,11 @@ from mymodels.models import Net
 from mymodels.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 from mymodels.unetr import UNETR
 from mymodels.Unet import UNet
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 
 def Device(model):
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if torch.cuda.is_available():
         print("\n Using GPU \n")
         model = DataParallel(model)
