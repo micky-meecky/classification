@@ -232,7 +232,6 @@ def Train_breast():
     model_name = 'resnet34'  # 模型名字 -----------------------------------------------------
     model = utils.InitModel(model_name, use_pretrained)    # -----------------------------------------------------
     log_dir = './log/log'
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model_dir = './savemodel'
     save_model_dir = os.path.join(model_dir, project)
     t = TicToc()
@@ -248,7 +247,7 @@ def Train_breast():
 
     print(getModelSize(model))
 
-    utils.Device(model, device)
+    device = utils.Device(model)
     train_loader, valid_loader, test_loader = breast_loader(bs)
 
     # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------

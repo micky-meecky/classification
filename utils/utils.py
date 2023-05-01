@@ -9,16 +9,17 @@ from mymodels.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 from mymodels.unetr import UNETR
 from mymodels.Unet import UNet
 
-
-def Device(model, device):
+def Device(model):
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if torch.cuda.is_available():
-        print("Using GPU")
+        print("\n Using GPU \n")
         model = DataParallel(model)
         model.to(device)
     else:
         print("Using CPU")
         # model = DataParallel(model)
         model.to(device)
+    return device
 
 
 def LossExport(cls_running_loss, seg_running_loss, running_loss, datas, writer, epoch, _have_segtask):
