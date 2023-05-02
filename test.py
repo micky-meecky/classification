@@ -36,7 +36,8 @@ def trainvalid(mode: str, dataloader: DataLoader, model, device: torch.device, w
 
     with torch.no_grad():
         for data in dataloader:
-            (img_file_name, images, targets1, targets2, targets3, targets4) = data
+            # (img_file_name, images, targets1, targets2, targets3, targets4) = data
+            (images, targets4) = data
             if torch.cuda.is_available():
                 images = images.to(device)
                 targets1 = targets1.to(device)
@@ -102,7 +103,8 @@ def test(mode: str, dataloader: DataLoader, model, device: torch.device, _have_s
 
     with torch.no_grad():
         for data in dataloader:
-            (img_file_name, images, targets1, targets2, targets3, targets4) = data
+            # (img_file_name, images, targets1, targets2, targets3, targets4) = data
+            (images, targets4) = data
             if torch.cuda.is_available():
                 images = images.to(device)
                 targets1 = targets1.to(device)
