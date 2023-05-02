@@ -24,13 +24,13 @@ class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
         self.model = models.resnet18(pretrained=True)
-        # self.model.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        self.model.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.model.head = nn.Identity()
         self.fc1 = nn.Linear(1000, 120)
         self.dropout1 = nn.Dropout(0.5)
         self.fc2 = nn.Linear(120, 84)
         self.dropout2 = nn.Dropout(0.5)
-        self.fc3 = nn.Linear(84, 10)
+        self.fc3 = nn.Linear(84, 3)
 
     def forward(self, x):
         x = self.model(x)

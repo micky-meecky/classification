@@ -155,7 +155,7 @@ def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, num_workers):
                                         contour_list=valid_list_contour,
                                         dist_list=valid_list_dist,
                                         image_size=image_size,
-                                        batch_size=batch_size,
+                                        batch_size=156,
                                         num_workers=num_workers,
                                         mode='val',
                                         augmentation_prob=0., )
@@ -167,7 +167,7 @@ def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, num_workers):
                                         contour_list=test_list_contour,
                                         dist_list=test_list_dist,
                                         image_size=image_size,
-                                        batch_size=4,
+                                        batch_size=50,
                                         num_workers=num_workers,
                                         mode='test',
                                         augmentation_prob=0., )
@@ -225,31 +225,37 @@ def breast_loader(batch_size):
 
 
 def Train_breast():
-    project = 'resnet50_1_1'   # project name-----------------------------------------------------
-    epoch_num = 2000     # epoch_num -----------------------------------------------------
-    lr = 0.025  # 学习率  -----------------------------------------------------
-    bs = 15  # batch_size -----------------------------------------------------
+    project = 'resnet18_Net'   # project name-----------------------------------------------------
+    epoch_num = 1000     # epoch_num -----------------------------------------------------
+    lr = 0.0005  # 学习率  -----------------------------------------------------
+    lr_low = 1e-12  # 学习率下限  -----------------------------------------------------
+    lr_warm_epoch = 5  # warm up 的 epoch 数 -----------------------------------------------------
+    lr_cos_epoch = epoch_num - lr_warm_epoch - 10  # 学习率下降的epoch数 -----------------------------------------------------
+    num_epochs_decay = 10  # 学习率下降的epoch数 -----------------------------------------------------
+    decay_step = 100  # 学习率下降的epoch数 -----------------------------------------------------
+    decay_ratio = 0.01  # 学习率下降的比例 -----------------------------------------------------
+    bs = 100  # batch_size -----------------------------------------------------
     L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = False  # 是否使用预训练模型 -----------------------------------------------------
-    model_name = 'resnet50'  # 模型名字 -----------------------------------------------------
+    model_name = 'Net'  # 模型名字 -----------------------------------------------------
     model = utils.InitModel(model_name, use_pretrained)    # -----------------------------------------------------
     log_dir = './log/log'
     model_dir = './savemodel'
     save_model_dir = os.path.join(model_dir, project)
     t = TicToc()
     te = TicToc()
-    content = "per epoch Time: "
-    contentvalid = "per epoch training&vlidation test Time: "
-    contentwholeepoch = "whole epoch Time: "
-    contenttotal = "total cost: "
+    content = "----per epoch Time: "
+    contentvalid = "----per epoch training&vlidation test Time: "
+    contentwholeepoch = "----whole epoch Time: "
+    contenttotal = "----total cost: "
     is_train = True
     is_test = True  # False
-    is_continue_train = True
+    is_continue_train = False
     _have_segtask = False
 
     print(getModelSize(model))
     print('project: ', project)
-    print('lr: ', lr)
+
 
     model, device = utils.Device(model)
     print(device)
@@ -258,31 +264,21 @@ def Train_breast():
     # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
     criterion_cls = nn.CrossEntropyLoss()    # -----------------------------------------------------
     criterion_seg = SoftDiceLoss()    # -----------------------------------------------------
-    optimizer = optim.Adam(model.parameters(), lr)    # -----------------------------------------------------
+    optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))   # ------------------------------------------
+    lr_sch = utils.LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer)  # -------------------------------
 
     if is_continue_train:
-        model.load_state_dict(torch.load('./savemodel/resnet50_1_1/miniclsloss.pth'))
+        model_dir = './savemodel/' + project + '/miniclsloss.pth'
+        model.load_state_dict(torch.load(model_dir))
         print('load model')
 
     if is_train:
-        temploss = 100.0
-        tempacc = 0.4
+        torch.autograd.set_detect_anomaly(True)
         Iter = 0
 
-        if not os.path.exists(save_model_dir):
-            os.makedirs(save_model_dir)
-        else:
-            # 删掉原来的model文件
-            shutil.rmtree(save_model_dir)
-            os.makedirs(save_model_dir)
+        utils.Mkdir(save_model_dir)
         log_dir = os.path.join(log_dir, project)
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        else:
-            # 删掉原来的log文件
-            shutil.rmtree(log_dir)
-            os.makedirs(log_dir)
-
+        utils.Mkdir(log_dir)
         writer = SummaryWriter(log_dir=log_dir)
         datas = train_loader     # -----------------------------------------------------
         for epoch in range(epoch_num):
@@ -292,28 +288,29 @@ def Train_breast():
             seg_running_loss = 0.0
             running_loss = 0.0  # running_loss是所有batch的loss之和
             print('epoch: %d / %d' % (epoch + 1, epoch_num))
+            print('current lr:', utils.GetCurrentLr(optimizer))
             for i, data in tqdm(enumerate(datas, 0), total=len(datas)):
                 (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
                 if torch.cuda.is_available():
                     inputs = inputs.to(device)
-                    targets1 = targets1.to(device)
                     targets4 = targets4.to(device)
-
-                optimizer.zero_grad()
+                    if _have_segtask:
+                        targets1 = targets1.to(device)
                 if _have_segtask:
                     segout, outputs = model(inputs)
                     seg_loss = criterion_seg(segout, targets1)
                     cls_loss = criterion_cls(outputs, targets4)
                     loss = L * seg_loss + (1 - L) * cls_loss
-                    loss.backward()
                     seg_running_loss += seg_loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
                 else:
                     outputs = model(inputs)
                     cls_loss = criterion_cls(outputs, targets4)
                     loss = cls_loss
-                    loss.backward()
 
+                loss.backward()
                 optimizer.step()
+                optimizer.zero_grad()
+
                 cls_running_loss += cls_loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
                 running_loss += loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
                 Iter += 1
@@ -326,6 +323,10 @@ def Train_breast():
             t.ticend()
             t.printtime(content)
             t.ticbegin()
+
+            # 调整学习率
+            lr_sch, optimizer = utils.AdjustLr(lr_sch, optimizer, epoch, lr_cos_epoch, lr_warm_epoch, num_epochs_decay,
+                                               utils.GetCurrentLr(optimizer), lr_low, decay_step, decay_ratio)
 
             # 计算平均epoch_cls_loss
             epoch_cls_loss = utils.LossExport(cls_running_loss, seg_running_loss, running_loss, datas, writer, epoch, _have_segtask)

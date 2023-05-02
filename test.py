@@ -62,8 +62,8 @@ def trainvalid(mode: str, dataloader: DataLoader, model, device: torch.device, w
                 labels = model(images)
                 cls_acclist.append(cls_acc)
 
-            # 输出第一批的预测结果
-            if i == 0:
+            # 输出第一批的预测结果, 以及最后一批的预测结果
+            if i == 0 or i == len(dataloader) - 1:
                 predicted = predicted.cpu()
                 targets4 = targets4.cpu()
                 print('predicted = ', predicted)
