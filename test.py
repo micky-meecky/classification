@@ -40,20 +40,20 @@ def trainvalid(mode: str, dataloader: DataLoader, model, device: torch.device, w
             (images, targets4) = data
             if torch.cuda.is_available():
                 images = images.to(device)
-                targets1 = targets1.to(device)
+                # targets1 = targets1.to(device)
                 targets4 = targets4.to(device)
             if _have_segtask:
                 SR, labels = model(images)  # -----------------------------------------------------
                 # SR = F.sigmoid(segout)
-                SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(SR, targets1)
+                # SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(SR, targets1)
                 # 将这些指标存到一个list里面，方便后面计算平均值
-                SElist.append(SE)
-                PClist.append(PC)
-                F1list.append(F1)
-                JSlist.append(JS)
-                DClist.append(DC)
-                IOUlist.append(IOU)
-                Acclist.append(Acc)
+                # SElist.append(SE)
+                # PClist.append(PC)
+                # F1list.append(F1)
+                # JSlist.append(JS)
+                # DClist.append(DC)
+                # IOUlist.append(IOU)
+                # Acclist.append(Acc)
             else:
                 labels = model(images)
                 # labels = torch.exp(labels)  # -----------------------------------------------------
@@ -107,20 +107,20 @@ def test(mode: str, dataloader: DataLoader, model, device: torch.device, _have_s
             (images, targets4) = data
             if torch.cuda.is_available():
                 images = images.to(device)
-                targets1 = targets1.to(device)
+                # targets1 = targets1.to(device)
                 targets4 = targets4.to(device)
             if _have_segtask:
                 SR, labels = model(images)  # -----------------------------------------------------
                 # SR = F.sigmoid(segout)
-                SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(SR, targets1)
+                # SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(SR, targets1)
                 # 将这些指标存到一个list里面，方便后面计算平均值
-                SElist.append(SE)
-                PClist.append(PC)
-                F1list.append(F1)
-                JSlist.append(JS)
-                DClist.append(DC)
-                IOUlist.append(IOU)
-                Acclist.append(Acc)
+                # SElist.append(SE)
+                # PClist.append(PC)
+                # F1list.append(F1)
+                # JSlist.append(JS)
+                # DClist.append(DC)
+                # IOUlist.append(IOU)
+                # Acclist.append(Acc)
             else:
                 labels = model(images)
                 # labels = torch.exp(labels)  # -----------------------------------------------------
