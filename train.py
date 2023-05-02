@@ -223,9 +223,9 @@ def breast_loader(batch_size):
 
     return train_loader, valid_loader, test_loader
 def Train_breast():
-    project = 'resnet50_1'   # project name-----------------------------------------------------
+    project = 'resnet50_1_1'   # project name-----------------------------------------------------
     epoch_num = 2000     # epoch_num -----------------------------------------------------
-    lr = 0.00025  # 学习率  -----------------------------------------------------
+    lr = 0.025  # 学习率  -----------------------------------------------------
     bs = 15  # batch_size -----------------------------------------------------
     L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = False  # 是否使用预训练模型 -----------------------------------------------------
@@ -242,7 +242,7 @@ def Train_breast():
     contenttotal = "total cost: "
     is_train = True
     is_test = True  # False
-    is_continue_train = False
+    is_continue_train = True
     _have_segtask = False
 
     print(getModelSize(model))
