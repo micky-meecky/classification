@@ -75,7 +75,7 @@ def mnist_loader():
     return train_loader, val_loader, test_loader
 
 
-def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, num_workers):
+def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, testbs, num_workers):
     augmentation_prob = 1.0
     train, valid, test = get_fold_filelist(csv_file, K=fold_K, fold=fold_idx, validation=True)
 
@@ -168,7 +168,7 @@ def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, num_workers):
                                         contour_list=test_list_contour,
                                         dist_list=test_list_dist,
                                         image_size=image_size,
-                                        batch_size=15,
+                                        batch_size=testbs,
                                         num_workers=num_workers,
                                         mode='test',
                                         augmentation_prob=0., )
@@ -176,7 +176,7 @@ def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, num_workers):
     return train_loader, valid_loader, test_loader
 
 
-def breast_loader(batch_size):
+def breast_loader(batch_size, testbs):
     train_path_m = './train_path/fold/fold'
     csv_path = './class_out/train.csv'
     fold_k = 5
@@ -188,7 +188,7 @@ def breast_loader(batch_size):
     num_workers = 5
 
     print('batch_size: ', batch_size)
-    train_loader, valid_loader, test_loader = getdataset(csv_path, fold_k, fold_idx, image_size, batch_size, num_workers)
+    train_loader, valid_loader, test_loader = getdataset(csv_path, fold_k, fold_idx, image_size, batch_size, testbs, num_workers)
 
     # train_path = train_path_m + str(fold_id) + '/train/images/'  # train_path是指训练集图片路径
     # val_path = train_path_m + str(fold_id) + '/validation/images/'  # val_path是指验证集图片路径
@@ -235,7 +235,8 @@ def Train_breast():
     num_epochs_decay = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 20  # 学习率下降的epoch数 -----------------------------------------------------
     decay_ratio = 0.01  # 学习率下降的比例 -----------------------------------------------------
-    bs = 30  # batch_size -----------------------------------------------------
+    bs = 80  # batch_size -----------------------------------------------------
+    testbs = 80  # test_batch_size -----------------------------------------------------
     L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = False  # 是否使用预训练模型 -----------------------------------------------------
     model_name = 'unet'  # 模型名字 -----------------------------------------------------
@@ -259,7 +260,7 @@ def Train_breast():
 
     model, device = utils.Device(model)
     print(device)
-    # train_loader, valid_loader, test_loader = breast_loader(bs)
+    # train_loader, valid_loader, test_loader = breast_loader(bs, testbs)
     train_loader, test_loader = OpenDataSet.SelectDataSet('Cifar_10', bs)
 
     # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
