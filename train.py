@@ -261,7 +261,7 @@ def Train_breast():
     optimizer = optim.Adam(model.parameters(), lr)    # -----------------------------------------------------
 
     if is_continue_train:
-        model.load_state_dict(torch.load('./savemodel/test/miniclsloss.pth'))
+        model.load_state_dict(torch.load('./savemodel/resnet50_1_1/miniclsloss.pth'))
         print('load model')
 
     if is_train:
