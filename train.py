@@ -155,7 +155,7 @@ def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, num_workers):
                                         contour_list=valid_list_contour,
                                         dist_list=valid_list_dist,
                                         image_size=image_size,
-                                        batch_size=156,
+                                        batch_size=batch_size,
                                         num_workers=num_workers,
                                         mode='val',
                                         augmentation_prob=0., )
@@ -167,7 +167,7 @@ def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, num_workers):
                                         contour_list=test_list_contour,
                                         dist_list=test_list_dist,
                                         image_size=image_size,
-                                        batch_size=50,
+                                        batch_size=20,
                                         num_workers=num_workers,
                                         mode='test',
                                         augmentation_prob=0., )
@@ -184,7 +184,7 @@ def breast_loader(batch_size):
     distance_type = "dist_mask"
     normal_flag = False
     image_size = 256
-    num_workers = 4
+    num_workers = 6
 
     print('batch_size: ', batch_size)
     train_loader, valid_loader, test_loader = getdataset(csv_path, fold_k, fold_idx, image_size, batch_size, num_workers)
@@ -225,19 +225,19 @@ def breast_loader(batch_size):
 
 
 def Train_breast():
-    project = 'resnet18_Net'   # project name-----------------------------------------------------
-    epoch_num = 1000     # epoch_num -----------------------------------------------------
-    lr = 0.0005  # 学习率  -----------------------------------------------------
+    project = 'Unet_3'   # project name-----------------------------------------------------
+    epoch_num = 1300     # epoch_num -----------------------------------------------------
+    lr = 0.001  # 学习率  -----------------------------------------------------
     lr_low = 1e-12  # 学习率下限  -----------------------------------------------------
     lr_warm_epoch = 5  # warm up 的 epoch 数 -----------------------------------------------------
     lr_cos_epoch = epoch_num - lr_warm_epoch - 10  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 10  # 学习率下降的epoch数 -----------------------------------------------------
-    decay_step = 100  # 学习率下降的epoch数 -----------------------------------------------------
+    decay_step = 20  # 学习率下降的epoch数 -----------------------------------------------------
     decay_ratio = 0.01  # 学习率下降的比例 -----------------------------------------------------
-    bs = 100  # batch_size -----------------------------------------------------
+    bs = 30  # batch_size -----------------------------------------------------
     L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = False  # 是否使用预训练模型 -----------------------------------------------------
-    model_name = 'Net'  # 模型名字 -----------------------------------------------------
+    model_name = 'unet'  # 模型名字 -----------------------------------------------------
     model = utils.InitModel(model_name, use_pretrained)    # -----------------------------------------------------
     log_dir = './log/log'
     model_dir = './savemodel'
@@ -255,7 +255,6 @@ def Train_breast():
 
     print(getModelSize(model))
     print('project: ', project)
-
 
     model, device = utils.Device(model)
     print(device)

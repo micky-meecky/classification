@@ -93,15 +93,16 @@ class UNet(nn.Module):
         factor = 2 if bilinear else 1
         self.down4 = (Down(512, 1024 // factor))
         self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
-        self.up1 = (Up(1024, 512 // factor, bilinear))
-        self.up2 = (Up(512, 256 // factor, bilinear))
-        self.up3 = (Up(256, 128 // factor, bilinear))
-        self.up4 = (Up(128, 64, bilinear))
-        self.outc = (OutConv(64, n_classes))
+        # self.up1 = (Up(1024, 512 // factor, bilinear))
+        # self.up2 = (Up(512, 256 // factor, bilinear))
+        # self.up3 = (Up(256, 128 // factor, bilinear))
+        # self.up4 = (Up(128, 64, bilinear))
+        # self.outc = (OutConv(64, n_classes))
         self.activation = nn.Sigmoid()
 
         # classification head
-        self.linear = nn.Linear(1984, 3)
+        # self.linear = nn.Linear(1984, 3)
+        self.linear = nn.Linear(1024, 3)
         self.logsoftmax = nn.LogSoftmax(dim=1)
 
 
@@ -113,8 +114,6 @@ class UNet(nn.Module):
         x3 = self.down2(x2)
         x4 = self.down3(x3)
         x5 = self.down4(x4)
-
-
 
         # print('x5.shape', x5.shape)
         # print('x4.shape', x4.shape)
@@ -137,23 +136,23 @@ class UNet(nn.Module):
         features_concatenated = torch.cat([x1, x2_upsampled, x3_upsampled, x4_upsampled, x5_upsampled], dim=1)
         # print('features_concatenated.shape', features_concatenated.shape)
 
-        # decoder
-        x = self.up1(x5, x4)
-        x = self.up2(x, x3)
-        x = self.up3(x, x2)
-        x = self.up4(x, x1)
-
-        # segmentation head
-        logits = self.outc(x)
-        logits = self.activation(logits)
+        # # decoder
+        # x = self.up1(x5, x4)
+        # x = self.up2(x, x3)
+        # x = self.up3(x, x2)
+        # x = self.up4(x, x1)
+        #
+        # # segmentation head
+        # logits = self.outc(x)
+        # logits = self.activation(logits)
 
         # classification head
-        clsx = F.adaptive_avg_pool2d(features_concatenated, (1, 1))  # 这里是在x5上做的avgpool，目的是为了得到一个全局的特征，维度变化为[batch_size, 1024, 1, 1]
-        clsx = clsx.view(-1, 1984)  # [batch_size, 1024]
-        clsx = self.linear(clsx)  # [batch_size, 3]
-        label = self.logsoftmax(clsx)  # [batch_size, 3]
+        clsx = F.adaptive_avg_pool2d(x5, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
+        clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
+        label = self.linear(clsx)  # [batch_size, 3]
+        # label = self.logsoftmax(label)  # [batch_size, 3]
 
-        return [logits, label]
+        return label
 
     def use_checkpointing(self):
         self.inc = torch.utils.checkpoint(self.inc)
