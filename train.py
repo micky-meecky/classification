@@ -167,7 +167,7 @@ def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, num_workers):
                                         contour_list=test_list_contour,
                                         dist_list=test_list_dist,
                                         image_size=image_size,
-                                        batch_size=20,
+                                        batch_size=15,
                                         num_workers=num_workers,
                                         mode='test',
                                         augmentation_prob=0., )
