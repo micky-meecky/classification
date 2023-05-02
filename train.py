@@ -246,6 +246,8 @@ def Train_breast():
     _have_segtask = False
 
     print(getModelSize(model))
+    print('project: ', project)
+    print('lr: ', lr)
 
     model, device = utils.Device(model)
     print(device)
