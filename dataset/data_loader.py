@@ -330,5 +330,7 @@ def get_loader_difficult(seg_list,
                                   batch_size=batch_size,
                                   shuffle=True,
                                   num_workers=num_workers,
-                                  drop_last=False)
+                                  drop_last=False,
+                                  pin_memory=True
+                                  )
     return data_loader

@@ -222,6 +222,8 @@ def breast_loader(batch_size):
     # )
 
     return train_loader, valid_loader, test_loader
+
+
 def Train_breast():
     project = 'resnet50_1_1'   # project name-----------------------------------------------------
     epoch_num = 2000     # epoch_num -----------------------------------------------------
