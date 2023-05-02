@@ -28,6 +28,7 @@ import utils.evaluation as ue
 from utils.myloss import SoftDiceLoss, JaccardLoss
 import test
 from utils import utils
+from mymodels import OpenDataSet
 
 import warnings
 warnings.filterwarnings('ignore', message='Argument \'interpolation\' of type int is deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.')
@@ -225,7 +226,7 @@ def breast_loader(batch_size):
 
 
 def Train_breast():
-    project = 'Unet_3'   # project name-----------------------------------------------------
+    project = 'Unet_3_cifar10'   # project name-----------------------------------------------------
     epoch_num = 1300     # epoch_num -----------------------------------------------------
     lr = 0.0005  # 学习率  -----------------------------------------------------
     lr_low = 1e-12  # 学习率下限  -----------------------------------------------------
@@ -234,7 +235,7 @@ def Train_breast():
     num_epochs_decay = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 20  # 学习率下降的epoch数 -----------------------------------------------------
     decay_ratio = 0.01  # 学习率下降的比例 -----------------------------------------------------
-    bs = 15  # batch_size -----------------------------------------------------
+    bs = 10  # batch_size -----------------------------------------------------
     L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = False  # 是否使用预训练模型 -----------------------------------------------------
     model_name = 'unet'  # 模型名字 -----------------------------------------------------
@@ -258,7 +259,8 @@ def Train_breast():
 
     model, device = utils.Device(model)
     print(device)
-    train_loader, valid_loader, test_loader = breast_loader(bs)
+    # train_loader, valid_loader, test_loader = breast_loader(bs)
+    train_loader, test_loader = OpenDataSet.SelectDataSet('Cifar_10', bs)
 
     # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
     criterion_cls = nn.CrossEntropyLoss()    # -----------------------------------------------------
@@ -289,7 +291,8 @@ def Train_breast():
             print('epoch: %d / %d' % (epoch + 1, epoch_num))
             print('current lr:', utils.GetCurrentLr(optimizer))
             for i, data in tqdm(enumerate(datas, 0), total=len(datas)):
-                (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
+                # (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
+                (inputs, targets4) = data
                 if torch.cuda.is_available():
                     inputs = inputs.to(device)
                     targets4 = targets4.to(device)
@@ -336,7 +339,7 @@ def Train_breast():
             print('Iter = ', Iter)
             if epoch % 6 == 0:
                 test.trainvalid('train', datas, model, device, writer, Iter, _have_segtask)
-                test.trainvalid('valid', valid_loader, model, device, writer, Iter, _have_segtask)
+                test.trainvalid('valid', test_loader, model, device, writer, Iter, _have_segtask)
 
             t.ticend()
             t.printtime(contentvalid)

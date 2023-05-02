@@ -81,7 +81,7 @@ def InitModel(modelname, use_pretrained: bool = False):
         elif modelname == 'unetr':
             model = UNETR()
         elif modelname == 'unet':
-            model = UNet(1, 1)
+            model = UNet(3, 1)
         elif modelname == 'Net':
             model = Net()
         elif modelname == 'resnet34':

@@ -102,10 +102,10 @@ class UNet(nn.Module):
 
         # classification head
         # self.linear = nn.Linear(1984, 3)
-        self.linear = nn.Linear(1024, 3)
+        self.linear1 = nn.Linear(1024, 512)
+        self.dropout = nn.Dropout(0.5)
+        self.linear2 = nn.Linear(512, 10)
         self.logsoftmax = nn.LogSoftmax(dim=1)
-
-
 
     def forward(self, x):
         # encoder
@@ -121,10 +121,10 @@ class UNet(nn.Module):
         # print('x2.shape', x2.shape)
         # print('x1.shape', x1.shape)
 
-        x5_upsampled = self.upsample(x5)
-        x4_upsampled = self.upsample(x4)
-        x3_upsampled = self.upsample(x3)
-        x2_upsampled = self.upsample(x2)
+        # x5_upsampled = self.upsample(x5)
+        # x4_upsampled = self.upsample(x4)
+        # x3_upsampled = self.upsample(x3)
+        # x2_upsampled = self.upsample(x2)
 
         # print('x5_upsampled.shape', x5_upsampled.shape)
         # print('x4_upsampled.shape', x4_upsampled.shape)
@@ -133,7 +133,7 @@ class UNet(nn.Module):
 
 
         # 将特征图cat起来,这样可以捕获多尺度的特征，以获取更好的语义信息
-        features_concatenated = torch.cat([x1, x2_upsampled, x3_upsampled, x4_upsampled, x5_upsampled], dim=1)
+        # features_concatenated = torch.cat([x1, x2_upsampled, x3_upsampled, x4_upsampled, x5_upsampled], dim=1)
         # print('features_concatenated.shape', features_concatenated.shape)
 
         # # decoder
@@ -149,7 +149,9 @@ class UNet(nn.Module):
         # classification head
         clsx = F.adaptive_avg_pool2d(x5, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
         clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
-        label = self.linear(clsx)  # [batch_size, 3]
+        label = self.linear1(clsx)  # [1024, 512]
+        label = self.dropout(label)
+        label = self.linear2(label)  # [512, 10]
         # label = self.logsoftmax(label)  # [batch_size, 3]
 
         return label
