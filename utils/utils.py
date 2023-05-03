@@ -75,6 +75,13 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3):
             num_classes = 2
             model.last_linear = nn.Linear(model.last_linear.in_features, num_classes)
             model.conv1 = torch.nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+        if modelname.startswith('densenet'):
+            # 替换输出层
+            num_classes = 2
+            model.last_linear = nn.Linear(4096, num_classes)
+            model.features.conv0 = torch.nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+            # 打印模型
+            print(model)
     else:
         if modelname == 'resnet18':
             model = resnet18(class_num)
@@ -90,6 +97,8 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3):
             model = resnet50(class_num)
         elif modelname == 'resnet101':
             model = resnet101(class_num)
+        elif modelname == 'resnet152':
+            model = resnet152(class_num)
         elif modelname == 'ViT':
             model = ViT_model(256, 32, 10)   # 256是输入图片的大小，32是patch的大小，3是类别数
     return model

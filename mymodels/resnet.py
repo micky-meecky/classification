@@ -136,12 +136,12 @@ def resnet50(num_classes):
     """
     return ResNet(BottleNeck, [3, 4, 6, 3], num_classes)
 
-def resnet101():
+def resnet101(num_classes):
     """ return a ResNet 101 object
     """
     return ResNet(BottleNeck, [3, 4, 23, 3], num_classes)
 
-def resnet152():
+def resnet152(num_classes):
     """ return a ResNet 152 object
     """
     return ResNet(BottleNeck, [3, 8, 36, 3], num_classes)

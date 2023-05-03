@@ -108,8 +108,8 @@ def test(mode: str, dataloader: DataLoader, model, device: torch.device, class_n
 
     with torch.no_grad():
         for data in dataloader:
-            # (img_file_name, images, targets1, targets2, targets3, targets4) = data
-            (images, targets4) = data
+            (img_file_name, images, targets1, targets2, targets3, targets4) = data
+            # (images, targets4) = data
             if class_num == 2:
                 # 将标签进行修改
                 targets4[targets4 == 0] = 0
@@ -137,9 +137,7 @@ def test(mode: str, dataloader: DataLoader, model, device: torch.device, class_n
                 labels = F.softmax(labels, dim=1)  # -----------------------------------------------------
                 _, predicted = torch.max(labels.data, 1)
                 cls_acc = ue.get_clsaccuracy(predicted, targets4)
-                labels = model(images)
                 cls_acclist.append(cls_acc)
-
 
             # 输出预测结果
             if i % 10 == 0:     # 每10个batch输出一次
