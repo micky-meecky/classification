@@ -226,22 +226,22 @@ def breast_loader(batch_size, testbs):
 
 
 def Train_breast():
-    project = 'ViT_0_cifar'   # project name-----------------------------------------------------
+    project = 'preresnet101_cls2_0'   # project name-----------------------------------------------------
     epoch_num = 500     # epoch_num -----------------------------------------------------
-    class_num = 3       # class_num -----------------------------------------------------
-    lr = 0.01  # 学习率  -----------------------------------------------------
-    lr_low = 1e-13  # 学习率下限  -----------------------------------------------------
+    class_num = 2       # class_num -----------------------------------------------------
+    lr = 0.0005  # 学习率  -----------------------------------------------------
+    lr_low = 1e-14  # 学习率下限  -----------------------------------------------------
     lr_warm_epoch = 5  # warm up 的 epoch 数 -----------------------------------------------------
     lr_cos_epoch = epoch_num - lr_warm_epoch - 10  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 10  # 学习率下降的epoch数 -----------------------------------------------------
-    decay_step = 20  # 学习率下降的epoch数 -----------------------------------------------------
-    decay_ratio = 0.01  # 学习率下降的比例 -----------------------------------------------------
-    bs = 250  # batch_size -----------------------------------------------------
+    decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
+    decay_ratio = 0.05  # 学习率下降的比例 -----------------------------------------------------
+    bs = 20  # batch_size -----------------------------------------------------
     testbs = 10  # test_batch_size -----------------------------------------------------
     L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
-    use_pretrained = False  # 是否使用预训练模型 -----------------------------------------------------
-    model_name = 'ViT'  # 模型名字 -----------------------------------------------------
-    model = utils.InitModel(model_name, use_pretrained)    # -----------------------------------------------------
+    use_pretrained = True  # 是否使用预训练模型 -----------------------------------------------------
+    model_name = 'resnet101'  # 模型名字 -----------------------------------------------------
+    model = utils.InitModel(model_name, use_pretrained)  # -----------------------------------------------------
     log_dir = './log/log'
     model_dir = './savemodel'
     save_model_dir = os.path.join(model_dir, project)
@@ -261,8 +261,8 @@ def Train_breast():
 
     model, device = utils.Device(model)
     print(device)
-    # train_loader, valid_loader, test_loader = breast_loader(bs, testbs)
-    train_loader, test_loader = OpenDataSet.SelectDataSet('Cifar_10', bs)
+    train_loader, valid_loader, test_loader = breast_loader(bs, testbs)
+    # train_loader, test_loader = OpenDataSet.SelectDataSet('Cifar_10', bs)
 
     # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
     criterion_cls = nn.CrossEntropyLoss()    # -----------------------------------------------------
@@ -292,9 +292,21 @@ def Train_breast():
             running_loss = 0.0  # running_loss是所有batch的loss之和
             print('epoch: %d / %d' % (epoch + 1, epoch_num))
             print('current lr:', utils.GetCurrentLr(optimizer))
+            num_zero = 0
+            num_one = 0
             for i, data in tqdm(enumerate(datas, 0), total=len(datas)):
-                # (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
-                (inputs, targets4) = data
+                (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
+                # (inputs, targets4) = data
+                if class_num == 2:
+                    # 将标签进行修改
+                    targets4[targets4 == 0] = 0
+                    targets4[targets4 == 1] = 0
+                    targets4[targets4 == 2] = 1
+
+                    # 将这里面的所有标签为0的统计个数，存在num_zero中
+                    num_zero += (targets4 == 0).sum().item()
+                    num_one += (targets4 == 1).sum().item()
+
                 if torch.cuda.is_available():
                     inputs = inputs.to(device)
                     targets4 = targets4.to(device)
@@ -323,6 +335,10 @@ def Train_breast():
                     writer.add_scalars('Loss', {'seg_running_loss': seg_running_loss}, Iter)
                 writer.add_scalars('Loss', {'running_loss': running_loss}, Iter)
 
+            # 打印num_zero和num_one
+            print('num_zero: ', num_zero)
+            print('num_one: ', num_one)
+
             # 计时结束
             t.ticend()
             t.printtime(content)
@@ -340,8 +356,8 @@ def Train_breast():
 
             print('Iter = ', Iter)
             if epoch % 3 == 0:
-                test.trainvalid('train', datas, model, device, writer, Iter, _have_segtask)
-                test.trainvalid('valid', test_loader, model, device, writer, Iter, _have_segtask)
+                test.trainvalid('train', datas, model, device, writer, Iter, class_num, _have_segtask)
+                test.trainvalid('valid', valid_loader, model, device, writer, Iter, class_num, _have_segtask)
 
             t.ticend()
             t.printtime(contentvalid)
@@ -358,7 +374,7 @@ def Train_breast():
     if is_test:
         mini_loss_model = save_model_dir + '/miniclsloss' + '.pth'
         model.load_state_dict(torch.load(mini_loss_model))
-        test.test('test', test_loader, model, device, _have_segtask)
+        test.test('test', test_loader, model, device, class_num, _have_segtask)
     print('\nFinished Testing\n')
 
 

@@ -2,13 +2,13 @@ import torch
 from vit_pytorch import ViT
 
 
-def ViT_model(image_size=256, patch_size=32, num_classes=3):
+def ViT_model(image_size=256, patch_size=16, num_classes=3):
     v = ViT(
         image_size=image_size,
         patch_size=patch_size,
         num_classes=num_classes,
         dim=1024,
-        depth=6,
+        depth=12,
         heads=16,
         mlp_dim=2048,
         dropout=0.1,

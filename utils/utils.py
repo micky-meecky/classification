@@ -49,7 +49,7 @@ def LossExport(cls_running_loss, seg_running_loss, running_loss, datas, writer, 
 
 def SaveModel(model, epoch, epoch_cls_loss, save_model_dir):
     temploss = 100.0
-    if epoch % 10 == 0:  # 每10个epoch保存一次模型
+    if epoch % 20 == 0:  # 每20个epoch保存一次模型
         torch.save(model.state_dict(), save_model_dir + '/model' + str(epoch) + '.pth')
         print('save model')
     if temploss > epoch_cls_loss:
@@ -72,7 +72,7 @@ def InitModel(modelname, use_pretrained: bool = False):
         # modelname如果是以resnet开头的，则在他最后一层添加一个softmax激活
         if modelname.startswith('resnet'):
             # 替换输出层
-            num_classes = 3
+            num_classes = 2
             model.last_linear = nn.Linear(model.last_linear.in_features, num_classes)
             model.conv1 = torch.nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
             pass

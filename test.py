@@ -16,7 +16,7 @@ import utils.evaluation as ue
 import torch.nn.functional as F
 
 
-def trainvalid(mode: str, dataloader: DataLoader, model, device: torch.device, writer, Iter, _have_segtask: bool):
+def trainvalid(mode: str, dataloader: DataLoader, model, device: torch.device, writer, Iter, class_num, _have_segtask: bool):
     printcontent = mode + 'set testing...'
     print(printcontent)
     outputcontent = mode + ' set上的准确率: %.3f %%'
@@ -36,8 +36,13 @@ def trainvalid(mode: str, dataloader: DataLoader, model, device: torch.device, w
 
     with torch.no_grad():
         for data in dataloader:
-            # (img_file_name, images, targets1, targets2, targets3, targets4) = data
-            (images, targets4) = data
+            (img_file_name, images, targets1, targets2, targets3, targets4) = data
+            # (images, targets4) = data
+            if class_num == 2:
+                # 将标签进行修改
+                targets4[targets4 == 0] = 0
+                targets4[targets4 == 1] = 0
+                targets4[targets4 == 2] = 1
             if torch.cuda.is_available():
                 images = images.to(device)
                 # targets1 = targets1.to(device)
@@ -83,7 +88,7 @@ def trainvalid(mode: str, dataloader: DataLoader, model, device: torch.device, w
     writer.add_scalars('Accuracy', {scalarcontent: (100 * sum(cls_acclist) / len(cls_acclist))}, Iter)
 
 
-def test(mode: str, dataloader: DataLoader, model, device: torch.device, _have_segtask: bool):
+def test(mode: str, dataloader: DataLoader, model, device: torch.device, class_num, _have_segtask: bool):
     printcontent = mode + 'set testing...'
     print(printcontent)
     outputcontent = mode + ' set上的准确率: %.3f %%'
@@ -105,6 +110,11 @@ def test(mode: str, dataloader: DataLoader, model, device: torch.device, _have_s
         for data in dataloader:
             # (img_file_name, images, targets1, targets2, targets3, targets4) = data
             (images, targets4) = data
+            if class_num == 2:
+                # 将标签进行修改
+                targets4[targets4 == 0] = 0
+                targets4[targets4 == 1] = 0
+                targets4[targets4 == 2] = 1
             if torch.cuda.is_available():
                 images = images.to(device)
                 # targets1 = targets1.to(device)
