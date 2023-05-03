@@ -15,6 +15,7 @@ from torch.optim import lr_scheduler
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torchvision import models
+from torchvision.models.googlenet import GoogLeNet
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 
@@ -64,6 +65,28 @@ def Device(model):
     return model, device
 
 
+class CustomGoogLeNet(GoogLeNet):
+    def __init__(self, num_classes=1000, aux_logits=True, transform_input=False, init_weights=True,
+                 pretrained=False):
+        super().__init__(num_classes=num_classes, aux_logits=aux_logits, transform_input=transform_input,
+                         init_weights=init_weights)
+        if pretrained:
+            pretrained_model = models.googlenet(pretrained=True)
+            state_dict = pretrained_model.state_dict()
+
+            # Remove keys that do not match
+            state_dict.pop("conv1.conv.weight")
+            state_dict.pop("fc.weight")
+            state_dict.pop("fc.bias")
+
+            self.load_state_dict(state_dict, strict=False)
+
+    def _transform_input(self, x: torch.Tensor) -> torch.Tensor:
+        if self.transform_input:
+            x = x.clone()
+            x_ch0 = torch.unsqueeze(x[:, 0], 1) * (0.229 / 0.5) + (0.485 - 0.5) / 0.5
+            x = x_ch0
+        return x
 
 
 
@@ -106,7 +129,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3):
                 model.features[0][2]
             )
         if modelname.startswith('googlenet'):
-            model = models.googlenet(pretrained=True)
+            model = CustomGoogLeNet(pretrained=True)
             # 替换输出层
             num_classes = class_num
             model.fc = nn.Linear(model.fc.in_features, num_classes)
