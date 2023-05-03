@@ -36,8 +36,8 @@ def trainvalid(mode: str, dataloader: DataLoader, model, device: torch.device, w
 
     with torch.no_grad():
         for data in dataloader:
-            # (img_file_name, images, targets1, targets2, targets3, targets4) = data
-            (images, targets4) = data
+            (img_file_name, images, targets1, targets2, targets3, targets4) = data
+            # (images, targets4) = data
             if class_num == 2:
                 # 将标签进行修改
                 targets4[targets4 == 0] = 0
@@ -108,8 +108,8 @@ def test(mode: str, dataloader: DataLoader, model, device: torch.device, class_n
 
     with torch.no_grad():
         for data in dataloader:
-            # (img_file_name, images, targets1, targets2, targets3, targets4) = data
-            (images, targets4) = data
+            (img_file_name, images, targets1, targets2, targets3, targets4) = data
+            # (images, targets4) = data
             if class_num == 2:
                 # 将标签进行修改
                 targets4[targets4 == 0] = 0
