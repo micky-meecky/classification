@@ -70,10 +70,10 @@ def trainvalid(mode: str, dataloader: DataLoader, model, device: torch.device, w
 
             # 输出第一批的预测结果, 以及最后一批的预测结果
             if i == 0 or i == len(dataloader) - 1:
-                # predicted = predicted.cpu()
-                # targets4 = targets4.cpu()
-                # print('predicted = ', predicted)
-                # print('targets4 = ', targets4)
+                predicted = predicted.cpu()
+                targets4 = targets4.cpu()
+                print('predicted = ', predicted)
+                print('targets4 = ', targets4)
                 i += 1
 
             # total += targets4.size(0)
@@ -143,10 +143,10 @@ def test(mode: str, dataloader: DataLoader, model, device: torch.device, class_n
 
             # 输出预测结果
             if i % 10 == 0:     # 每10个batch输出一次
-                # predicted = predicted.cpu()
-                # targets4 = targets4.cpu()
-                # print('predicted = ', predicted)
-                # print('targets4 = ', targets4)
+                predicted = predicted.cpu()
+                targets4 = targets4.cpu()
+                print('predicted = ', predicted)
+                print('targets4 = ', targets4)
                 i += 1
 
         print(outputcontent % (100 * sum(cls_acclist) / len(cls_acclist)))
