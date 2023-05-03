@@ -9,9 +9,9 @@ from mymodels import OpenDataSet
 
 if __name__ == '__main__':
     # Load the model
-    model_name = 'resnet18'
-    new_model = models.resnet18(pretrained=True)
-    new_model.fc = nn.Linear(new_model.fc.in_features, 10)  # Modify the last layer to match the number of classes
+    model_name = 'dense121'
+    new_model = models.densenet121(pretrained=True)
+    new_model.classifier = nn.Linear(1024, 10)
 
     if torch.cuda.is_available():
         device_ids = [i for i in range(torch.cuda.device_count())]

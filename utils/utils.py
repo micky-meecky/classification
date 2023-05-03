@@ -14,6 +14,7 @@ import os
 from torch.optim import lr_scheduler
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torchvision import models
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 
@@ -69,19 +70,20 @@ def Device(model):
 def InitModel(modelname, use_pretrained: bool = False, class_num=3):
     model = None
     if use_pretrained:
-        torch.hub.set_dir("./mymodels/downloaded_models")
-        model = pretrainedmodels.__dict__[modelname](num_classes=1000, pretrained='imagenet')
-        # modelname如果是以resnet开头的，则在他最后一层添加一个softmax激活
         if modelname.startswith('resnet'):
+            model = models.resnet18(pretrained=True)
             # 替换输出层
             num_classes = 2
             model.last_linear = nn.Linear(model.last_linear.in_features, num_classes)
             model.conv1 = torch.nn.Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
         if modelname.startswith('densenet'):
             # 替换输出层
+            model = models.densenet121(pretrained=True)
             num_classes = 2
-            model.last_linear = nn.Linear(4096, num_classes)
-            model.features.conv0 = torch.nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+            # 修改输出类别
+            model.classifier = nn.Linear(model.classifier.in_features, num_classes)
+            # 修改输入通道数
+            model.features.conv0 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
             # 打印模型
             # print(model)
     else:
