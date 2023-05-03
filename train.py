@@ -229,7 +229,7 @@ def Train_breast(project, bs, model_name):
     project = project   # project name-----------------------------------------------------
     epoch_num = 700     # epoch_num -----------------------------------------------------
     class_num = 2       # class_num -----------------------------------------------------
-    lr = 1e-4  # 学习率  -----------------------------------------------------
+    lr = 1e-5  # 学习率  -----------------------------------------------------
     lr_low = 1e-14  # 学习率下限  ------------------------------------------------------
     lr_warm_epoch = 5  # warm up 的 epoch 数 -----------------------------------------------------
     lr_cos_epoch = epoch_num - lr_warm_epoch - 10  # 学习率下降的epoch数 -----------------------------------------------------
@@ -479,10 +479,9 @@ if __name__ == '__main__':
     bs = 20
     model_name = 'densenet121'
 
-    # Train_breast(project, bs, model_name)
-
+    Train_breast(project, bs, model_name)
     Train_breast('resnet101_cls_0', 20, 'resnet101')
-    # Train_breast('xception_cls_0', 20, 'xception')
+    Train_breast('xception_cls_0', 20, 'xception')
     # Train_breast('googlenet_cls_0', 5, 'googlenet')
 
 
