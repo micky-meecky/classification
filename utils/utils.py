@@ -20,14 +20,13 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 def Device(model):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model.to(device)
     if torch.cuda.is_available():
         print("\n Using GPU \n")
         model = DataParallel(model)
-        model.to(device)
     else:
         print("Using CPU")
         # model = DataParallel(model)
-        model.to(device)
     return model, device
 
 
