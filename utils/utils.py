@@ -64,7 +64,7 @@ def WriteIntoTxt(txtcontent, txtdir):
             f.write(i + '\n')
 
 
-def InitModel(modelname, use_pretrained: bool = False):
+def InitModel(modelname, use_pretrained: bool = False, class_num=3):
     model = None
     if use_pretrained:
         torch.hub.set_dir("./mymodels/downloaded_models")
@@ -77,7 +77,7 @@ def InitModel(modelname, use_pretrained: bool = False):
             model.conv1 = torch.nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
     else:
         if modelname == 'resnet18':
-            model = resnet18()
+            model = resnet18(class_num)
         elif modelname == 'unetr':
             model = UNETR()
         elif modelname == 'unet':
@@ -85,11 +85,11 @@ def InitModel(modelname, use_pretrained: bool = False):
         elif modelname == 'Net':
             model = Net()
         elif modelname == 'resnet34':
-            model = resnet34()
+            model = resnet34(class_num)
         elif modelname == 'resnet50':
-            model = resnet50()
+            model = resnet50(class_num)
         elif modelname == 'resnet101':
-            model = resnet101()
+            model = resnet101(class_num)
         elif modelname == 'ViT':
             model = ViT_model(256, 32, 10)   # 256是输入图片的大小，32是patch的大小，3是类别数
     return model
