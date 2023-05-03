@@ -18,6 +18,7 @@ def ViT_model(image_size=256, patch_size=16, num_classes=3):
 
 
 if __name__ == "__main__":
+
     img = torch.randn(1, 3, 256, 256)
 
     model = ViT_model()
