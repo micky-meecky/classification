@@ -76,7 +76,7 @@ def mnist_loader():
 
 
 def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, testbs, num_workers):
-    augmentation_prob = 1.0
+    augmentation_prob = 0.0
     train, valid, test = get_fold_filelist(csv_file, K=fold_K, fold=fold_idx, validation=True)
 
     # 输出 train, valid, test的大小
@@ -226,7 +226,7 @@ def breast_loader(batch_size, testbs):
 
 
 def Train_breast():
-    project = 'resnet101_cls2_0'   # project name-----------------------------------------------------
+    project = 'resnet50_cls2_1'   # project name-----------------------------------------------------
     epoch_num = 500     # epoch_num -----------------------------------------------------
     class_num = 2       # class_num -----------------------------------------------------
     lr = 0.0005  # 学习率  -----------------------------------------------------
