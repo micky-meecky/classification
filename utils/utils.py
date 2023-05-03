@@ -17,22 +17,6 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 
-
-def Device(model):
-    if torch.cuda.is_available():
-        device_ids = [i for i in range(torch.cuda.device_count())]
-        device = f"cuda:{device_ids[0]}"
-        print("\n Using GPU \n")
-        model = DataParallel(model, device_ids=device_ids)
-    else:
-        device = torch.device("cpu")
-        print("Using CPU")
-    model.to(device)
-    model.load_state_dict(torch.load("temp_model.pth"))
-    return model, device
-
-
-
 def LossExport(cls_running_loss, seg_running_loss, running_loss, datas, writer, epoch, _have_segtask):
     # 计算平均epoch_cls_loss
     epoch_cls_loss = cls_running_loss / len(datas)  # len(train_loader)是batch的个数---------------
@@ -65,6 +49,19 @@ def WriteIntoTxt(txtcontent, txtdir):
         for i in txtcontent:
             f.write(i + '\n')
 
+def Device(model):
+    if torch.cuda.is_available():
+        device_ids = [i for i in range(torch.cuda.device_count())]
+        device = f"cuda:{device_ids[0]}"
+        print("\n Using GPU \n")
+    else:
+        device = torch.device("cpu")
+        print("Using CPU")
+    model.to(device)
+    model.load_state_dict(torch.load("temp_model.pth"))
+    return model, device
+
+
 
 def InitModel(modelname, use_pretrained: bool = False, class_num=3):
     model = None
@@ -83,7 +80,11 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3):
             model.last_linear = nn.Linear(4096, num_classes)
             model.features.conv0 = torch.nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
             # 打印模型
-            print(model)
+            # print(model)
+        if torch.cuda.is_available():
+            device_ids = [i for i in range(torch.cuda.device_count())]
+            device = f"cuda:{device_ids[0]}"
+            model = DataParallel(model, device_ids=device_ids)
         torch.save(model.state_dict(), "temp_model.pth")
     else:
         if modelname == 'resnet18':
