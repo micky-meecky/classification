@@ -70,14 +70,14 @@ def Device(model):
 def InitModel(modelname, use_pretrained: bool = False, class_num=3):
     model = None
     if use_pretrained:
-        if modelname.startswith('resnet'):
+        if modelname.startswith('resnet101'):
             model = models.resnet101(pretrained=True)
             # 替换输出层
             num_classes = class_num
             model.fc = nn.Linear(model.fc.in_features, num_classes)
             # 修改输入通道数
             model.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-        if modelname.startswith('densenet'):
+        if modelname.startswith('densenet121'):
             # 替换输出层
             model = models.densenet121(pretrained=True)
             num_classes = class_num
@@ -87,6 +87,14 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3):
             model.features.conv0 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
             # 打印模型
             # print(model)
+        if modelname.startswith('xception'):
+            model = pretrainedmodels.xception(num_classes=1000, pretrained='imagenet')
+
+            # 更改最后一层的输出分类数
+            model.last_linear = nn.Linear(model.last_linear.in_features, class_num)
+
+            # 更改输入通道数为1
+            model.conv1 = nn.Conv2d(1, 32, 3, stride=2, padding=1, bias=False)
     else:
         if modelname == 'resnet18':
             model = resnet18(class_num)
