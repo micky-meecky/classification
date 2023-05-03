@@ -225,8 +225,8 @@ def breast_loader(batch_size, testbs):
     return train_loader, valid_loader, test_loader
 
 
-def Train_breast():
-    project = 'densenet121_cls_0'   # project name-----------------------------------------------------
+def Train_breast(project, bs, model_name):
+    project = project   # project name-----------------------------------------------------
     epoch_num = 700     # epoch_num -----------------------------------------------------
     class_num = 2       # class_num -----------------------------------------------------
     lr = 1e-4  # 学习率  -----------------------------------------------------
@@ -236,11 +236,11 @@ def Train_breast():
     num_epochs_decay = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_ratio = 0.05  # 学习率下降的比例 -----------------------------------------------------
-    bs = 50  # batch_size -----------------------------------------------------
+    bs = bs  # batch_size -----------------------------------------------------
     testbs = 10  # test_batch_size -----------------------------------------------------
     L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = True  # 是否使用预训练模型 -----------------------------------------------------
-    model_name = 'densenet121'  # 模型名字 -----------------------------------------------------
+    model_name = model_name  # 模型名字 -----------------------------------------------------
     model = utils.InitModel(model_name, use_pretrained, class_num)  # ---------------------------------------------
     log_dir = './log/log'
     model_dir = './savemodel'
@@ -475,6 +475,14 @@ def Train_Mnist():
 
 if __name__ == '__main__':
     # Train_Mnist()
-    Train_breast()
+    project = 'densenet121_cls_0'
+    bs = 20
+    model_name = 'densenet121'
+
+    # Train_breast(project, bs, model_name)
+
+    Train_breast('resnet101_cls_0', 20, 'resnet101')
+
+
 
 
