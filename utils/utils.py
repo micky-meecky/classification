@@ -128,7 +128,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3):
                 model.features[0][1],
                 model.features[0][2]
             )
-        if modelname.startswith('googlenet'):
+        if modelname.startswith('googlenet'):   # 有很多问题
             model = CustomGoogLeNet(pretrained=True)
             # 替换输出层
             num_classes = class_num
@@ -155,7 +155,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3):
         elif modelname == 'resnet152':
             model = resnet152(class_num)
         elif modelname == 'ViT':
-            model = ViT_model(256, 32, 10)   # 256是输入图片的大小，32是patch的大小，3是类别数
+            model = ViT_model(256, 32, 3)   # 256是输入图片的大小，32是patch的大小，3是类别数
     return model
 
 
