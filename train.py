@@ -479,7 +479,7 @@ if __name__ == '__main__':
     bs = 20
     model_name = 'densenet121'
 
-    # Train_breast(project, bs, model_name)
+    Train_breast(project, bs, model_name)
 
     Train_breast('resnet101_cls_0', 20, 'resnet101')
 

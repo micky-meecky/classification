@@ -71,15 +71,16 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3):
     model = None
     if use_pretrained:
         if modelname.startswith('resnet'):
-            model = models.resnet18(pretrained=True)
+            model = models.resnet101(pretrained=True)
             # 替换输出层
-            num_classes = 2
-            model.last_linear = nn.Linear(model.last_linear.in_features, num_classes)
-            model.conv1 = torch.nn.Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+            num_classes = class_num
+            model.fc = nn.Linear(model.fc.in_features, num_classes)
+            # 修改输入通道数
+            model.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
         if modelname.startswith('densenet'):
             # 替换输出层
             model = models.densenet121(pretrained=True)
-            num_classes = 2
+            num_classes = class_num
             # 修改输出类别
             model.classifier = nn.Linear(model.classifier.in_features, num_classes)
             # 修改输入通道数
