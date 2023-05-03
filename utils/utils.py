@@ -75,7 +75,6 @@ def InitModel(modelname, use_pretrained: bool = False):
             num_classes = 2
             model.last_linear = nn.Linear(model.last_linear.in_features, num_classes)
             model.conv1 = torch.nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-            pass
     else:
         if modelname == 'resnet18':
             model = resnet18()
