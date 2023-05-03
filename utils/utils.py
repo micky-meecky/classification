@@ -28,6 +28,7 @@ def Device(model):
         device = torch.device("cpu")
         print("Using CPU")
     model.to(device)
+    model.load_state_dict(torch.load("temp_model.pth"))
     return model, device
 
 
@@ -83,6 +84,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3):
             model.features.conv0 = torch.nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
             # 打印模型
             print(model)
+        torch.save(model.state_dict(), "temp_model.pth")
     else:
         if modelname == 'resnet18':
             model = resnet18(class_num)
