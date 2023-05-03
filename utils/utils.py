@@ -57,9 +57,12 @@ def Device(model):
     else:
         device = torch.device("cpu")
         print("Using CPU")
+
     model.to(device)
-    model.load_state_dict(torch.load("temp_model.pth"))
+    model = DataParallel(model, device_ids=device_ids) if torch.cuda.is_available() else model
     return model, device
+
+
 
 
 
@@ -81,11 +84,6 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3):
             model.features.conv0 = torch.nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
             # 打印模型
             # print(model)
-        if torch.cuda.is_available():
-            device_ids = [i for i in range(torch.cuda.device_count())]
-            device = f"cuda:{device_ids[0]}"
-            model = DataParallel(model, device_ids=device_ids)
-        torch.save(model.state_dict(), "temp_model.pth")
     else:
         if modelname == 'resnet18':
             model = resnet18(class_num)
