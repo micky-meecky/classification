@@ -185,7 +185,7 @@ def breast_loader(batch_size, testbs):
     distance_type = "dist_mask"
     normal_flag = False
     image_size = 256
-    num_workers = 4
+    num_workers = 5
 
     print('batch_size: ', batch_size)
     train_loader, valid_loader, test_loader = getdataset(csv_path, fold_k, fold_idx, image_size, batch_size, testbs, num_workers)
@@ -235,7 +235,7 @@ def Train_breast():
     num_epochs_decay = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 20  # 学习率下降的epoch数 -----------------------------------------------------
     decay_ratio = 0.01  # 学习率下降的比例 -----------------------------------------------------
-    bs = 100  # batch_size -----------------------------------------------------
+    bs = 500  # batch_size -----------------------------------------------------
     testbs = 80  # test_batch_size -----------------------------------------------------
     L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = False  # 是否使用预训练模型 -----------------------------------------------------
