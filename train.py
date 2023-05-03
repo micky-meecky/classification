@@ -185,7 +185,7 @@ def breast_loader(batch_size, testbs):
     distance_type = "dist_mask"
     normal_flag = False
     image_size = 256
-    num_workers = 5
+    num_workers = 4
 
     print('batch_size: ', batch_size)
     train_loader, valid_loader, test_loader = getdataset(csv_path, fold_k, fold_idx, image_size, batch_size, testbs, num_workers)
