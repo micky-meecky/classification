@@ -9,6 +9,7 @@ from mymodels.models import Net
 from mymodels.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 from mymodels.unetr import UNETR
 from mymodels.Unet import UNet
+from mymodels.ViT import ViT_model
 import os
 from torch.optim import lr_scheduler
 from torch.optim.lr_scheduler import _LRScheduler
@@ -90,6 +91,8 @@ def InitModel(modelname, use_pretrained: bool = False):
             model = resnet50()
         elif modelname == 'resnet101':
             model = resnet101()
+        elif modelname == 'ViT':
+            model = ViT_model(256, 32, 10)   # 256是输入图片的大小，32是patch的大小，3是类别数
     return model
 
 

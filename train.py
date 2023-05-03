@@ -185,7 +185,7 @@ def breast_loader(batch_size, testbs):
     distance_type = "dist_mask"
     normal_flag = False
     image_size = 256
-    num_workers = 5
+    num_workers = 6
 
     print('batch_size: ', batch_size)
     train_loader, valid_loader, test_loader = getdataset(csv_path, fold_k, fold_idx, image_size, batch_size, testbs, num_workers)
@@ -226,20 +226,20 @@ def breast_loader(batch_size, testbs):
 
 
 def Train_breast():
-    project = 'resnet50_2_cifar10'   # project name-----------------------------------------------------
-    epoch_num = 1000     # epoch_num -----------------------------------------------------
-    lr = 0.05  # 学习率  -----------------------------------------------------
+    project = 'ViT_0_cifar'   # project name-----------------------------------------------------
+    epoch_num = 500     # epoch_num -----------------------------------------------------
+    lr = 0.01  # 学习率  -----------------------------------------------------
     lr_low = 1e-13  # 学习率下限  -----------------------------------------------------
     lr_warm_epoch = 5  # warm up 的 epoch 数 -----------------------------------------------------
     lr_cos_epoch = epoch_num - lr_warm_epoch - 10  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 20  # 学习率下降的epoch数 -----------------------------------------------------
     decay_ratio = 0.01  # 学习率下降的比例 -----------------------------------------------------
-    bs = 500  # batch_size -----------------------------------------------------
-    testbs = 80  # test_batch_size -----------------------------------------------------
+    bs = 5000  # batch_size -----------------------------------------------------
+    testbs = 10  # test_batch_size -----------------------------------------------------
     L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = False  # 是否使用预训练模型 -----------------------------------------------------
-    model_name = 'resnet50'  # 模型名字 -----------------------------------------------------
+    model_name = 'ViT'  # 模型名字 -----------------------------------------------------
     model = utils.InitModel(model_name, use_pretrained)    # -----------------------------------------------------
     log_dir = './log/log'
     model_dir = './savemodel'
