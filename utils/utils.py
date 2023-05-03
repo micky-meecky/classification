@@ -19,15 +19,17 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 def Device(model):
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model.to(device)
     if torch.cuda.is_available():
+        device_ids = [i for i in range(torch.cuda.device_count())]
+        device = f"cuda:{device_ids[0]}"
         print("\n Using GPU \n")
-        model = DataParallel(model)
+        model = DataParallel(model, device_ids=device_ids)
     else:
+        device = torch.device("cpu")
         print("Using CPU")
-        # model = DataParallel(model)
+    model.to(device)
     return model, device
+
 
 
 def LossExport(cls_running_loss, seg_running_loss, running_loss, datas, writer, epoch, _have_segtask):
