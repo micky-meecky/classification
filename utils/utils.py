@@ -94,7 +94,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3):
             # 更改输入通道数为1
             model.conv1 = nn.Conv2d(1, 32, 3, stride=2, padding=1, bias=False)
         if modelname.startswith('efficientnet'):
-            model = models.efficientnet_b7(pretrained=True)
+            model = models.efficientnet_b6(pretrained=True)
             # 替换输出层
             num_classes = class_num
             model.classifier[1] = nn.Linear(model.classifier[1].in_features, num_classes)
@@ -105,6 +105,13 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3):
                 model.features[0][1],
                 model.features[0][2]
             )
+        if modelname.startswith('googlenet'):
+            model = models.googlenet(pretrained=True)
+            # 替换输出层
+            num_classes = class_num
+            model.fc = nn.Linear(model.fc.in_features, num_classes)
+            # 修改输入通道数
+            model.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
 
 
     else:
