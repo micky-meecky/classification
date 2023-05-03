@@ -319,10 +319,10 @@ def Train_breast():
                     loss = L * seg_loss + (1 - L) * cls_loss
                     seg_running_loss += seg_loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
                 else:
-                    print(next(model.parameters()).device)
-                    # 查看数据在哪个设备上
-                    print(inputs.device)
-                    print(targets4.device)
+                    # print(next(model.parameters()).device)
+                    # # 查看数据在哪个设备上
+                    # print(inputs.device)
+                    # print(targets4.device)
                     outputs = model(inputs)
                     cls_loss = criterion_cls(outputs, targets4)
                     loss = cls_loss
