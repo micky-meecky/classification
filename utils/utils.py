@@ -89,12 +89,24 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3):
             # print(model)
         if modelname.startswith('xception'):
             model = pretrainedmodels.xception(num_classes=1000, pretrained='imagenet')
-
             # 更改最后一层的输出分类数
             model.last_linear = nn.Linear(model.last_linear.in_features, class_num)
-
             # 更改输入通道数为1
             model.conv1 = nn.Conv2d(1, 32, 3, stride=2, padding=1, bias=False)
+        if modelname.startswith('efficientnet'):
+            model = models.efficientnet_b7(pretrained=True)
+            # 替换输出层
+            num_classes = class_num
+            model.classifier[1] = nn.Linear(model.classifier[1].in_features, num_classes)
+            # 修改输入通道数
+            firstconv_output_channels = model.features[0][0].out_channels
+            model.features[0] = torch.nn.Sequential(
+                torch.nn.Conv2d(1, firstconv_output_channels, kernel_size=3, stride=2, padding=1, bias=False),
+                model.features[0][1],
+                model.features[0][2]
+            )
+
+
     else:
         if modelname == 'resnet18':
             model = resnet18(class_num)
