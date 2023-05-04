@@ -234,7 +234,7 @@ def breast_loader(batch_size, testbs, validate_flag):
 
 def Train_breast(Project, Bs, Model_name, Use_pretrained):
     project = Project  # project name-----------------------------------------------------
-    epoch_num = 500  # epoch_num -----------------------------------------------------
+    epoch_num = 550  # epoch_num -----------------------------------------------------
     class_num = 2  # class_num -----------------------------------------------------
     lr = 1e-5  # 学习率  -----------------------------------------------------
     validate_flag = False  # 是否使用验证集 -----------------------------------------------------
@@ -527,7 +527,7 @@ if __name__ == '__main__':
     model_name = 'unetr'
     use_pretrained = False
 
-    # Train_breast(project, bs, model_name, use_pretrained)
-    # Train_breast('efficientnetb7_cls2_0', 20, 'efficientnet', True)
-    # Train_breast('resnet101_cls_1', 20, 'resnet101', True)
+    Train_breast(project, bs, model_name, use_pretrained)
+    Train_breast('efficientnetb7_cls2_0', 20, 'efficientnet', True)
+    Train_breast('resnet101_cls_1', 20, 'resnet101', True)
     Train_breast('xception_cls_1', 20, 'xception', True)
