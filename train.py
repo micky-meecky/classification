@@ -523,7 +523,7 @@ def Train_Mnist():
 if __name__ == '__main__':
     # Train_Mnist()
     project = 'unetr_cls2_0'
-    bs = 10
+    bs = 30
     model_name = 'unetr'
 
     Train_breast(project, bs, model_name)
