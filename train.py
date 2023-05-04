@@ -476,7 +476,7 @@ def Train_Mnist():
 if __name__ == '__main__':
     # Train_Mnist()
     project = 'swin_cls_0'
-    bs = 15
+    bs = 30
     model_name = 'swin_transformer'
 
     Train_breast(project, bs, model_name)
