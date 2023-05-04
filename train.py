@@ -232,7 +232,7 @@ def breast_loader(batch_size, testbs, validate_flag):
     return train_loader, valid_loader, test_loader
 
 
-def Train_breast(Project, Bs, Model_name):
+def Train_breast(Project, Bs, Model_name, Use_pretrained):
     project = Project  # project name-----------------------------------------------------
     epoch_num = 500  # epoch_num -----------------------------------------------------
     class_num = 2  # class_num -----------------------------------------------------
@@ -247,7 +247,7 @@ def Train_breast(Project, Bs, Model_name):
     bs = Bs  # batch_size -----------------------------------------------------
     testbs = 10  # test_batch_size -----------------------------------------------------
     L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
-    use_pretrained = False  # 是否使用预训练模型 -----------------------------------------------------
+    use_pretrained = Use_pretrained  # 是否使用预训练模型 -----------------------------------------------------
     model_name = Model_name  # 模型名字 -----------------------------------------------------
     model = utils.InitModel(model_name, use_pretrained, class_num)  # ---------------------------------------------
     log_dir = './log/log'
@@ -525,7 +525,9 @@ if __name__ == '__main__':
     project = 'unetr_cls2_0'
     bs = 30
     model_name = 'unetr'
+    use_pretrained = False
 
-    # Train_breast(project, bs, model_name)
-    Train_breast('resnet101_cls_1', 20, 'resnet101')
-    Train_breast('xception_cls_1', 20, 'xception')
+    # Train_breast(project, bs, model_name, use_pretrained)
+    Train_breast('efficientnetb7_cls2_0', 20, 'efficientnet', True)
+    Train_breast('resnet101_cls_1', 20, 'resnet101', True)
+    Train_breast('xception_cls_1', 20, 'xception', True)
