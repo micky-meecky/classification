@@ -121,7 +121,22 @@ def get_fold_filelist(csv_file, K=3, fold=1, random_state=2020, validation=False
     if validation is False:  # 不设置验证集，则直接返回
         train_set = low_fold_train[fold-1]+mid_fold_train[fold-1]+high_fold_train[fold-1]
         test_set = low_fold_test[fold-1]+mid_fold_test[fold-1]+high_fold_test[fold-1]
+
+        # 统计训练集和测试集的label分布
+        train_label = [int(i[1]) for i in train_set]
+        train_label.sort()
+        print('train_label', train_label)
+        train_label_count = [train_label.count(i) for i in range(3)]
+        print('train_label_count', train_label_count)
+
+        test_label = [int(i[1]) for i in test_set]
+        test_label.sort()
+        print('test_label', test_label)
+        test_label_count = [test_label.count(i) for i in range(3)]
+        print('test_label_count', test_label_count)
+
         return [train_set, test_set]
+
     else:  # 设置验证集合，则从训练集“类别 且 size平衡地”抽取一定数量样本做验证集
         # 分离第fold折各size分层的三类样本，train_n 表示正常类，train_m 表示恶性类，train_b 表示良性类
         low_fold_train_n = [i for i in low_fold_train[fold-1] if int(i[1]) == 2]

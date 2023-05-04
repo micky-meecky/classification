@@ -139,6 +139,14 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3):
         if modelname.startswith('swin_transformer'):
             torch.hub.set_dir("./mymodels/downloaded_models")
             model = timm.create_model('swin_base_patch4_window7_224', pretrained=True, in_chans=1, num_classes=2)
+        if modelname.startswith('resnet18'):
+            model = models.resnet18(pretrained=True)
+            # 替换输出层
+            num_classes = class_num
+            model.fc = nn.Linear(model.fc.in_features, num_classes)
+            # 修改输入通道数
+            model.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
+
 
     else:
         if modelname == 'resnet18':

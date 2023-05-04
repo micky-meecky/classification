@@ -193,7 +193,7 @@ class Transformer(nn.Module):
 
 
 class UNETR(nn.Module):
-    def __init__(self, img_shape=(256, 256), input_dim=3, output_dim=3, embed_dim=768, patch_size=16, num_heads=12,
+    def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=2, embed_dim=768, patch_size=16, num_heads=12,
                  dropout=0.2, batch_size=10):
         super().__init__()
         self.input_dim = input_dim
@@ -206,7 +206,7 @@ class UNETR(nn.Module):
         self.num_layers = 12
         self.ext_layers = [3, 6, 9, 12]
         self.linear = nn.Linear(embed_dim * 1, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
-        self.log_softmax = nn.LogSoftmax(dim=1)
+        # self.log_softmax = nn.LogSoftmax(dim=1)
         # self.fc1 = nn.Linear(embed_dim * 1, 512)
         # self.dropout1 = nn.Dropout(0.2)
         # self.fc2 = nn.Linear(512, 256)
@@ -216,62 +216,23 @@ class UNETR(nn.Module):
         self.patch_dim = [int(x / patch_size) for x in img_shape]
 
         # Transformer Encoder
-        self.transformer = Transformer(
-                input_dim,
-                embed_dim,
-                img_shape,
-                patch_size,
-                num_heads,
-                self.num_layers,
-                dropout,
-                self.ext_layers
-            )
+        self.transformer = Transformer(input_dim, embed_dim, img_shape, patch_size, num_heads, self.num_layers, dropout,
+                                       self.ext_layers)
 
         # U-Net Decoder
-        self.decoder0 = nn.Sequential(
-                Conv2DBlock(input_dim, 32, 3),
-                Conv2DBlock(32, 64, 3)
-            )
-
-        self.decoder3 = nn.Sequential(
-                Deconv2DBlock(embed_dim, 512),
-                Deconv2DBlock(512, 256),
-                Deconv2DBlock(256, 128)
-            )
-
-        self.decoder6 = nn.Sequential(
-                Deconv2DBlock(embed_dim, 512),
-                Deconv2DBlock(512, 256),
-            )
-
-        self.decoder9 = Deconv2DBlock(embed_dim, 512)
-
-        self.decoder12_upsampler = SingleDeconv2DBlock(embed_dim, 512)
-
-        self.decoder9_upsampler = nn.Sequential(
-                Conv2DBlock(1024, 512),
-                Conv2DBlock(512, 512),
-                Conv2DBlock(512, 512),
-                SingleDeconv2DBlock(512, 256)
-            )
-
-        self.decoder6_upsampler = nn.Sequential(
-                Conv2DBlock(512, 256),
-                Conv2DBlock(256, 256),
-                SingleDeconv2DBlock(256, 128)
-            )
-
-        self.decoder3_upsampler = nn.Sequential(
-                Conv2DBlock(256, 128),
-                Conv2DBlock(128, 128),
-                SingleDeconv2DBlock(128, 64)
-            )
-
-        self.decoder0_header = nn.Sequential(
-                Conv2DBlock(128, 64),
-                Conv2DBlock(64, 64),
-                SingleConv2DBlock(64, output_dim, 1)
-            )
+        # self.decoder0 = nn.Sequential(Conv2DBlock(input_dim, 32, 3),Conv2DBlock(32, 64, 3))
+        # self.decoder3 = nn.Sequential(Deconv2DBlock(embed_dim, 512), Deconv2DBlock(512, 256), Deconv2DBlock(256, 128))
+        # self.decoder6 = nn.Sequential(Deconv2DBlock(embed_dim, 512), Deconv2DBlock(512, 256),)
+        # self.decoder9 = Deconv2DBlock(embed_dim, 512)
+        # self.decoder12_upsampler = SingleDeconv2DBlock(embed_dim, 512)
+        # self.decoder9_upsampler = nn.Sequential(Conv2DBlock(1024, 512), Conv2DBlock(512, 512), Conv2DBlock(512, 512),
+        #                                         SingleDeconv2DBlock(512, 256))
+        # self.decoder6_upsampler = nn.Sequential(Conv2DBlock(512, 256), Conv2DBlock(256, 256),
+        #                                         SingleDeconv2DBlock(256, 128))
+        # self.decoder3_upsampler = nn.Sequential(Conv2DBlock(256, 128), Conv2DBlock(128, 128),
+        #                                         SingleDeconv2DBlock(128, 64))
+        # self.decoder0_header = nn.Sequential(Conv2DBlock(128, 64), Conv2DBlock(64, 64),
+        #                                      SingleConv2DBlock(64, output_dim, 1))
 
     def forward(self, x):
         z = self.transformer(x)
@@ -289,7 +250,7 @@ class UNETR(nn.Module):
         # linear
         z12 = self.linear(z12)  # shape: (batch_size, 3)
         # softmax
-        label = self.log_softmax(z12)  # shape: (batch_size, 3)
+        # label = self.log_softmax(z12)  # shape: (batch_size, 3)
 
 
         # z3 = torch.mean(z3.view(z3.size(0), z3.size(1), -1), dim=2)  # shape: (batch_size, 768)
@@ -311,4 +272,4 @@ class UNETR(nn.Module):
         # z0 = self.decoder0(z0)
         # output = self.decoder0_header(torch.cat([z0, z3], dim=1))
 
-        return label
+        return z12
