@@ -526,7 +526,6 @@ if __name__ == '__main__':
     bs = 30
     model_name = 'unetr'
 
-    Train_breast(project, bs, model_name)
-    # Train_breast('resnet101_cls_0', 20, 'resnet101')
-    # Train_breast('xception_cls_0', 20, 'xception')
-    # Train_breast('googlenet_cls_0', 5, 'googlenet')
+    # Train_breast(project, bs, model_name)
+    Train_breast('resnet101_cls_1', 20, 'resnet101')
+    Train_breast('xception_cls_1', 20, 'xception')
