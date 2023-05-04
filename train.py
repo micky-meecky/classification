@@ -184,7 +184,7 @@ def breast_loader(batch_size, testbs):
     fold_id = 1
     distance_type = "dist_mask"
     normal_flag = False
-    image_size = 256
+    image_size = 224
     num_workers = 6
 
     print('batch_size: ', batch_size)
@@ -225,22 +225,22 @@ def breast_loader(batch_size, testbs):
     return train_loader, valid_loader, test_loader
 
 
-def Train_breast(project, bs, model_name):
-    project = project   # project name-----------------------------------------------------
-    epoch_num = 700     # epoch_num -----------------------------------------------------
+def Train_breast(Project, Bs, Model_name):
+    project = Project   # project name-----------------------------------------------------
+    epoch_num = 500     # epoch_num -----------------------------------------------------
     class_num = 2       # class_num -----------------------------------------------------
-    lr = 1e-5  # 学习率  -----------------------------------------------------
-    lr_low = 1e-14  # 学习率下限  ------------------------------------------------------
+    lr = 1e-6  # 学习率  -----------------------------------------------------
+    lr_low = 1e-15  # 学习率下限  ------------------------------------------------------
     lr_warm_epoch = 5  # warm up 的 epoch 数 -----------------------------------------------------
     lr_cos_epoch = epoch_num - lr_warm_epoch - 10  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_ratio = 0.05  # 学习率下降的比例 -----------------------------------------------------
-    bs = bs  # batch_size -----------------------------------------------------
+    bs = Bs  # batch_size -----------------------------------------------------
     testbs = 10  # test_batch_size -----------------------------------------------------
     L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = True  # 是否使用预训练模型 -----------------------------------------------------
-    model_name = model_name  # 模型名字 -----------------------------------------------------
+    model_name = Model_name  # 模型名字 -----------------------------------------------------
     model = utils.InitModel(model_name, use_pretrained, class_num)  # ---------------------------------------------
     log_dir = './log/log'
     model_dir = './savemodel'
@@ -475,13 +475,13 @@ def Train_Mnist():
 
 if __name__ == '__main__':
     # Train_Mnist()
-    project = 'densenet121_cls_0'
-    bs = 20
-    model_name = 'densenet121'
+    project = 'swin_cls_0'
+    bs = 15
+    model_name = 'swin_transformer'
 
     Train_breast(project, bs, model_name)
-    Train_breast('resnet101_cls_0', 20, 'resnet101')
-    Train_breast('xception_cls_0', 20, 'xception')
+    # Train_breast('resnet101_cls_0', 20, 'resnet101')
+    # Train_breast('xception_cls_0', 20, 'xception')
     # Train_breast('googlenet_cls_0', 5, 'googlenet')
 
 
