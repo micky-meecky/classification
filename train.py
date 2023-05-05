@@ -542,6 +542,6 @@ if __name__ == '__main__':
     use_pretrained = False
 
     # Train_breast(project, bs, model_name, use_pretrained)
-    Train_breast('efficientnetb7_cls2_0', 8, 'efficientnet', True)
+    Train_breast('efficientnetb7_cls2_0', 30, 'efficientnet', True)
     # Train_breast('resnet101_cls_1', 20, 'resnet101', True)
     # Train_breast('xception_cls_1', 20, 'xception', True)
