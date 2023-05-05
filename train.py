@@ -274,7 +274,7 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
     # train_loader, test_loader = OpenDataSet.SelectDataSet('Cifar_10', bs)
 
     # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
-    pos_weight = torch.tensor([108 / 515]).to(device)
+    pos_weight = torch.tensor([515 / 108]).to(device)
     criterion_cls = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     criterion_seg = SoftDiceLoss()  # -----------------------------------------------------
     optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))  # ------------------------------------------
