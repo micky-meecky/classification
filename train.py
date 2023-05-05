@@ -274,8 +274,8 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
     # train_loader, test_loader = OpenDataSet.SelectDataSet('Cifar_10', bs)
 
     # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
-    weight = torch.tensor([108 / 623, 515 / 623]).to(device)
-    criterion_cls = nn.BCEWithLogitsLoss(weight=weight)  # -----------------------------------------------------
+    pos_weight = torch.tensor([108 / 515]).to(device)
+    criterion_cls = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     criterion_seg = SoftDiceLoss()  # -----------------------------------------------------
     optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))  # ------------------------------------------
     lr_sch = utils.LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer)  # -------------------------------
@@ -293,7 +293,7 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
         log_dir = os.path.join(log_dir, project)
         utils.Mkdir(log_dir)
         writer = SummaryWriter(log_dir=log_dir)
-        datas = train_loader  # -----------------------------------------------------
+        datas = test_loader  # -----------------------------------------------------
         for epoch in range(epoch_num):
             t.ticbegin()
             te.ticbegin()
