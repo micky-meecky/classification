@@ -544,5 +544,5 @@ if __name__ == '__main__':
 
     Train_breast(project, bs, model_name, 1e-3, use_pretrained, True)
     # Train_breast('efficientnetb7_cls2_0', 30, 'efficientnet', 1e-4, True, False)
-    Train_breast('resnet101_cls_1', 20, 'resnet101', 1e-5, True, False)
-    Train_breast('xception_cls_1', 20, 'xception', 1e-5, True, False)
+    Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
+    Train_breast('xception_cls2bce_1', 20, 'xception', 1e-5, True, False)
