@@ -232,11 +232,11 @@ def breast_loader(batch_size, testbs, validate_flag):
     return train_loader, valid_loader, test_loader
 
 
-def Train_breast(Project, Bs, Model_name, Use_pretrained):
+def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask):
     project = Project  # project name-----------------------------------------------------
-    epoch_num = 550  # epoch_num -----------------------------------------------------
+    epoch_num = 700  # epoch_num -----------------------------------------------------
     class_num = 1  # class_num -----------------------------------------------------
-    lr = 1e-3  # 学习率  -----------------------------------------------------
+    lr = lr  # 学习率  -----------------------------------------------------
     validate_flag = False  # 是否使用验证集 -----------------------------------------------------
     lr_low = 1e-12  # 学习率下限  ------------------------------------------------------
     lr_warm_epoch = 5  # warm up 的 epoch 数 -----------------------------------------------------
@@ -261,7 +261,7 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
     is_train = True
     is_test = True  # False
     is_continue_train = False
-    _have_segtask = True
+    _have_segtask = _have_segtask
 
     model = utils.InitModel(model_name, use_pretrained, class_num, _have_segtask)  # ---------------------------------------------
 
@@ -537,12 +537,12 @@ def Train_Mnist():
 
 if __name__ == '__main__':
     # Train_Mnist()
-    project = 'unetr_cls2_bce_1'
-    bs = 5
+    project = 'unetr_cls2seg_bce_1'
+    bs = 20
     model_name = 'unetr'
     use_pretrained = False
 
-    Train_breast(project, bs, model_name, use_pretrained)
-    # Train_breast('efficientnetb7_cls2_0', 30, 'efficientnet', True)
-    # Train_breast('resnet101_cls_1', 20, 'resnet101', True)
-    # Train_breast('xception_cls_1', 20, 'xception', True)
+    Train_breast(project, bs, model_name, 1e-3, use_pretrained, True)
+    # Train_breast('efficientnetb7_cls2_0', 30, 'efficientnet', 1e-4, True, False)
+    Train_breast('resnet101_cls_1', 20, 'resnet101', 1e-5, True, False)
+    Train_breast('xception_cls_1', 20, 'xception', 1e-5, True, False)
