@@ -340,7 +340,7 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
                     _, predicted = torch.max(labels.data, 1)
                     cls_loss = criterion_cls(outputs, targets4)
                 else:  # 如果是二分类，就用sigmoid
-                    # labels = torch.sigmoid(outputs)
+                    labels = torch.sigmoid(outputs)
                     predicted = torch.round(labels)
                     cls_loss = criterion_cls(outputs, targets4v)
                 if _have_segtask:
@@ -543,5 +543,5 @@ if __name__ == '__main__':
 
     # Train_breast(project, bs, model_name, use_pretrained)
     # Train_breast('efficientnetb7_cls2_0', 30, 'efficientnet', True)
-    Train_breast('resnet101_cls_1', 20, 'resnet101', True)
+    Train_breast('resnet101_cls_1', 8, 'resnet101', True)
     # Train_breast('xception_cls_1', 20, 'xception', True)
