@@ -8,7 +8,7 @@ import pretrainedmodels
 import pretrainedmodels.utils as utils
 from mymodels.models import Net
 from mymodels.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
-from mymodels.unetr import UNETR
+from mymodels.unetr import UNETR, UNETRcls
 from mymodels.Unet import UNet
 from mymodels.ViT import ViT_model
 import os
@@ -89,8 +89,7 @@ class CustomGoogLeNet(GoogLeNet):
         return x
 
 
-
-def InitModel(modelname, use_pretrained: bool = False, class_num=3):
+def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtask=False):
     model = None
     if use_pretrained:
         if modelname.startswith('resnet101'):
@@ -143,7 +142,10 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3):
         if modelname == 'resnet18':
             model = resnet18(class_num)
         elif modelname == 'unetr':
-            model = UNETR()
+            if _have_segtask:
+                model = UNETR()
+            else:
+                model = UNETRcls()
         elif modelname == 'unet':
             model = UNet(3, 1)
         elif modelname == 'Net':

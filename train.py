@@ -236,9 +236,9 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
     project = Project  # project name-----------------------------------------------------
     epoch_num = 550  # epoch_num -----------------------------------------------------
     class_num = 1  # class_num -----------------------------------------------------
-    lr = 1e-5  # 学习率  -----------------------------------------------------
+    lr = 1e-2  # 学习率  -----------------------------------------------------
     validate_flag = False  # 是否使用验证集 -----------------------------------------------------
-    lr_low = 1e-15  # 学习率下限  ------------------------------------------------------
+    lr_low = 1e-12  # 学习率下限  ------------------------------------------------------
     lr_warm_epoch = 5  # warm up 的 epoch 数 -----------------------------------------------------
     lr_cos_epoch = epoch_num - lr_warm_epoch - 10  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 10  # 学习率下降的epoch数 -----------------------------------------------------
@@ -249,7 +249,6 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
     L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = Use_pretrained  # 是否使用预训练模型 -----------------------------------------------------
     model_name = Model_name  # 模型名字 -----------------------------------------------------
-    model = utils.InitModel(model_name, use_pretrained, class_num)  # ---------------------------------------------
     log_dir = './log/log'
     model_dir = './savemodel'
     save_model_dir = os.path.join(model_dir, project)
@@ -263,6 +262,8 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
     is_test = True  # False
     is_continue_train = False
     _have_segtask = False
+
+    model = utils.InitModel(model_name, use_pretrained, class_num, _have_segtask)  # ---------------------------------------------
 
     print(getModelSize(model))
     print('project: ', project)
@@ -285,7 +286,7 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
 
     if is_train:
         torch.autograd.set_detect_anomaly(True)
-        Iter = 0
+        Iter = seg_loss = 0
 
         utils.Mkdir(save_model_dir)
         log_dir = os.path.join(log_dir, project)
@@ -319,48 +320,54 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
 
                 if torch.cuda.is_available():
                     inputs = inputs.to(device)
+                    targets1 = targets1.to(device)
                     targets4 = targets4.to(device)
                     if _have_segtask:
                         targets1 = targets1.to(device)
                 if _have_segtask:
-                    segout, outputs = model(inputs)
+                    targets4v = targets4.view(-1, 1)
+                    targets4v = targets4v.to(torch.float)
+                    outputs, segout = model(inputs)
                     seg_loss = criterion_seg(segout, targets1)
-                    cls_loss = criterion_cls(outputs, targets4)
-                    loss = L * seg_loss + (1 - L) * cls_loss
                     seg_running_loss += seg_loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
                 else:
                     targets4v = targets4.view(-1, 1)
                     targets4v = targets4v.to(torch.float)
                     outputs = model(inputs)
-                    if class_num > 2:
-                        labels = F.softmax(outputs, dim=1)  # -----------------------------------------------------
-                        _, predicted = torch.max(labels.data, 1)
-                        cls_loss = criterion_cls(outputs, targets4)
-                    else:  # 如果是二分类，就用sigmoid
-                        labels = torch.sigmoid(outputs)
-                        predicted = torch.round(labels)
-                        cls_loss = criterion_cls(labels, targets4v)
+
+                if class_num > 2:
+                    labels = F.softmax(outputs, dim=1)  # -----------------------------------------------------
+                    _, predicted = torch.max(labels.data, 1)
+                    cls_loss = criterion_cls(outputs, targets4)
+                else:  # 如果是二分类，就用sigmoid
+                    labels = torch.sigmoid(outputs)
+                    predicted = torch.round(labels)
+                    cls_loss = criterion_cls(labels, targets4v)
+                if _have_segtask:
+                    loss = L * seg_loss + (1 - L) * cls_loss
+                else:
                     loss = cls_loss
 
-                    # 计算TP, FP, TN, FN
-                    tp = torch.sum((predicted == 0) & (targets4 == 0)).item()
-                    fp = torch.sum((predicted == 0) & (targets4 == 1)).item()
-                    tn = torch.sum((predicted == 1) & (targets4 == 1)).item()
-                    fn = torch.sum((predicted == 1) & (targets4 == 0)).item()
+                # 计算TP, FP, TN, FN
+                predicted = predicted.squeeze().long()
+                tp = torch.sum((predicted == 0) & (targets4 == 0)).item()
+                fp = torch.sum((predicted == 0) & (targets4 == 1)).item()
+                tn = torch.sum((predicted == 1) & (targets4 == 1)).item()
+                fn = torch.sum((predicted == 1) & (targets4 == 0)).item()
 
-                    epoch_tp += tp
-                    epoch_fp += fp
-                    epoch_tn += tn
-                    epoch_fn += fn
+                epoch_tp += tp
+                epoch_fp += fp
+                epoch_tn += tn
+                epoch_fn += fn
 
-                    if i == 0:
-                        predicted = predicted.detach()
-                        predicted = predicted.long()
-                        predicted = predicted.cpu()
-                        targets4 = targets4.cpu()
-                        predicted = predicted.squeeze()
-                        tmp_pre = predicted
-                        tmp_tar = targets4
+                if i == 0:
+                    predicted = predicted.detach()
+                    predicted = predicted.long()
+                    predicted = predicted.cpu()
+                    targets4 = targets4.cpu()
+                    predicted = predicted.squeeze()
+                    tmp_pre = predicted
+                    tmp_tar = targets4
 
                 loss.backward()
                 optimizer.step()
@@ -391,6 +398,8 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
             print('num_one: ', num_one)
             print('\npredicted = ', tmp_pre)
             print('targets4 = ', tmp_tar)
+            print('epoch_tp = ', epoch_tp, 'epoch_fp = ', epoch_fp, 'epoch_tn = ', epoch_tn, 'epoch_fn = ', epoch_fn)
+
 
             # 计时结束
             t.ticend()
@@ -527,8 +536,8 @@ def Train_Mnist():
 
 if __name__ == '__main__':
     # Train_Mnist()
-    project = 'unetr_cls2_1'
-    bs = 30
+    project = 'unetr_cls2seg_0'
+    bs = 8
     model_name = 'unetr'
     use_pretrained = False
 
