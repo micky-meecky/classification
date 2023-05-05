@@ -40,7 +40,7 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
         for data in dataloader:
             (img_file_name, images, targets1, targets2, targets3, targets4) = data
             # (images, targets4) = data
-            if class_num == 2:
+            if class_num <= 2:
                 # 将标签进行修改
                 targets4[targets4 == 0] = 0
                 targets4[targets4 == 1] = 0
