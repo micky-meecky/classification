@@ -527,7 +527,7 @@ def Train_Mnist():
 
 if __name__ == '__main__':
     # Train_Mnist()
-    project = 'unetr_cls2_0'
+    project = 'unetr_cls2_1'
     bs = 30
     model_name = 'unetr'
     use_pretrained = False
