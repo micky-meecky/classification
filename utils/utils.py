@@ -117,7 +117,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
             model.conv1 = nn.Conv2d(1, 32, 3, stride=2, padding=1, bias=False)
         if modelname.startswith('efficientnet'):
             torch.hub.set_dir("./mymodels/downloaded_models")
-            model = timm.create_model('efficientnet_b7', pretrained=True, in_chans=1, num_classes=2)
+            model = timm.create_model('efficientnet_b7', pretrained=True, in_chans=1, num_classes=1)
         if modelname.startswith('googlenet'):   # 有很多问题
             model = CustomGoogLeNet(pretrained=True)
             # 替换输出层

@@ -537,11 +537,11 @@ def Train_Mnist():
 if __name__ == '__main__':
     # Train_Mnist()
     project = 'unetr_cls2seg_0'
-    bs = 30
+    bs = 8
     model_name = 'unetr'
     use_pretrained = False
 
-    Train_breast(project, bs, model_name, use_pretrained)
-    # Train_breast('efficientnetb7_cls2_0', 20, 'efficientnet', True)
+    # Train_breast(project, bs, model_name, use_pretrained)
+    Train_breast('efficientnetb7_cls2_0', 8, 'efficientnet', True)
     # Train_breast('resnet101_cls_1', 20, 'resnet101', True)
     # Train_breast('xception_cls_1', 20, 'xception', True)
