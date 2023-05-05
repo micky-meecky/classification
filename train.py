@@ -274,7 +274,7 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
     # train_loader, test_loader = OpenDataSet.SelectDataSet('Cifar_10', bs)
 
     # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
-    criterion_cls = nn.BCELoss()  # -----------------------------------------------------
+    criterion_cls = nn.BCEWithLogitsLoss()  # -----------------------------------------------------
     criterion_seg = SoftDiceLoss()  # -----------------------------------------------------
     optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))  # ------------------------------------------
     lr_sch = utils.LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer)  # -------------------------------
@@ -340,9 +340,9 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
                     _, predicted = torch.max(labels.data, 1)
                     cls_loss = criterion_cls(outputs, targets4)
                 else:  # 如果是二分类，就用sigmoid
-                    labels = torch.sigmoid(outputs)
+                    # labels = torch.sigmoid(outputs)
                     predicted = torch.round(labels)
-                    cls_loss = criterion_cls(labels, targets4v)
+                    cls_loss = criterion_cls(outputs, targets4v)
                 if _have_segtask:
                     loss = L * seg_loss + (1 - L) * cls_loss
                 else:
