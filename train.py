@@ -243,7 +243,7 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
     lr_cos_epoch = epoch_num - lr_warm_epoch - 10  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
-    decay_ratio = 0.05  # 学习率下降的比例 -----------------------------------------------------
+    decay_ratio = 0.01  # 学习率下降的比例 -----------------------------------------------------
     bs = Bs  # batch_size -----------------------------------------------------
     testbs = 10  # test_batch_size -----------------------------------------------------
     L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
@@ -261,7 +261,7 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
     is_train = True
     is_test = True  # False
     is_continue_train = False
-    _have_segtask = False
+    _have_segtask = True
 
     model = utils.InitModel(model_name, use_pretrained, class_num, _have_segtask)  # ---------------------------------------------
 
@@ -321,7 +321,6 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
 
                 if torch.cuda.is_available():
                     inputs = inputs.to(device)
-                    targets1 = targets1.to(device)
                     targets4 = targets4.to(device)
                     if _have_segtask:
                         targets1 = targets1.to(device)
@@ -329,6 +328,7 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
                     targets4v = targets4.view(-1, 1)
                     targets4v = targets4v.to(torch.float)
                     outputs, segout = model(inputs)
+                    segout = torch.sigmoid(segout)
                     seg_loss = criterion_seg(segout, targets1)
                     seg_running_loss += seg_loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
                 else:
@@ -538,7 +538,7 @@ def Train_Mnist():
 if __name__ == '__main__':
     # Train_Mnist()
     project = 'unetr_cls2_bce_1'
-    bs = 40
+    bs = 5
     model_name = 'unetr'
     use_pretrained = False
 
