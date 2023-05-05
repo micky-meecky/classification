@@ -236,7 +236,7 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
     project = Project  # project name-----------------------------------------------------
     epoch_num = 550  # epoch_num -----------------------------------------------------
     class_num = 1  # class_num -----------------------------------------------------
-    lr = 1e-2  # 学习率  -----------------------------------------------------
+    lr = 1e-3  # 学习率  -----------------------------------------------------
     validate_flag = False  # 是否使用验证集 -----------------------------------------------------
     lr_low = 1e-12  # 学习率下限  ------------------------------------------------------
     lr_warm_epoch = 5  # warm up 的 epoch 数 -----------------------------------------------------
@@ -293,7 +293,7 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
         log_dir = os.path.join(log_dir, project)
         utils.Mkdir(log_dir)
         writer = SummaryWriter(log_dir=log_dir)
-        datas = test_loader  # -----------------------------------------------------
+        datas = train_loader  # -----------------------------------------------------
         for epoch in range(epoch_num):
             t.ticbegin()
             te.ticbegin()
@@ -537,12 +537,12 @@ def Train_Mnist():
 
 if __name__ == '__main__':
     # Train_Mnist()
-    project = 'unetr_cls2seg_0'
-    bs = 8
+    project = 'unetr_cls2_bce_1'
+    bs = 20
     model_name = 'unetr'
     use_pretrained = False
 
-    # Train_breast(project, bs, model_name, use_pretrained)
+    Train_breast(project, bs, model_name, use_pretrained)
     # Train_breast('efficientnetb7_cls2_0', 30, 'efficientnet', True)
-    Train_breast('resnet101_cls_1', 8, 'resnet101', True)
+    # Train_breast('resnet101_cls_1', 20, 'resnet101', True)
     # Train_breast('xception_cls_1', 20, 'xception', True)
