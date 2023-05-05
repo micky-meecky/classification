@@ -66,9 +66,10 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
                 # labels = torch.exp(labels)  # -----------------------------------------------------
                 if class_num > 2:
                     labels = F.softmax(labels, dim=1)  # -----------------------------------------------------
+                    _, predicted = torch.max(labels.data, 1)
                 else:  # 如果是二分类，就用sigmoid
                     labels = torch.sigmoid(labels)
-                _, predicted = torch.max(labels.data, 1)
+                    predicted = torch.round(labels.data)
 
                 # 计算TP, FP, TN, FN
                 tp = torch.sum((predicted == 0) & (targets4 == 0)).item()
@@ -83,6 +84,11 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
 
             # 输出第一批的预测结果, 以及最后一批的预测结果
             if i == 0 or i == len(dataloader) - 1:
+                predicted = predicted.detach()
+                predicted = predicted.long()
+                predicted = predicted.cpu()
+                targets4 = targets4.cpu()
+                predicted = predicted.squeeze()
                 predicted = predicted.cpu()
                 targets4 = targets4.cpu()
                 print('predicted = ', predicted)
@@ -110,10 +116,10 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
                 sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))
 
     # writer.add_scalars('Accuracy', {scalarcontent: (100 * sum(cls_acclist) / len(cls_acclist))}, Iter)
-    writer.add_scalars('Accuracy', {'train acc': acc}, Iter)
-    writer.add_scalars('precision', {'train precision': precision}, Iter)
-    writer.add_scalars('recall', {'train recall': recall}, Iter)
-    writer.add_scalars('f1_score', {'train f1_score': f1_score}, Iter)
+    writer.add_scalars('Accuracy', {'valid acc': acc}, Iter)
+    writer.add_scalars('precision', {'valid precision': precision}, Iter)
+    writer.add_scalars('recall', {'valid recall': recall}, Iter)
+    writer.add_scalars('f1_score', {'valid f1_score': f1_score}, Iter)
 
 
 def test(mode: str, dataloader: DataLoader, model, device: torch.device, class_num, _have_segtask: bool):

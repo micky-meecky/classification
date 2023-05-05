@@ -193,7 +193,7 @@ class Transformer(nn.Module):
 
 
 class UNETR(nn.Module):
-    def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=2, embed_dim=768, patch_size=16, num_heads=12,
+    def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
                  dropout=0.2, batch_size=10):
         super().__init__()
         self.input_dim = input_dim
@@ -205,13 +205,10 @@ class UNETR(nn.Module):
         self.dropout = dropout
         self.num_layers = 12
         self.ext_layers = [3, 6, 9, 12]
-        self.linear = nn.Linear(embed_dim * 1, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
-        # self.log_softmax = nn.LogSoftmax(dim=1)
-        # self.fc1 = nn.Linear(embed_dim * 1, 512)
-        # self.dropout1 = nn.Dropout(0.2)
-        # self.fc2 = nn.Linear(512, 256)
-        # self.dropout2 = nn.Dropout(0.2)
-        # self.fc4 = nn.Linear(256, 3)
+        # self.linear = nn.Linear(embed_dim * 1, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
+        self.fc1 = nn.Linear(embed_dim * 1, 512)
+        self.dropout1 = nn.Dropout(0.2)
+        self.fc2 = nn.Linear(512, self.output_dim)
 
         self.patch_dim = [int(x / patch_size) for x in img_shape]
 
@@ -248,9 +245,11 @@ class UNETR(nn.Module):
         # dropout
         z12 = F.dropout(z12, p=self.dropout, training=self.training)
         # linear
-        z12 = self.linear(z12)  # shape: (batch_size, 3)
-        # softmax
-        # label = self.log_softmax(z12)  # shape: (batch_size, 3)
+        # z12 = self.linear(z12)  # shape: (batch_size, 3)
+        z12 = self.fc1(z12)
+        z12 = self.dropout1(z12)
+        z12 = self.fc2(z12)
+
 
 
         # z3 = torch.mean(z3.view(z3.size(0), z3.size(1), -1), dim=2)  # shape: (batch_size, 768)

@@ -235,7 +235,7 @@ def breast_loader(batch_size, testbs, validate_flag):
 def Train_breast(Project, Bs, Model_name, Use_pretrained):
     project = Project  # project name-----------------------------------------------------
     epoch_num = 550  # epoch_num -----------------------------------------------------
-    class_num = 2  # class_num -----------------------------------------------------
+    class_num = 1  # class_num -----------------------------------------------------
     lr = 1e-5  # 学习率  -----------------------------------------------------
     validate_flag = False  # 是否使用验证集 -----------------------------------------------------
     lr_low = 1e-15  # 学习率下限  ------------------------------------------------------
@@ -273,7 +273,7 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
     # train_loader, test_loader = OpenDataSet.SelectDataSet('Cifar_10', bs)
 
     # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
-    criterion_cls = nn.CrossEntropyLoss()  # -----------------------------------------------------
+    criterion_cls = nn.BCELoss()  # -----------------------------------------------------
     criterion_seg = SoftDiceLoss()  # -----------------------------------------------------
     optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))  # ------------------------------------------
     lr_sch = utils.LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer)  # -------------------------------
@@ -307,7 +307,7 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
                 (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
                 Iter += 1
                 # (inputs, targets4) = data
-                if class_num == 2:
+                if class_num <= 2:
                     # 将标签进行修改
                     targets4[targets4 == 0] = 0
                     targets4[targets4 == 1] = 0
@@ -329,17 +329,17 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
                     loss = L * seg_loss + (1 - L) * cls_loss
                     seg_running_loss += seg_loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
                 else:
-                    # print(next(model.parameters()).device)
-                    # # 查看数据在哪个设备上
-                    # print(inputs.device)
-                    # print(targets4.device)
+                    targets4v = targets4.view(-1, 1)
+                    targets4v = targets4v.to(torch.float)
                     outputs = model(inputs)
                     if class_num > 2:
                         labels = F.softmax(outputs, dim=1)  # -----------------------------------------------------
+                        _, predicted = torch.max(labels.data, 1)
+                        cls_loss = criterion_cls(outputs, targets4)
                     else:  # 如果是二分类，就用sigmoid
                         labels = torch.sigmoid(outputs)
-                    _, predicted = torch.max(labels.data, 1)
-                    cls_loss = criterion_cls(outputs, targets4)
+                        predicted = torch.round(labels)
+                        cls_loss = criterion_cls(labels, targets4v)
                     loss = cls_loss
 
                     # 计算TP, FP, TN, FN
@@ -354,10 +354,13 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
                     epoch_fn += fn
 
                     if i == 0:
+                        predicted = predicted.detach()
+                        predicted = predicted.long()
                         predicted = predicted.cpu()
                         targets4 = targets4.cpu()
-                        print('predicted = ', predicted)
-                        print('targets4 = ', targets4)
+                        predicted = predicted.squeeze()
+                        tmp_pre = predicted
+                        tmp_tar = targets4
 
                 loss.backward()
                 optimizer.step()
@@ -386,6 +389,8 @@ def Train_breast(Project, Bs, Model_name, Use_pretrained):
             # 打印num_zero和num_one
             print('num_zero: ', num_zero)
             print('num_one: ', num_one)
+            print('\npredicted = ', tmp_pre)
+            print('targets4 = ', tmp_tar)
 
             # 计时结束
             t.ticend()
@@ -528,6 +533,6 @@ if __name__ == '__main__':
     use_pretrained = False
 
     Train_breast(project, bs, model_name, use_pretrained)
-    Train_breast('efficientnetb7_cls2_0', 20, 'efficientnet', True)
-    Train_breast('resnet101_cls_1', 20, 'resnet101', True)
-    Train_breast('xception_cls_1', 20, 'xception', True)
+    # Train_breast('efficientnetb7_cls2_0', 20, 'efficientnet', True)
+    # Train_breast('resnet101_cls_1', 20, 'resnet101', True)
+    # Train_breast('xception_cls_1', 20, 'xception', True)

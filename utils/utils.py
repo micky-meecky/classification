@@ -40,11 +40,10 @@ def SaveModel(model, epoch, epoch_cls_loss, save_model_dir):
     temploss = 100.0
     if epoch % 20 == 0:  # 每20个epoch保存一次模型
         torch.save(model.state_dict(), save_model_dir + '/model' + str(epoch) + '.pth')
-        print('save model')
     if temploss > epoch_cls_loss:
         temploss = epoch_cls_loss
         torch.save(model.state_dict(), save_model_dir + '/miniclsloss' + '.pth')
-        print('save model，and epoch_cls_loss = ', temploss, '\n')
+    print('save model，and epoch_cls_loss = ', temploss, '\n')
 
 
 def WriteIntoTxt(txtcontent, txtdir):
