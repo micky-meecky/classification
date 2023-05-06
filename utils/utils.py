@@ -8,7 +8,7 @@ import pretrainedmodels
 import pretrainedmodels.utils as utils
 from mymodels.models import Net
 from mymodels.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
-from mymodels.unetr import UNETR, UNETRcls
+from mymodels.unetr import UNETR, UNETRcls, UNETRseg, UNETswin
 from mymodels.Unet import UNet
 from mymodels.ViT import ViT_model
 import os
@@ -51,17 +51,18 @@ def WriteIntoTxt(txtcontent, txtdir):
         for i in txtcontent:
             f.write(i + '\n')
 
+
 def Device(model):
     if torch.cuda.is_available():
         device_ids = [i for i in range(torch.cuda.device_count())]
         device = f"cuda:{device_ids[0]}"
         print("\n Using GPU \n")
+        model.to(device)
+        model = DataParallel(model, device_ids=device_ids) if torch.cuda.is_available() else model
     else:
         device = torch.device("cpu")
         print("Using CPU")
-
-    model.to(device)
-    model = DataParallel(model, device_ids=device_ids) if torch.cuda.is_available() else model
+        model.to(device)
     return model, device
 
 
@@ -89,7 +90,7 @@ class CustomGoogLeNet(GoogLeNet):
         return x
 
 
-def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtask=False):
+def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtask=False, _only_segtask=False):
     model = None
     if use_pretrained:
         if modelname.startswith('resnet101'):
@@ -148,10 +149,13 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
         if modelname == 'resnet18':
             model = resnet18(class_num)
         elif modelname == 'unetr':
-            if _have_segtask:
-                model = UNETR()
+            if _only_segtask:
+                model = UNETRseg()
             else:
-                model = UNETRcls()
+                if _have_segtask:
+                    model = UNETR()
+                else:
+                    model = UNETRcls()
         elif modelname == 'unet':
             model = UNet(3, 1)
         elif modelname == 'Net':
@@ -167,6 +171,48 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
         elif modelname == 'ViT':
             model = ViT_model(256, 32, 3)   # 256是输入图片的大小，32是patch的大小，3是类别数
     return model
+
+
+def GetTPFP(predicted, targets4):
+    predicted = predicted.squeeze().long()
+    tp = torch.sum((predicted == 0) & (targets4 == 0)).item()
+    fp = torch.sum((predicted == 0) & (targets4 == 1)).item()
+    tn = torch.sum((predicted == 1) & (targets4 == 1)).item()
+    fn = torch.sum((predicted == 1) & (targets4 == 0)).item()
+    return tp, fp, tn, fn
+
+
+def PrintTrainInfo(_only_segtask, epoch, epoch_num, epoch_tp, epoch_fp, epoch_tn, epoch_fn, num_zero, num_one,
+                   tmp_pre, tmp_tar, writer, Iter):
+    precision, recall, f1_score, acc = 0, 0, 0, 0
+    if not _only_segtask:
+        # 计算精确率（Precision）、召回率（Recall）和F1分数
+        precision = epoch_tp / (epoch_tp + epoch_fp) if epoch_tp + epoch_fp > 0 else 0
+        recall = epoch_tp / (epoch_tp + epoch_fn) if epoch_tp + epoch_fn > 0 else 0
+        f1_score = 2 * precision * recall / (precision + recall) if precision + recall > 0 else 0
+        acc = (epoch_tp + epoch_tn) / (epoch_tp + epoch_tn + epoch_fp + epoch_fn)
+        print(
+            f'Epoch: {epoch + 1}/{epoch_num},'
+            f' Precision: {precision:.4f},'
+            f' Recall: {recall:.4f},'
+            f' F1-score: {f1_score:.4f},'
+            f' Accuracy: {acc:.4f}'
+        )
+
+        # 打印num_zero和num_one
+        print('num_zero: ', num_zero)
+        print('num_one: ', num_one)
+        print('\npredicted = ', tmp_pre)
+        print('targets4 = ', tmp_tar)
+        print('epoch_tp = ', epoch_tp, 'epoch_fp = ', epoch_fp, 'epoch_tn = ', epoch_tn, 'epoch_fn = ', epoch_fn)
+
+        if epoch % 3 == 0:
+            writer.add_scalars('Accuracy', {'train acc': acc}, Iter)
+            writer.add_scalars('precision', {'train precision': precision}, Iter)
+            writer.add_scalars('recall', {'train recall': recall}, Iter)
+            writer.add_scalars('f1_score', {'train f1_score': f1_score}, Iter)
+
+    return precision, recall, f1_score, acc
 
 
 def update_lr(lr, optimizer):

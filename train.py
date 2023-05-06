@@ -232,9 +232,9 @@ def breast_loader(batch_size, testbs, validate_flag):
     return train_loader, valid_loader, test_loader
 
 
-def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask):
+def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _only_segtask):
     project = Project  # project name-----------------------------------------------------
-    epoch_num = 700  # epoch_num -----------------------------------------------------
+    epoch_num = 500  # epoch_num -----------------------------------------------------
     class_num = 1  # class_num -----------------------------------------------------
     lr = lr  # 学习率  -----------------------------------------------------
     validate_flag = False  # 是否使用验证集 -----------------------------------------------------
@@ -245,7 +245,7 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask):
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_ratio = 0.01  # 学习率下降的比例 -----------------------------------------------------
     bs = Bs  # batch_size -----------------------------------------------------
-    testbs = 10  # test_batch_size -----------------------------------------------------
+    testbs = 5  # test_batch_size -----------------------------------------------------
     L = 0.5  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = Use_pretrained  # 是否使用预训练模型 -----------------------------------------------------
     model_name = Model_name  # 模型名字 -----------------------------------------------------
@@ -261,9 +261,13 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask):
     is_train = True
     is_test = True  # False
     is_continue_train = False
-    _have_segtask = _have_segtask
+    _only_segtask = _only_segtask
+    if _only_segtask:
+        _have_segtask = True
+    else:
+        _have_segtask = _have_segtask
 
-    model = utils.InitModel(model_name, use_pretrained, class_num, _have_segtask)  # ---------------------------------------------
+    model = utils.InitModel(model_name, use_pretrained, class_num, _have_segtask, _only_segtask)  # ---------------------------------------------
 
     print(getModelSize(model))
     print('project: ', project)
@@ -286,9 +290,16 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask):
         print('load model')
 
     if is_train:
+        SElist = []
+        PClist = []
+        F1list = []
+        JSlist = []
+        DClist = []
+        IOUlist = []
+        Acclist = []
         torch.autograd.set_detect_anomaly(True)
         Iter = seg_loss = 0
-
+        tmp_pre = tmp_tar = None
         utils.Mkdir(save_model_dir)
         log_dir = os.path.join(log_dir, project)
         utils.Mkdir(log_dir)
@@ -324,84 +335,66 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask):
                     targets4 = targets4.to(device)
                     if _have_segtask:
                         targets1 = targets1.to(device)
-                if _have_segtask:
-                    targets4v = targets4.view(-1, 1)
-                    targets4v = targets4v.to(torch.float)
-                    outputs, segout = model(inputs)
-                    segout = torch.sigmoid(segout)
+                if _only_segtask:
+                    segout = model(inputs)
                     seg_loss = criterion_seg(segout, targets1)
-                    seg_running_loss += seg_loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
+                    seg_running_loss += seg_loss.item()
+                    loss = seg_loss
+                    SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1)
+                    # 将这些指标存到一个list里面，方便后面计算平均值
+                    SElist.append(SE)
+                    PClist.append(PC)
+                    F1list.append(F1)
+                    JSlist.append(JS)
+                    DClist.append(DC)
+                    IOUlist.append(IOU)
+                    Acclist.append(Acc)
                 else:
-                    targets4v = targets4.view(-1, 1)
-                    targets4v = targets4v.to(torch.float)
-                    outputs = model(inputs)
+                    if _have_segtask:
+                        outputs, segout = model(inputs)
+                        segout = torch.sigmoid(segout)
+                        seg_loss = criterion_seg(segout, targets1)
+                        seg_running_loss += seg_loss.item()
+                    else:
+                        outputs = model(inputs)
 
-                if class_num > 2:
-                    labels = F.softmax(outputs, dim=1)  # -----------------------------------------------------
-                    _, predicted = torch.max(labels.data, 1)
-                    cls_loss = criterion_cls(outputs, targets4)
-                else:  # 如果是二分类，就用sigmoid
-                    labels = torch.sigmoid(outputs)
-                    predicted = torch.round(labels)
-                    cls_loss = criterion_cls(outputs, targets4v)
-                if _have_segtask:
-                    loss = L * seg_loss + (1 - L) * cls_loss
-                else:
-                    loss = cls_loss
+                    if class_num > 2:
+                        labels = F.softmax(outputs, dim=1)  # -----------------------------------------------------
+                        _, predicted = torch.max(labels.data, 1)
+                        cls_loss = criterion_cls(outputs, targets4)
+                    else:  # 如果是二分类，就用sigmoid
+                        labels = torch.sigmoid(outputs)
+                        predicted = torch.round(labels)
+                        targets4v = targets4.view(-1, 1)
+                        targets4v = targets4v.to(torch.float)
+                        cls_loss = criterion_cls(outputs, targets4v)
+                    if _have_segtask:
+                        loss = L * seg_loss + (1 - L) * cls_loss
+                    else:
+                        loss = cls_loss
+                    cls_running_loss += cls_loss.item()
 
-                # 计算TP, FP, TN, FN
-                predicted = predicted.squeeze().long()
-                tp = torch.sum((predicted == 0) & (targets4 == 0)).item()
-                fp = torch.sum((predicted == 0) & (targets4 == 1)).item()
-                tn = torch.sum((predicted == 1) & (targets4 == 1)).item()
-                fn = torch.sum((predicted == 1) & (targets4 == 0)).item()
+                    # 计算TP, FP, TN, FN
+                    tp, fp, tn, fn = utils.GetTPFP(predicted, targets4)
 
-                epoch_tp += tp
-                epoch_fp += fp
-                epoch_tn += tn
-                epoch_fn += fn
+                    epoch_tp += tp
+                    epoch_fp += fp
+                    epoch_tn += tn
+                    epoch_fn += fn
 
-                if i == 0:
-                    predicted = predicted.detach()
-                    predicted = predicted.long()
-                    predicted = predicted.cpu()
-                    targets4 = targets4.cpu()
-                    predicted = predicted.squeeze()
-                    tmp_pre = predicted
-                    tmp_tar = targets4
+                    if i == 0:
+                        tmp_pre = predicted.detach().long().cpu().squeeze()
+                        tmp_tar = targets4.cpu()
 
                 loss.backward()
                 optimizer.step()
                 optimizer.zero_grad()
 
-                cls_running_loss += cls_loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
-                running_loss += loss.item()  # loss.item()是一个batch的loss, running_loss是所有batch的loss之和
-                writer.add_scalars('Loss', {'cls_running_loss': cls_running_loss}, Iter)
-                if _have_segtask:
-                    writer.add_scalars('Loss', {'seg_running_loss': seg_running_loss}, Iter)
-                writer.add_scalars('Loss', {'running_loss': running_loss}, Iter)
+                running_loss += loss.item()
 
-            # 计算精确率（Precision）、召回率（Recall）和F1分数
-            precision = epoch_tp / (epoch_tp + epoch_fp) if epoch_tp + epoch_fp > 0 else 0
-            recall = epoch_tp / (epoch_tp + epoch_fn) if epoch_tp + epoch_fn > 0 else 0
-            f1_score = 2 * precision * recall / (precision + recall) if precision + recall > 0 else 0
-            acc = (epoch_tp + epoch_tn) / (epoch_tp + epoch_tn + epoch_fp + epoch_fn)
-            print(
-                f'Epoch: {epoch + 1}/{epoch_num},'
-                f' Precision: {precision:.4f},'
-                f' Recall: {recall:.4f},'
-                f' F1-score: {f1_score:.4f},'
-                f' Accuracy: {acc:.4f}'
-            )
-
-            # 打印num_zero和num_one
-            print('num_zero: ', num_zero)
-            print('num_one: ', num_one)
-            print('\npredicted = ', tmp_pre)
-            print('targets4 = ', tmp_tar)
-            print('epoch_tp = ', epoch_tp, 'epoch_fp = ', epoch_fp, 'epoch_tn = ', epoch_tn, 'epoch_fn = ', epoch_fn)
-
-
+            precision, recall, f1_score, acc = \
+                utils.PrintTrainInfo(_only_segtask, epoch, epoch_num, epoch_tp, epoch_fp, epoch_tn, epoch_fn, num_zero,
+                                     num_one, tmp_pre, tmp_tar, writer, Iter)
             # 计时结束
             t.ticend()
             t.printtime(content)
@@ -418,15 +411,22 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask):
             # 保存模型策略
             utils.SaveModel(model, epoch, epoch_cls_loss, save_model_dir)
 
+            # 输出分割指标
+            if _have_segtask:
+                print('train set segmentation output',
+                      'SE = %.3f, PC = %.3f, F1 = %.3f, JS = %.3f, DC = %.3f, IOU = %.3f, Acc = %.3f' % (
+                          sum(SElist) / len(SElist), sum(PClist) / len(PClist), sum(F1list) / len(F1list),
+                          sum(JSlist) / len(JSlist),
+                          sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))
+                writer.add_scalars('train/IOU', {'IOU': sum(IOUlist) / len(IOUlist)}, epoch)
+                writer.add_scalars('train/DC', {'DC': sum(DClist) / len(DClist)}, epoch)
+
             print('Iter = ', Iter)
             writer.add_scalars('Lr', {'lr': utils.GetCurrentLr(optimizer)}, epoch)
             if epoch % 3 == 0:
-                writer.add_scalars('Accuracy', {'train acc': acc}, Iter)
-                writer.add_scalars('precision', {'train precision': precision}, Iter)
-                writer.add_scalars('recall', {'train recall': recall}, Iter)
-                writer.add_scalars('f1_score', {'train f1_score': f1_score}, Iter)
                 # test.trainvalid('train', datas, model, device, writer, Iter, class_num, _have_segtask)
-                test.trainvalid('valid', valid_loader, model, device, writer, Iter, class_num, _have_segtask)
+                test.trainvalid('valid', valid_loader, model, device, writer, Iter, class_num, _have_segtask,
+                                _only_segtask)
 
             t.ticend()
             t.printtime(contentvalid)
@@ -442,7 +442,7 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask):
     if is_test:
         mini_loss_model = save_model_dir + '/miniclsloss' + '.pth'
         model.load_state_dict(torch.load(mini_loss_model))
-        test.test('test', test_loader, model, device, class_num, _have_segtask)
+        test.test('test', test_loader, model, device, class_num, _have_segtask, _only_segtask)
     print('\nFinished Testing\n')
 
 
@@ -542,7 +542,7 @@ if __name__ == '__main__':
     # model_name = 'unetr'
     # use_pretrained = False
 
-    Train_breast('unetr_cls2seg_bce_2', 30, 'unetr', 1e-3, False, True)
+    Train_breast('unetr_olseg_3', 30, 'unetr', 1e-3, False, True, True)
     # Train_breast('efficientnetb7_cls2_0', 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
     # Train_breast('xception_cls2bce_1', 20, 'xception', 1e-5, True, False)
