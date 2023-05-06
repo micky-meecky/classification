@@ -193,8 +193,8 @@ class Transformer(nn.Module):
 
 
 class UNETR(nn.Module):
-    def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
-                 dropout=0.2, batch_size=10):
+    def __init__(self, img_shape=(256, 256), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
+                 dropout=0.1, batch_size=10):
         super().__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -205,10 +205,10 @@ class UNETR(nn.Module):
         self.dropout = dropout
         self.num_layers = 12
         self.ext_layers = [3, 6, 9, 12]
-        # self.linear = nn.Linear(embed_dim * 1, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
-        self.fc1 = nn.Linear(embed_dim * 1, 512)
-        self.dropout1 = nn.Dropout(0.2)
-        self.fc2 = nn.Linear(512, self.output_dim)
+        self.linear = nn.Linear(embed_dim * 1, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
+        # self.fc1 = nn.Linear(embed_dim * 1, 512)
+        # self.dropout1 = nn.Dropout(0.1)
+        # self.fc2 = nn.Linear(512, self.output_dim)
 
         self.patch_dim = [int(x / patch_size) for x in img_shape]
 
@@ -243,12 +243,12 @@ class UNETR(nn.Module):
         # flatten
         z12c = z12c.view(z12c.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
         # dropout
-        z12c = F.dropout(z12c, p=self.dropout, training=self.training)
+        # z12c = F.dropout(z12c, p=self.dropout, training=self.training)
         # linear
-        # z12 = self.linear(z12)  # shape: (batch_size, 3)
-        z12c = self.fc1(z12c)
-        z12c = self.dropout1(z12c)
-        z12c = self.fc2(z12c)
+        z12 = self.linear(z12)  # shape: (batch_size, 3)
+        # z12c = self.fc1(z12c)
+        # z12c = self.dropout1(z12c)
+        # z12c = self.fc2(z12c)
 
 
 
@@ -309,7 +309,6 @@ class UNETRcls(nn.Module):
         z12c = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
         z12c = z12c.view(z12c.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
         z12c = F.dropout(z12c, p=self.dropout, training=self.training)
-        # z12 = self.linear(z12)  # shape: (batch_size, 3)
         z12c = self.fc1(z12c)
         z12c = self.dropout1(z12c)
         z12c = self.fc2(z12c)

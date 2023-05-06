@@ -190,7 +190,7 @@ def breast_loader(batch_size, testbs, validate_flag):
     fold_id = 1
     distance_type = "dist_mask"
     normal_flag = False
-    image_size = 224
+    image_size = 256
     num_workers = 6
 
     print('batch_size: ', batch_size)
@@ -246,7 +246,7 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask):
     decay_ratio = 0.01  # 学习率下降的比例 -----------------------------------------------------
     bs = Bs  # batch_size -----------------------------------------------------
     testbs = 10  # test_batch_size -----------------------------------------------------
-    L = 0.2  # 代表的是seg_loss的权重 -----------------------------------------------------
+    L = 0.5  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = Use_pretrained  # 是否使用预训练模型 -----------------------------------------------------
     model_name = Model_name  # 模型名字 -----------------------------------------------------
     log_dir = './log/log'
@@ -537,12 +537,15 @@ def Train_Mnist():
 
 if __name__ == '__main__':
     # Train_Mnist()
-    project = 'unetr_cls2seg_bce_1'
-    bs = 30
-    model_name = 'unetr'
-    use_pretrained = False
+    # project = 'unetr_cls2seg_bce_1'
+    # bs = 30
+    # model_name = 'unetr'
+    # use_pretrained = False
 
-    Train_breast(project, bs, model_name, 1e-3, use_pretrained, True)
+    Train_breast('unetr_cls2seg_bce_2', 30, 'unetr', 1e-3, False, True)
     # Train_breast('efficientnetb7_cls2_0', 30, 'efficientnet', 1e-4, True, False)
-    Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
-    Train_breast('xception_cls2bce_1', 20, 'xception', 1e-5, True, False)
+    # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
+    # Train_breast('xception_cls2bce_1', 20, 'xception', 1e-5, True, False)
+    # Train_breast('mobilenetv3_cls2bce_0', 40, 'mobilenetv3', 1e-6, True, False)
+    # Train_breast('resnest14d_cls2_bce_0', 30, 'resnest14d', 1e-6, True, False)
+

@@ -135,6 +135,12 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
             model.fc = nn.Linear(model.fc.in_features, num_classes)
             # 修改输入通道数
             model.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        if modelname.startswith('mobilenetv3'):
+            torch.hub.set_dir("./mymodels/downloaded_models")
+            model = timm.create_model('mobilenetv3_large_100', pretrained=True, in_chans=1, num_classes=1)
+        if modelname.startswith('resnest14d'):
+            torch.hub.set_dir("./mymodels/downloaded_models")
+            model = timm.create_model('resnest14d', pretrained=True, in_chans=1, num_classes=1)
 
 
 
