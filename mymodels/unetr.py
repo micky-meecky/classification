@@ -245,7 +245,7 @@ class UNETR(nn.Module):
         # dropout
         # z12c = F.dropout(z12c, p=self.dropout, training=self.training)
         # linear
-        z12 = self.linear(z12)  # shape: (batch_size, 3)
+        z12c = self.linear(z12c)  # shape: (batch_size, 3)
         # z12c = self.fc1(z12c)
         # z12c = self.dropout1(z12c)
         # z12c = self.fc2(z12c)
