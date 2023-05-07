@@ -10,7 +10,11 @@ class SoftDiceLoss(nn.Module):
 
     def forward(self, probs, targets):
         num = targets.size(0)   # batch_size
-        smooth = 0.01
+        if num == 1:
+            print('Error: SoftDiceLoss dice loss can not be computed with batch_size = 1')
+        if num == 0:
+            print('Error: SoftDiceLoss dice loss can not be computed with batch_size = 0')
+        smooth = 1
 
         # 针对每一个batch中的每一个样本，计算其dice loss
         loss = 0
@@ -27,12 +31,11 @@ class SoftDiceLoss(nn.Module):
             # 计算acc
             corr = np.sum(SR == GT)
             acc = float(corr) / float(SR.shape[0])
-            if acc == 1:
-                score = 1
-            else:
+            score = 1.  # 转换为tensor
+            score = torch.from_numpy(np.array(score)).float().cuda()
+            if acc != 1:
                 score = 2. * (intersection.sum() + smooth) / (m1.sum() + m2.sum() + smooth)
-            score = 1 - score
-            loss += score
+            loss += 1 - score
         loss = loss / num
         return loss
 

@@ -245,7 +245,7 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_ratio = 0.01  # 学习率下降的比例 -----------------------------------------------------
     bs = Bs  # batch_size -----------------------------------------------------
-    testbs = 3  # test_batch_size -----------------------------------------------------
+    testbs = 1  # test_batch_size -----------------------------------------------------
     L = 0.5  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = Use_pretrained  # 是否使用预训练模型 -----------------------------------------------------
     model_name = Model_name  # 模型名字 -----------------------------------------------------
@@ -304,7 +304,7 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
         log_dir = os.path.join(log_dir, project)
         utils.Mkdir(log_dir)
         writer = SummaryWriter(log_dir=log_dir)
-        datas = test_loader  # -----------------------------------------------------
+        datas = train_loader  # -----------------------------------------------------
         for epoch in range(epoch_num):
             t.ticbegin()
             te.ticbegin()
@@ -316,6 +316,7 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
             num_zero = 0
             num_one = 0
             epoch_tp, epoch_fp, epoch_tn, epoch_fn = 0, 0, 0, 0
+            model.train()
             for i, data in tqdm(enumerate(datas, 0), total=len(datas)):
                 (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
                 Iter += 1
@@ -390,8 +391,8 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
                         tmp_tar = targets4.cpu()
 
                 loss.backward()
+                optimizer.zero_grad()
                 optimizer.step()
-                model.zero_grad()
 
                 running_loss += loss.item()
 
