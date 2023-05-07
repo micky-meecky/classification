@@ -268,6 +268,7 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
         _have_segtask = _have_segtask
 
     model = utils.InitModel(model_name, use_pretrained, class_num, _have_segtask, _only_segtask)  # ---------------------------------------------
+    utils.init_weights(model)
 
     print(getModelSize(model))
     print('project: ', project)
@@ -304,7 +305,7 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
         log_dir = os.path.join(log_dir, project)
         utils.Mkdir(log_dir)
         writer = SummaryWriter(log_dir=log_dir)
-        datas = train_loader  # -----------------------------------------------------
+        datas = test_loader  # -----------------------------------------------------
         for epoch in range(epoch_num):
             t.ticbegin()
             te.ticbegin()

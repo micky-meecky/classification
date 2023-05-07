@@ -17,6 +17,7 @@ from torch.optim.lr_scheduler import _LRScheduler
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torchvision import models
 from torchvision.models.googlenet import GoogLeNet
+import torch.nn.init as init
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 
@@ -271,6 +272,21 @@ def AdjustLr(lr_sch, optimizer, epoch, lr_cos_epoch, lr_warm_epoch, num_epochs_d
                 print('Decay learning rate to lr: {}.'.format(lr))
 
     return lr_sch, optimizer
+
+
+# 初始化网络权重
+def init_weights(model):
+    for m in model.modules():
+        if isinstance(m, nn.Conv2d):
+            # 随机初始化
+            init.uniform_(m.weight)
+            # Xavier 初始化
+            init.xavier_uniform_(m.weight)
+            # He 初始化
+            init.kaiming_uniform_(m.weight)
+            # 偏置初始化
+            if m.bias is not None:
+                init.zeros_(m.bias)
 
 
 def GetCurrentLr(optimizer):
