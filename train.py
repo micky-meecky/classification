@@ -240,7 +240,7 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
     validate_flag = False  # 是否使用验证集 -----------------------------------------------------
     lr_low = 1e-12  # 学习率下限  ------------------------------------------------------
     lr_warm_epoch = 5  # warm up 的 epoch 数 -----------------------------------------------------
-    lr_cos_epoch = 400  # 学习率下降的epoch数 -----------------------------------------------------
+    lr_cos_epoch = epoch_num - lr_warm_epoch - 10  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_ratio = 0.01  # 学习率下降的比例 -----------------------------------------------------
@@ -323,15 +323,15 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
                 optimizer.zero_grad()
                 Iter += 1
                 # (inputs, targets4) = data
-                if class_num <= 2:
-                    # 将标签进行修改
-                    targets4[targets4 == 0] = 0
-                    targets4[targets4 == 1] = 0
-                    targets4[targets4 == 2] = 1
+                # if class_num <= 2:
+                #     # 将标签进行修改
+                #     targets4[targets4 == 0] = 0
+                #     targets4[targets4 == 1] = 0
+                #     targets4[targets4 == 2] = 1
 
-                    # 将这里面的所有标签为0的统计个数，存在num_zero中
-                    num_zero += (targets4 == 0).sum().item()
-                    num_one += (targets4 == 1).sum().item()
+                    # # 将这里面的所有标签为0的统计个数，存在num_zero中
+                    # num_zero += (targets4 == 0).sum().item()
+                    # num_one += (targets4 == 1).sum().item()
 
                 if torch.cuda.is_available():
                     inputs = inputs.to(device)
@@ -395,7 +395,6 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
                         tmp_tar = targets4.cpu()
 
                     loss.backward()
-                    optimizer.zero_grad()
                     optimizer.step()
 
                 running_loss += loss.item()
