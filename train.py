@@ -391,7 +391,7 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
 
                 loss.backward()
                 optimizer.step()
-                optimizer.zero_grad()
+                model.zero_grad()
 
                 running_loss += loss.item()
 

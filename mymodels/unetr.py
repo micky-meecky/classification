@@ -388,6 +388,66 @@ class SwinSelfAttention(nn.Module):
         return attention_output
 
 
+class WindowAttention(nn.Module):
+    def __init__(self, window_size, num_heads, embed_dim, dropout):
+        super().__init__()
+        self.window_size = window_size
+        self.num_heads = num_heads
+        self.embed_dim = embed_dim
+        self.attn = SwinSelfAttention(num_heads, embed_dim, dropout)
+
+    def forward(self, x, H, W, attention_mask=None):
+        B, N, C = x.shape
+        x = x.view(B, H // self.window_size, self.window_size, W // self.window_size, self.window_size, C)
+        x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(B, -1, self.window_size * self.window_size, C)
+
+        if attention_mask is not None:
+            attention_mask = attention_mask.view(B, H // self.window_size, self.window_size, W // self.window_size, self.window_size)
+            attention_mask = attention_mask.permute(0, 1, 3, 2, 4).contiguous().view(B, -1, self.window_size * self.window_size)
+
+        attn_out = self.attn(x, attention_mask)
+        attn_out = attn_out.view(B, H // self.window_size, W // self.window_size, self.window_size, self.window_size, C)
+        attn_out = attn_out.permute(0, 1, 3, 2, 4, 5).contiguous().view(B, N, C)
+
+        return attn_out
+
+
+class SwinTransformerBlock(nn.Module):
+    def __init__(self, embed_dim, num_heads, window_size, dropout):
+        super().__init__()
+        self.norm1 = nn.LayerNorm(embed_dim)
+        self.attn = WindowAttention(window_size, num_heads, embed_dim, dropout)
+        self.norm2 = nn.LayerNorm(embed_dim)
+        self.ffn = PositionwiseFeedForward(embed_dim, 2048, dropout)
+
+    def forward(self, x, H, W, attention_mask=None):
+        attn_out = self.attn(self.norm1(x), H, W, attention_mask)
+        x = x + attn_out
+        ffn_out = self.ffn(self.norm2(x))
+        x = x + ffn_out
+        return x
+
+
+class SwinTransformerEncoder(nn.Module):
+    def __init__(self, input_dim, embed_dim, img_shape, patch_size, num_heads, num_layers, dropout, window_size):
+        super().__init__()
+        self.embeddings = SwinEmbeddings(input_dim, embed_dim, img_shape, patch_size, dropout)
+        self.layers = nn.ModuleList()
+        for _ in range(num_layers):
+            layer = SwinTransformerBlock(embed_dim, num_heads, window_size, dropout)
+            self.layers.append(layer)
+
+    def forward(self, x):
+        H, W = x.shape[-2], x.shape[-1]
+        x = self.embeddings(x)
+        H, W = H // self.embeddings.patch_size, W // self.embeddings.patch_size
+        x = x.view(x.shape[0], H, W, -1).permute(0, 3, 1, 2).contiguous()
+
+        for layer in self.layers:
+            x = layer(x, H, W)
+
+        return x
+
 
 class UNETRseg(nn.Module):
     def __init__(self, img_shape=(256, 256), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
