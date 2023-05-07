@@ -260,7 +260,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     contenttotal = "----total cost: "
     is_train = True
     is_test = True  # False
-    is_continue_train = True
+    is_continue_train = False
     _only_segtask = _only_segtask
     if _only_segtask:
         _have_segtask = True
