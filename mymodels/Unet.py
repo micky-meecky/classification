@@ -92,20 +92,20 @@ class UNet(nn.Module):
         self.down3 = (Down(256, 512))
         factor = 2 if bilinear else 1
         self.down4 = (Down(512, 1024 // factor))
-        self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
-        # self.up1 = (Up(1024, 512 // factor, bilinear))
-        # self.up2 = (Up(512, 256 // factor, bilinear))
-        # self.up3 = (Up(256, 128 // factor, bilinear))
-        # self.up4 = (Up(128, 64, bilinear))
-        # self.outc = (OutConv(64, n_classes))
+        # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
+        self.up1 = (Up(1024, 512 // factor, bilinear))
+        self.up2 = (Up(512, 256 // factor, bilinear))
+        self.up3 = (Up(256, 128 // factor, bilinear))
+        self.up4 = (Up(128, 64, bilinear))
+        self.outc = (OutConv(64, n_classes))
         self.activation = nn.Sigmoid()
 
         # classification head
         # self.linear = nn.Linear(1984, 3)
-        self.linear1 = nn.Linear(1024, 512)
-        self.dropout = nn.Dropout(0.5)
-        self.linear2 = nn.Linear(512, 10)
-        self.logsoftmax = nn.LogSoftmax(dim=1)
+        # self.linear1 = nn.Linear(1024, 512)
+        # self.dropout = nn.Dropout(0.5)
+        # self.linear2 = nn.Linear(512, 10)
+        # self.logsoftmax = nn.LogSoftmax(dim=1)
 
     def forward(self, x):
         # encoder
@@ -120,7 +120,7 @@ class UNet(nn.Module):
         # print('x3.shape', x3.shape)
         # print('x2.shape', x2.shape)
         # print('x1.shape', x1.shape)
-
+        #
         # x5_upsampled = self.upsample(x5)
         # x4_upsampled = self.upsample(x4)
         # x3_upsampled = self.upsample(x3)
@@ -136,25 +136,29 @@ class UNet(nn.Module):
         # features_concatenated = torch.cat([x1, x2_upsampled, x3_upsampled, x4_upsampled, x5_upsampled], dim=1)
         # print('features_concatenated.shape', features_concatenated.shape)
 
-        # # decoder
-        # x = self.up1(x5, x4)
-        # x = self.up2(x, x3)
-        # x = self.up3(x, x2)
-        # x = self.up4(x, x1)
-        #
-        # # segmentation head
-        # logits = self.outc(x)
+        # decoder
+        x = self.up1(x5, x4)
+
+        x = self.up2(x, x3)
+
+        x = self.up3(x, x2)
+
+        x = self.up4(x, x1)
+
+
+        # segmentation head
+        logits = self.outc(x)
         # logits = self.activation(logits)
 
         # classification head
-        clsx = F.adaptive_avg_pool2d(x5, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
-        clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
-        label = self.linear1(clsx)  # [1024, 512]
-        label = self.dropout(label)
-        label = self.linear2(label)  # [512, 10]
+        # clsx = F.adaptive_avg_pool2d(x5, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
+        # clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
+        # label = self.linear1(clsx)  # [1024, 512]
+        # label = self.dropout(label)
+        # label = self.linear2(label)  # [512, 10]
         # label = self.logsoftmax(label)  # [batch_size, 3]
 
-        return label
+        return logits
 
     def use_checkpointing(self):
         self.inc = torch.utils.checkpoint(self.inc)
@@ -167,4 +171,14 @@ class UNet(nn.Module):
         self.up3 = torch.utils.checkpoint(self.up3)
         self.up4 = torch.utils.checkpoint(self.up4)
         self.outc = torch.utils.checkpoint(self.outc)
+
+if __name__ == '__main__':
+    model = UNet(3, 3)
+    model.eval()
+    input = torch.randn(1, 3, 256, 256)
+    label = torch.randn(1, 3, 256, 256)
+    output = model(input)
+    print(output.shape)
+
+
 

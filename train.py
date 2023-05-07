@@ -245,7 +245,7 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_ratio = 0.01  # 学习率下降的比例 -----------------------------------------------------
     bs = Bs  # batch_size -----------------------------------------------------
-    testbs = 5  # test_batch_size -----------------------------------------------------
+    testbs = 3  # test_batch_size -----------------------------------------------------
     L = 0.5  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = Use_pretrained  # 是否使用预训练模型 -----------------------------------------------------
     model_name = Model_name  # 模型名字 -----------------------------------------------------
@@ -304,7 +304,7 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
         log_dir = os.path.join(log_dir, project)
         utils.Mkdir(log_dir)
         writer = SummaryWriter(log_dir=log_dir)
-        datas = train_loader  # -----------------------------------------------------
+        datas = test_loader  # -----------------------------------------------------
         for epoch in range(epoch_num):
             t.ticbegin()
             te.ticbegin()
@@ -341,7 +341,7 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
                     SR_flat = segout.view(segout.size(0), -1)
                     GT_flat = targets1.view(targets1.size(0), -1)
                     seg_loss = criterion_seg(SR_flat, GT_flat)
-                    seg_running_loss += seg_loss.item()
+                    seg_running_loss += seg_loss
                     loss = seg_loss
                     SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
                     # 将这些指标存到一个list里面，方便后面计算平均值
@@ -545,7 +545,7 @@ if __name__ == '__main__':
     # model_name = 'unetr'
     # use_pretrained = False
 
-    Train_breast('unetr_olseg_3', 30, 'unetr', 1, False, True, True)
+    Train_breast('UNet_olseg_0', 30, 'unet', 1, False, True, True)
     # Train_breast('efficientnetb7_cls2_0', 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
     # Train_breast('xception_cls2bce_1', 20, 'xception', 1e-5, True, False)
