@@ -232,7 +232,7 @@ def breast_loader(batch_size, testbs, validate_flag):
     return train_loader, valid_loader, test_loader
 
 
-def Train_breast(Project, Bs, Model_name, lr, epoch, Use_pretrained, _have_segtask, _only_segtask):
+def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segtask, _only_segtask):
     project = Project  # project name-----------------------------------------------------
     epoch_num = epoch  # epoch_num -----------------------------------------------------
     class_num = 1  # class_num -----------------------------------------------------
