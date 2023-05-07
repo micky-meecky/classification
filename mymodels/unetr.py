@@ -451,7 +451,7 @@ class SwinTransformerEncoder(nn.Module):
 
 class UNETRseg(nn.Module):
     def __init__(self, img_shape=(256, 256), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
-                 dropout=0.1, batch_size=10):
+                 dropout=0.1):
         super().__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -485,45 +485,63 @@ class UNETRseg(nn.Module):
                                              SingleConv2DBlock(64, output_dim, 1))
 
     def forward(self, x):
+        # z = self.transformer(x)
+        # z0, z3, z6, z9, z12 = x, *z
+        # # print('z0 shape is ', z0.shape)
+        # # print('z3 shape is ', z3.shape)
+        # # print('z6 shape is ', z6.shape)
+        # # print('z9 shape is ', z9.shape)
+        # # print('z12 shape is ', z12.shape)
+        #
+        # z3 = z3.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)  # *self.
+        # z6 = z6.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
+        # z9 = z9.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
+        # z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)   # shape: (batch_size, 768, 16, 16)
+        # # print('z0 shape is ', z0.shape)
+        # # print('z3 shape is ', z3.shape)
+        # # print('z6 shape is ', z6.shape)
+        # # print('z9 shape is ', z9.shape)
+        # # print('z12 shape is ', z12.shape)
+        #
+        # z12 = self.decoder12_upsampler(z12)
+        # # print('z12 shape is ', z12.shape)
+        # z9 = self.decoder9(z9)
+        # # print('z9 shape is ', z9.shape)
+        # z9 = self.decoder9_upsampler(torch.cat([z9, z12], dim=1))
+        # # print('z9 shape is ', z9.shape)
+        # z6 = self.decoder6(z6)
+        # # print('z6 shape is ', z6.shape)
+        # z6 = self.decoder6_upsampler(torch.cat([z6, z9], dim=1))
+        # # print('z6 shape is ', z6.shape)
+        # z3 = self.decoder3(z3)
+        # # print('z3 shape is ', z3.shape)
+        # z3 = self.decoder3_upsampler(torch.cat([z3, z6], dim=1))
+        # # print('z3 shape is ', z3.shape)
+        # z0 = self.decoder0(z0)
+        # # print('z0 shape is ', z0.shape)
+        # output = self.decoder0_header(torch.cat([z0, z3], dim=1))
+        # # print('output shape is ', output.shape)
+        #
+        # return output
+
         z = self.transformer(x)
         z0, z3, z6, z9, z12 = x, *z
-        # print('z0 shape is ', z0.shape)
-        # print('z3 shape is ', z3.shape)
-        # print('z6 shape is ', z6.shape)
-        # print('z9 shape is ', z9.shape)
-        # print('z12 shape is ', z12.shape)
-
-        z3 = z3.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)  # *self.
+        z3 = z3.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
         z6 = z6.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
         z9 = z9.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
-        z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)   # shape: (batch_size, 768, 16, 16)
-        # print('z0 shape is ', z0.shape)
-        # print('z3 shape is ', z3.shape)
-        # print('z6 shape is ', z6.shape)
-        # print('z9 shape is ', z9.shape)
-        # print('z12 shape is ', z12.shape)
+        z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
 
         z12 = self.decoder12_upsampler(z12)
-        # print('z12 shape is ', z12.shape)
         z9 = self.decoder9(z9)
-        # print('z9 shape is ', z9.shape)
         z9 = self.decoder9_upsampler(torch.cat([z9, z12], dim=1))
-        # print('z9 shape is ', z9.shape)
         z6 = self.decoder6(z6)
-        # print('z6 shape is ', z6.shape)
         z6 = self.decoder6_upsampler(torch.cat([z6, z9], dim=1))
-        # print('z6 shape is ', z6.shape)
         z3 = self.decoder3(z3)
-        # print('z3 shape is ', z3.shape)
         z3 = self.decoder3_upsampler(torch.cat([z3, z6], dim=1))
-        # print('z3 shape is ', z3.shape)
         z0 = self.decoder0(z0)
-        # print('z0 shape is ', z0.shape)
         output = self.decoder0_header(torch.cat([z0, z3], dim=1))
-        # print('output shape is ', output.shape)
 
         return output
-
 
 class UNETswin(nn.Module):
     def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=768, patch_size=32, num_heads=12,
