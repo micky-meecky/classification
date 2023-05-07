@@ -232,9 +232,9 @@ def breast_loader(batch_size, testbs, validate_flag):
     return train_loader, valid_loader, test_loader
 
 
-def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _only_segtask):
+def Train_breast(Project, Bs, Model_name, lr, epoch, Use_pretrained, _have_segtask, _only_segtask):
     project = Project  # project name-----------------------------------------------------
-    epoch_num = 500  # epoch_num -----------------------------------------------------
+    epoch_num = epoch  # epoch_num -----------------------------------------------------
     class_num = 1  # class_num -----------------------------------------------------
     lr = lr  # 学习率  -----------------------------------------------------
     validate_flag = False  # 是否使用验证集 -----------------------------------------------------
@@ -322,16 +322,16 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
                 (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
                 optimizer.zero_grad()
                 Iter += 1
-                # (inputs, targets4) = data
-                # if class_num <= 2:
-                #     # 将标签进行修改
-                #     targets4[targets4 == 0] = 0
-                #     targets4[targets4 == 1] = 0
-                #     targets4[targets4 == 2] = 1
+                (inputs, targets4) = data
+                if class_num <= 2:
+                    # 将标签进行修改
+                    targets4[targets4 == 0] = 0
+                    targets4[targets4 == 1] = 0
+                    targets4[targets4 == 2] = 1
 
-                    # # 将这里面的所有标签为0的统计个数，存在num_zero中
-                    # num_zero += (targets4 == 0).sum().item()
-                    # num_one += (targets4 == 1).sum().item()
+                    # 将这里面的所有标签为0的统计个数，存在num_zero中
+                    num_zero += (targets4 == 0).sum().item()
+                    num_one += (targets4 == 1).sum().item()
 
                 if torch.cuda.is_available():
                     inputs = inputs.to(device)
@@ -543,17 +543,11 @@ def Train_Mnist():
 
 
 if __name__ == '__main__':
-    # Train_Mnist()
-    # project = 'unetr_cls2seg_bce_1'
-    # bs = 30
-    # model_name = 'unetr'
-    # use_pretrained = False
-
-    # Train_breast('UNet_olseg_0', 30, 'unet', 1e-3, False, True, True)
-    Train_breast('unetrseg_olseg_0', 30, 'unetr', 1e-2, False, True, True)
+    # Train_breast('UNet_olseg_0', 30, 550, 'unet', 1e-3, False, True, True)
+    Train_breast('unetrseg_olseg_0', 31, 2000, 'unetr', 1e-2, False, True, True)
     # Train_breast('efficientnetb7_cls2_0', 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
     # Train_breast('xception_cls2bce_1', 20, 'xception', 1e-5, True, False)
     # Train_breast('mobilenetv3_cls2bce_0', 40, 'mobilenetv3', 1e-6, True, False)
-    # Train_breast('skresnet18_cls2_bce_0', 30, 'skresnet18', 1e-6, True, False, False)
+    # Train_breast('vgg16_bn_cls2_bce_1', 30, 600, 'vgg16_bn', 1e-6, True, False, False)
 
