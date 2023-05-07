@@ -320,6 +320,7 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
             model.train()
             for i, data in tqdm(enumerate(datas, 0), total=len(datas)):
                 (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
+                optimizer.zero_grad()
                 Iter += 1
                 # (inputs, targets4) = data
                 if class_num <= 2:
@@ -353,6 +354,9 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
                     DClist.append(DC)
                     IOUlist.append(IOU)
                     Acclist.append(Acc)
+
+                    loss.backward()
+                    optimizer.step()
                 else:
                     if _have_segtask:
                         outputs, segout = model(inputs)
@@ -390,9 +394,9 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
                         tmp_pre = predicted.detach().long().cpu().squeeze()
                         tmp_tar = targets4.cpu()
 
-                loss.backward()
-                optimizer.zero_grad()
-                optimizer.step()
+                    loss.backward()
+                    optimizer.zero_grad()
+                    optimizer.step()
 
                 running_loss += loss.item()
 
