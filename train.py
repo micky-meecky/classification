@@ -239,7 +239,7 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
     lr = lr  # 学习率  -----------------------------------------------------
     validate_flag = False  # 是否使用验证集 -----------------------------------------------------
     lr_low = 1e-12  # 学习率下限  ------------------------------------------------------
-    lr_warm_epoch = 1  # warm up 的 epoch 数 -----------------------------------------------------
+    lr_warm_epoch = 5  # warm up 的 epoch 数 -----------------------------------------------------
     lr_cos_epoch = 490  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
@@ -550,7 +550,7 @@ if __name__ == '__main__':
     # use_pretrained = False
 
     # Train_breast('UNet_olseg_0', 30, 'unet', 1e-3, False, True, True)
-    Train_breast('unetrseg_olseg_0', 30, 'unetr', 1e-1, False, True, True)
+    Train_breast('unetrseg_olseg_0', 30, 'unetr', 1e-2, False, True, True)
     # Train_breast('efficientnetb7_cls2_0', 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
     # Train_breast('xception_cls2bce_1', 20, 'xception', 1e-5, True, False)
