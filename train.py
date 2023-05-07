@@ -543,7 +543,7 @@ def Train_Mnist():
 
 
 if __name__ == '__main__':
-    # Train_breast('UNet_olseg_0', 30, 550, 'unet', 1e-3, False, True, True)
+    Train_breast('UNet_olseg_0', 30, 550, 'unet', 1e-3, False, True, True)
     Train_breast('unetrseg_olseg_0', 31, 2000, 'unetr', 1e-2, False, True, True)
     # Train_breast('efficientnetb7_cls2_0', 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
