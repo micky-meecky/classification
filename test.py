@@ -51,7 +51,7 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
                 targets1 = targets1.to(device)
                 segout = model(images)
                 segout = torch.sigmoid(segout)
-                SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1)
+                SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
                 # 将这些指标存到一个list里面，方便后面计算平均值
                 SElist.append(SE)
                 PClist.append(PC)
@@ -64,7 +64,7 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
                 if _have_segtask:
                     labels, segout = model(images)
                     segout = torch.sigmoid(segout)
-                    SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1)
+                    SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
                     # 将这些指标存到一个list里面，方便后面计算平均值
                     SElist.append(SE)
                     PClist.append(PC)
@@ -167,7 +167,7 @@ def test(mode: str, dataloader: DataLoader, model, device: torch.device,
                 targets1 = targets1.to(device)
                 segout = model(images)
                 segout = torch.sigmoid(segout)
-                SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1)
+                SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
                 # 将这些指标存到一个list里面，方便后面计算平均值
                 SElist.append(SE)
                 PClist.append(PC)
@@ -180,7 +180,7 @@ def test(mode: str, dataloader: DataLoader, model, device: torch.device,
                 if _have_segtask:
                     labels, segout = model(images)
                     segout = torch.sigmoid(segout)
-                    SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1)
+                    SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
                     # 将这些指标存到一个list里面，方便后面计算平均值
                     SElist.append(SE)
                     PClist.append(PC)

@@ -142,6 +142,9 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
         if modelname.startswith('resnest14d'):
             torch.hub.set_dir("./mymodels/downloaded_models")
             model = timm.create_model('resnest14d', pretrained=True, in_chans=1, num_classes=1)
+        if modelname.startswith('skresnet18'):
+            torch.hub.set_dir("./mymodels/downloaded_models")
+            model = timm.create_model('skresnet18', pretrained=True, in_chans=1, num_classes=1)
 
 
 

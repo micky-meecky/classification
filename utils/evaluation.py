@@ -243,14 +243,29 @@ def get_IOU(SR, GT, threshold=0.5):
     return IOU
 
 
-def get_all_seg(SR, GT, threshold=0.5):
-    SE = get_sensitivity(SR, GT, threshold=threshold)
-    PC = get_precision(SR, GT, threshold=threshold)
-    F1 = get_F1(SR, GT, threshold=threshold)
-    JS = get_JS(SR, GT, threshold=threshold)
-    DC = get_DC(SR, GT, threshold=threshold)
-    IOU = get_IOU(SR, GT, threshold=threshold)
-    Acc = get_accuracy(SR, GT, threshold=threshold)
+def get_all_seg(SR, GT, device, threshold=0.5):
+    SR = SR.data.cpu().numpy()
+    GT = GT.data.cpu().numpy()
+    SE, PC, F1, JS, DC, IOU, Acc = 0, 0, 0, 0, 0, 0, 0
+    for ii in range(SR.shape[0]):
+        SR_tmp = SR[ii, :].reshape(-1)
+        GT_tmp = GT[ii, :].reshape(-1)
+        SR_tmp = torch.from_numpy(SR_tmp).to(device)
+        GT_tmp = torch.from_numpy(GT_tmp).to(device)
+        SE += get_sensitivity(SR_tmp, GT_tmp, threshold=threshold)
+        PC += get_precision(SR_tmp, GT_tmp, threshold=threshold)
+        F1 += get_F1(SR_tmp, GT_tmp, threshold=threshold)
+        JS += get_JS(SR_tmp, GT_tmp, threshold=threshold)
+        DC += get_DC(SR_tmp, GT_tmp, threshold=threshold)
+        IOU += get_IOU(SR_tmp, GT_tmp, threshold=threshold)
+        Acc += get_accuracy(SR_tmp, GT_tmp, threshold=threshold)
+    SE /= SR.shape[0]
+    PC /= SR.shape[0]
+    F1 /= SR.shape[0]
+    JS /= SR.shape[0]
+    DC /= SR.shape[0]
+    IOU /= SR.shape[0]
+    Acc /= SR.shape[0]
 
     return [SE, PC, F1, JS, DC, IOU, Acc]
 

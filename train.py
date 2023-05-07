@@ -338,10 +338,12 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
                 if _only_segtask:
                     segout = model(inputs)
                     segout = torch.sigmoid(segout)
-                    seg_loss = criterion_seg(segout, targets1)
+                    SR_flat = segout.view(segout.size(0), -1)
+                    GT_flat = targets1.view(targets1.size(0), -1)
+                    seg_loss = criterion_seg(SR_flat, GT_flat)
                     seg_running_loss += seg_loss.item()
                     loss = seg_loss
-                    SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1)
+                    SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
                     # 将这些指标存到一个list里面，方便后面计算平均值
                     SElist.append(SE)
                     PClist.append(PC)
@@ -543,10 +545,10 @@ if __name__ == '__main__':
     # model_name = 'unetr'
     # use_pretrained = False
 
-    Train_breast('unetr_olseg_3', 30, 'unetr', 1e-1, False, True, True)
+    Train_breast('unetr_olseg_3', 30, 'unetr', 1, False, True, True)
     # Train_breast('efficientnetb7_cls2_0', 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
     # Train_breast('xception_cls2bce_1', 20, 'xception', 1e-5, True, False)
     # Train_breast('mobilenetv3_cls2bce_0', 40, 'mobilenetv3', 1e-6, True, False)
-    # Train_breast('resnest14d_cls2_bce_0', 30, 'resnest14d', 1e-6, True, False)
+    # Train_breast('skresnet18_cls2_bce_0', 30, 'skresnet18', 1e-6, True, False, False)
 
