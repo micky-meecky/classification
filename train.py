@@ -322,7 +322,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                 (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
                 optimizer.zero_grad()
                 Iter += 1
-                (inputs, targets4) = data
+                # (inputs, targets4) = data
                 if class_num <= 2:
                     # 将标签进行修改
                     targets4[targets4 == 0] = 0
