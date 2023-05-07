@@ -245,7 +245,7 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_ratio = 0.01  # 学习率下降的比例 -----------------------------------------------------
     bs = Bs  # batch_size -----------------------------------------------------
-    testbs = 3  # test_batch_size -----------------------------------------------------
+    testbs = Bs  # test_batch_size -----------------------------------------------------
     L = 0.5  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = Use_pretrained  # 是否使用预训练模型 -----------------------------------------------------
     model_name = Model_name  # 模型名字 -----------------------------------------------------
@@ -305,7 +305,7 @@ def Train_breast(Project, Bs, Model_name, lr, Use_pretrained, _have_segtask, _on
         log_dir = os.path.join(log_dir, project)
         utils.Mkdir(log_dir)
         writer = SummaryWriter(log_dir=log_dir)
-        datas = test_loader  # -----------------------------------------------------
+        datas = train_loader  # -----------------------------------------------------
         for epoch in range(epoch_num):
             t.ticbegin()
             te.ticbegin()
@@ -549,7 +549,7 @@ if __name__ == '__main__':
     # model_name = 'unetr'
     # use_pretrained = False
 
-    Train_breast('UNet_olseg_0', 30, 'unet', 1e-4, False, True, True)
+    Train_breast('UNet_olseg_0', 30, 'unet', 1e-3, False, True, True)
     # Train_breast('efficientnetb7_cls2_0', 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
     # Train_breast('xception_cls2bce_1', 20, 'xception', 1e-5, True, False)
