@@ -293,27 +293,13 @@ class UNETRcls(nn.Module):
     def forward(self, x):
         z = self.transformer(x)
         z0, z3, z6, z9, z12 = x, *z
-        z3 = z3.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
-        z6 = z6.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
-        z9 = z9.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
         z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)  # shape: (batch_size, 768, 16, 16)
         # 将z12用nn.AdaptiveAvgPool2d(1)降维
         z12 = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
         z12 = z12.view(z12.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
 
-        z9 = nn.AdaptiveAvgPool2d(1)(z9)  # shape: (batch_size, 768, 1, 1)
-        z9 = z9.view(z9.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
-
-        z6 = nn.AdaptiveAvgPool2d(1)(z6)  # shape: (batch_size, 768, 1, 1)
-        z6 = z6.view(z6.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
-
-        z3 = nn.AdaptiveAvgPool2d(1)(z3)  # shape: (batch_size, 768, 1, 1)
-        z3 = z3.view(z3.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
-
-        z_concat = torch.cat((z3, z6, z9, z12), dim=1)  # shape: (batch_size, 768*4)
-
         # 将一维向量输入到全连接层中
-        out = self.fc(z_concat)
+        out = self.fc(z12)
 
         # z12c = self.fc1(z12c)
         # z12c = self.dropout1(z12c)
