@@ -229,7 +229,7 @@ def update_lr(lr, optimizer):
 def LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer):
     lr_sch = None
     if lr_warm_epoch != 0 and lr_cos_epoch == 0:
-        update_lr(lr_low, optimizer)  # 使用warmup需要吧lr初始化为最小lr
+        update_lr(lr_low, optimizer)
         lr_sch = GradualWarmupScheduler(optimizer,
                                         multiplier=lr / lr_low,
                                         total_epoch=lr_warm_epoch,
@@ -241,7 +241,7 @@ def LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer):
                                                 eta_min=lr_low)
         print('use cos lr sch')
     elif lr_warm_epoch != 0 and lr_cos_epoch != 0:
-        update_lr(lr_low, optimizer)  # 使用warmup需要吧lr初始化为最小lr
+        update_lr(lr_low, optimizer)
         scheduler_cos = lr_scheduler.CosineAnnealingLR(optimizer,
                                                        lr_cos_epoch,
                                                        eta_min=lr_low)

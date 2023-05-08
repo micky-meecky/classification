@@ -281,7 +281,8 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
     pos_weight = torch.tensor([515 / 108]).to(device)
     criterion_cls = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
-    criterion_seg = SoftDiceLoss()  # -----------------------------------------------------
+    # criterion_seg = SoftDiceLoss()  # -----------------------------------------------------
+    criterion_seg = nn.BCELoss()  # -----------------------------------------------------
     optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))  # ------------------------------------------
     lr_sch = utils.LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer)  # -------------------------------
 
@@ -343,7 +344,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                     segout = torch.sigmoid(segout)
                     SR_flat = segout.view(segout.size(0), -1)
                     GT_flat = targets1.view(targets1.size(0), -1)
-                    loss = criterion_seg(SR_flat, GT_flat)
+                    loss = criterion_seg(segout, targets1)
                     seg_running_loss += loss
                     SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
                     # 将这些指标存到一个list里面，方便后面计算平均值
@@ -543,8 +544,9 @@ def Train_Mnist():
 
 
 if __name__ == '__main__':
-    Train_breast('UNet_olseg_0', 10, 550, 'unet', 1e-4, False, True, True)
-    Train_breast('unetrseg_olseg_0', 31, 2000, 'unetr', 1e-2, False, True, True)
+
+    Train_breast('unetrBCEloss_olseg_0', 10, 200, 'unetr', 1e-2, False, True, True)
+    # Train_breast('UNet_olseg_0', 10, 550, 'unet', 1e-4, False, True, True)
     # Train_breast('efficientnetb7_cls2_0', 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
     # Train_breast('xception_cls2bce_1', 20, 'xception', 1e-5, True, False)

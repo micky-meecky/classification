@@ -1,11 +1,9 @@
 import copy
-
 import timm
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
-
 
 
 class SingleDeconv2DBlock(nn.Module):
@@ -318,6 +316,101 @@ class UNETRcls(nn.Module):
         return z12c
 
 
+class UNETRseg(nn.Module):
+    def __init__(self, img_shape=(256, 256), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
+                 dropout=0.1):
+        super().__init__()
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        self.embed_dim = embed_dim
+        self.img_shape = img_shape
+        self.patch_size = patch_size
+        self.num_heads = num_heads
+        self.dropout = dropout
+        self.num_layers = 12
+        self.ext_layers = [3, 6, 9, 12]
+
+        self.patch_dim = [int(x / patch_size) for x in img_shape]
+
+        # Transformer Encoder
+        self.transformer = Transformer(input_dim, embed_dim, img_shape, patch_size, num_heads, self.num_layers, dropout,
+                                       self.ext_layers)
+
+        # U-Net Decoder
+        self.decoder0 = nn.Sequential(Conv2DBlock(input_dim, 32, 3),Conv2DBlock(32, 64, 3))
+        self.decoder3 = nn.Sequential(Deconv2DBlock(embed_dim, 512), Deconv2DBlock(512, 256), Deconv2DBlock(256, 128))
+        self.decoder6 = nn.Sequential(Deconv2DBlock(embed_dim, 512), Deconv2DBlock(512, 256),)
+        self.decoder9 = Deconv2DBlock(embed_dim, 512)
+        self.decoder12_upsampler = SingleDeconv2DBlock(embed_dim, 512)
+        self.decoder9_upsampler = nn.Sequential(Conv2DBlock(1024, 512), Conv2DBlock(512, 512), Conv2DBlock(512, 512),
+                                                SingleDeconv2DBlock(512, 256))
+        self.decoder6_upsampler = nn.Sequential(Conv2DBlock(512, 256), Conv2DBlock(256, 256),
+                                                SingleDeconv2DBlock(256, 128))
+        self.decoder3_upsampler = nn.Sequential(Conv2DBlock(256, 128), Conv2DBlock(128, 128),
+                                                SingleDeconv2DBlock(128, 64))
+        self.decoder0_header = nn.Sequential(Conv2DBlock(128, 64), Conv2DBlock(64, 64),
+                                             SingleConv2DBlock(64, output_dim, 1))
+
+    def forward(self, x):
+        # z = self.transformer(x)
+        # z0, z3, z6, z9, z12 = x, *z
+        # # print('z0 shape is ', z0.shape)
+        # # print('z3 shape is ', z3.shape)
+        # # print('z6 shape is ', z6.shape)
+        # # print('z9 shape is ', z9.shape)
+        # # print('z12 shape is ', z12.shape)
+        #
+        # z3 = z3.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)  # *self.
+        # z6 = z6.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
+        # z9 = z9.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
+        # z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)   # shape: (batch_size, 768, 16, 16)
+        # # print('z0 shape is ', z0.shape)
+        # # print('z3 shape is ', z3.shape)
+        # # print('z6 shape is ', z6.shape)
+        # # print('z9 shape is ', z9.shape)
+        # # print('z12 shape is ', z12.shape)
+        #
+        # z12 = self.decoder12_upsampler(z12)
+        # # print('z12 shape is ', z12.shape)
+        # z9 = self.decoder9(z9)
+        # # print('z9 shape is ', z9.shape)
+        # z9 = self.decoder9_upsampler(torch.cat([z9, z12], dim=1))
+        # # print('z9 shape is ', z9.shape)
+        # z6 = self.decoder6(z6)
+        # # print('z6 shape is ', z6.shape)
+        # z6 = self.decoder6_upsampler(torch.cat([z6, z9], dim=1))
+        # # print('z6 shape is ', z6.shape)
+        # z3 = self.decoder3(z3)
+        # # print('z3 shape is ', z3.shape)
+        # z3 = self.decoder3_upsampler(torch.cat([z3, z6], dim=1))
+        # # print('z3 shape is ', z3.shape)
+        # z0 = self.decoder0(z0)
+        # # print('z0 shape is ', z0.shape)
+        # output = self.decoder0_header(torch.cat([z0, z3], dim=1))
+        # # print('output shape is ', output.shape)
+        #
+        # return output
+
+        z = self.transformer(x)
+        z0, z3, z6, z9, z12 = x, *z
+        z3 = z3.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
+        z6 = z6.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
+        z9 = z9.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
+        z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
+
+        z12 = self.decoder12_upsampler(z12)
+        z9 = self.decoder9(z9)
+        z9 = self.decoder9_upsampler(torch.cat([z9, z12], dim=1))
+        z6 = self.decoder6(z6)
+        z6 = self.decoder6_upsampler(torch.cat([z6, z9], dim=1))
+        z3 = self.decoder3(z3)
+        z3 = self.decoder3_upsampler(torch.cat([z3, z6], dim=1))
+        z0 = self.decoder0(z0)
+        output = self.decoder0_header(torch.cat([z0, z3], dim=1))
+
+        return output
+
+
 class SwinEmbeddings(nn.Module):
     def __init__(self, input_dim, embed_dim, img_size, patch_size, dropout):
         super().__init__()
@@ -429,10 +522,11 @@ class SwinTransformerBlock(nn.Module):
 
 
 class SwinTransformerEncoder(nn.Module):
-    def __init__(self, input_dim, embed_dim, img_shape, patch_size, num_heads, num_layers, dropout, window_size):
+    def __init__(self, input_dim, embed_dim, img_shape, patch_size, num_heads, num_layers, dropout, window_size, extract_layers):
         super().__init__()
         self.embeddings = SwinEmbeddings(input_dim, embed_dim, img_shape, patch_size, dropout)
         self.layers = nn.ModuleList()
+        self.extract_layers = extract_layers
         for _ in range(num_layers):
             layer = SwinTransformerBlock(embed_dim, num_heads, window_size, dropout)
             self.layers.append(layer)
@@ -443,105 +537,14 @@ class SwinTransformerEncoder(nn.Module):
         H, W = H // self.embeddings.patch_size, W // self.embeddings.patch_size
         x = x.view(x.shape[0], H, W, -1).permute(0, 3, 1, 2).contiguous()
 
-        for layer in self.layers:
+        extract_layers = []
+        for depth, layer in enumerate(self.layers):
             x = layer(x, H, W)
+            if depth + 1 in self.extract_layers:
+                extract_layers.append(x)
 
-        return x
+        return extract_layers
 
-
-class UNETRseg(nn.Module):
-    def __init__(self, img_shape=(256, 256), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
-                 dropout=0.1):
-        super().__init__()
-        self.input_dim = input_dim
-        self.output_dim = output_dim
-        self.embed_dim = embed_dim
-        self.img_shape = img_shape
-        self.patch_size = patch_size
-        self.num_heads = num_heads
-        self.dropout = dropout
-        self.num_layers = 12
-        self.ext_layers = [3, 6, 9, 12]
-
-        self.patch_dim = [int(x / patch_size) for x in img_shape]
-
-        # Transformer Encoder
-        self.transformer = Transformer(input_dim, embed_dim, img_shape, patch_size, num_heads, self.num_layers, dropout,
-                                       self.ext_layers)
-
-        # U-Net Decoder
-        self.decoder0 = nn.Sequential(Conv2DBlock(input_dim, 32, 3),Conv2DBlock(32, 64, 3))
-        self.decoder3 = nn.Sequential(Deconv2DBlock(embed_dim, 512), Deconv2DBlock(512, 256), Deconv2DBlock(256, 128))
-        self.decoder6 = nn.Sequential(Deconv2DBlock(embed_dim, 512), Deconv2DBlock(512, 256),)
-        self.decoder9 = Deconv2DBlock(embed_dim, 512)
-        self.decoder12_upsampler = SingleDeconv2DBlock(embed_dim, 512)
-        self.decoder9_upsampler = nn.Sequential(Conv2DBlock(1024, 512), Conv2DBlock(512, 512), Conv2DBlock(512, 512),
-                                                SingleDeconv2DBlock(512, 256))
-        self.decoder6_upsampler = nn.Sequential(Conv2DBlock(512, 256), Conv2DBlock(256, 256),
-                                                SingleDeconv2DBlock(256, 128))
-        self.decoder3_upsampler = nn.Sequential(Conv2DBlock(256, 128), Conv2DBlock(128, 128),
-                                                SingleDeconv2DBlock(128, 64))
-        self.decoder0_header = nn.Sequential(Conv2DBlock(128, 64), Conv2DBlock(64, 64),
-                                             SingleConv2DBlock(64, output_dim, 1))
-
-    def forward(self, x):
-        # z = self.transformer(x)
-        # z0, z3, z6, z9, z12 = x, *z
-        # # print('z0 shape is ', z0.shape)
-        # # print('z3 shape is ', z3.shape)
-        # # print('z6 shape is ', z6.shape)
-        # # print('z9 shape is ', z9.shape)
-        # # print('z12 shape is ', z12.shape)
-        #
-        # z3 = z3.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)  # *self.
-        # z6 = z6.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
-        # z9 = z9.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
-        # z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)   # shape: (batch_size, 768, 16, 16)
-        # # print('z0 shape is ', z0.shape)
-        # # print('z3 shape is ', z3.shape)
-        # # print('z6 shape is ', z6.shape)
-        # # print('z9 shape is ', z9.shape)
-        # # print('z12 shape is ', z12.shape)
-        #
-        # z12 = self.decoder12_upsampler(z12)
-        # # print('z12 shape is ', z12.shape)
-        # z9 = self.decoder9(z9)
-        # # print('z9 shape is ', z9.shape)
-        # z9 = self.decoder9_upsampler(torch.cat([z9, z12], dim=1))
-        # # print('z9 shape is ', z9.shape)
-        # z6 = self.decoder6(z6)
-        # # print('z6 shape is ', z6.shape)
-        # z6 = self.decoder6_upsampler(torch.cat([z6, z9], dim=1))
-        # # print('z6 shape is ', z6.shape)
-        # z3 = self.decoder3(z3)
-        # # print('z3 shape is ', z3.shape)
-        # z3 = self.decoder3_upsampler(torch.cat([z3, z6], dim=1))
-        # # print('z3 shape is ', z3.shape)
-        # z0 = self.decoder0(z0)
-        # # print('z0 shape is ', z0.shape)
-        # output = self.decoder0_header(torch.cat([z0, z3], dim=1))
-        # # print('output shape is ', output.shape)
-        #
-        # return output
-
-        z = self.transformer(x)
-        z0, z3, z6, z9, z12 = x, *z
-        z3 = z3.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
-        z6 = z6.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
-        z9 = z9.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
-        z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
-
-        z12 = self.decoder12_upsampler(z12)
-        z9 = self.decoder9(z9)
-        z9 = self.decoder9_upsampler(torch.cat([z9, z12], dim=1))
-        z6 = self.decoder6(z6)
-        z6 = self.decoder6_upsampler(torch.cat([z6, z9], dim=1))
-        z3 = self.decoder3(z3)
-        z3 = self.decoder3_upsampler(torch.cat([z3, z6], dim=1))
-        z0 = self.decoder0(z0)
-        output = self.decoder0_header(torch.cat([z0, z3], dim=1))
-
-        return output
 
 class UNETswin(nn.Module):
     def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=768, patch_size=32, num_heads=12,
@@ -609,8 +612,67 @@ class UNETswin(nn.Module):
         return output
 
 
+class UNETRSwin(nn.Module):
+    def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
+                 dropout=0.1, batch_size=10, window_size=4):
+        super().__init__()
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        self.embed_dim = embed_dim
+        self.img_shape = img_shape
+        self.patch_size = patch_size
+        self.num_heads = num_heads
+        self.dropout = dropout
+        self.num_layers = 12
+        self.ext_layers = [3, 6, 9, 12]
+        self.window_size = window_size
+
+        # Swin Transformer Encoder
+        self.swin_transformer = SwinTransformerEncoder(input_dim, embed_dim, img_shape, patch_size, num_heads,
+                                                       self.num_layers, dropout,
+                                                       window_size, self.ext_layers)
+
+        # U-Net Decoder
+        self.decoder0 = nn.Sequential(Conv2DBlock(input_dim, 32, 3), Conv2DBlock(32, 64, 3))
+        self.decoder3 = nn.Sequential(Deconv2DBlock(embed_dim, 512), Deconv2DBlock(512, 256),
+                                      Deconv2DBlock(256, 128))
+        self.decoder6 = nn.Sequential(Deconv2DBlock(embed_dim, 512), Deconv2DBlock(512, 256), )
+        self.decoder9 = Deconv2DBlock(embed_dim, 512)
+        self.decoder12_upsampler = SingleDeconv2DBlock(embed_dim, 512)
+        self.decoder9_upsampler = nn.Sequential(Conv2DBlock(1024, 512), Conv2DBlock(512, 512),
+                                                Conv2DBlock(512, 512),
+                                                SingleDeconv2DBlock(512, 256))
+        self.decoder6_upsampler = nn.Sequential(Conv2DBlock(512, 256), Conv2DBlock(256, 256),
+                                                SingleDeconv2DBlock(256, 128))
+        self.decoder3_upsampler = nn.Sequential(Conv2DBlock(256, 128), Conv2DBlock(128, 128),
+                                                SingleDeconv2DBlock(128, 64))
+        self.decoder0_header = nn.Sequential(Conv2DBlock(128, 64), Conv2DBlock(64, 64),
+                                             SingleConv2DBlock(64, output_dim, 1))
+
+    def forward(self, x):
+        z = self.swin_transformer(x)
+        z0, z3, z6, z9, z12 = x, *z
+
+        z3 = z3.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
+        z6 = z6.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
+        z9 = z9.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
+        z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
+
+        z12 = self.decoder12_upsampler(z12)
+        z9 = self.decoder9(z9)
+        z9 = self.decoder9_upsampler(torch.cat([z9, z12], dim=1))
+        z6 = self.decoder6(z6)
+        z6 = self.decoder6_upsampler(torch.cat([z6, z9], dim=1))
+        z3 = self.decoder3(z3)
+        z3 = self.decoder3_upsampler(torch.cat([z3, z6], dim=1))
+        z0 = self.decoder0(z0)
+        output = self.decoder0_header(torch.cat([z0, z3], dim=1))
+
+        return output
+
+
 if __name__ == '__main__':
-    model = UNETRseg()
-    x = torch.randn(2, 1, 256, 256)
+    model = UNETRSwin()
+    x = torch.randn(2, 1, 224, 224)
     y = model(x)
     print(y.shape)
