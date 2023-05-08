@@ -278,10 +278,7 @@ class UNETRcls(nn.Module):
         self.dropout = dropout
         self.num_layers = 12
         self.ext_layers = [3, 6, 9, 12]
-        self.fc = nn.Linear(embed_dim * 1 * 1 * 4, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
-        # self.fc1 = nn.Linear(embed_dim * 1, 512)
-        # self.dropout1 = nn.Dropout(0.1)
-        # self.fc2 = nn.Linear(512, self.output_dim)
+        self.fc = nn.Linear(embed_dim, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
 
         self.patch_dim = [int(x / patch_size) for x in img_shape]
 
@@ -292,7 +289,7 @@ class UNETRcls(nn.Module):
 
     def forward(self, x):
         z = self.transformer(x)
-        z0, z3, z6, z9, z12 = x, *z
+        z0, , z6, z9, z12 = x, *z
         z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)  # shape: (batch_size, 768, 16, 16)
         # 将z12用nn.AdaptiveAvgPool2d(1)降维
         z12 = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
