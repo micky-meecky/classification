@@ -6,7 +6,6 @@ torch.cuda.empty_cache()
 
 #os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
-
 device = 'cuda:0'
 
 

@@ -266,7 +266,7 @@ class UNETR(nn.Module):
 
 
 class UNETRcls(nn.Module):
-    def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
+    def __init__(self, img_shape=(256, 256), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
                  dropout=0.2, batch_size=10):
         super().__init__()
         self.input_dim = input_dim
@@ -278,10 +278,10 @@ class UNETRcls(nn.Module):
         self.dropout = dropout
         self.num_layers = 12
         self.ext_layers = [3, 6, 9, 12]
-        # self.linear = nn.Linear(embed_dim * 1, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
-        self.fc1 = nn.Linear(embed_dim * 1, 512)
-        self.dropout1 = nn.Dropout(0.2)
-        self.fc2 = nn.Linear(512, self.output_dim)
+        self.fc = nn.Linear(embed_dim * 16 * 16 * 4, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
+        # self.fc1 = nn.Linear(embed_dim * 1, 512)
+        # self.dropout1 = nn.Dropout(0.1)
+        # self.fc2 = nn.Linear(512, self.output_dim)
 
         self.patch_dim = [int(x / patch_size) for x in img_shape]
 
@@ -293,17 +293,29 @@ class UNETRcls(nn.Module):
     def forward(self, x):
         z = self.transformer(x)
         z0, z3, z6, z9, z12 = x, *z
-        # z3 = z3.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
-        # z6 = z6.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
-        # z9 = z9.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
+        z3 = z3.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
+        z6 = z6.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
+        z9 = z9.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
         z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)  # shape: (batch_size, 768, 16, 16)
         # 将z12用nn.AdaptiveAvgPool2d(1)降维
-        z12c = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
-        z12c = z12c.view(z12c.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
-        z12c = F.dropout(z12c, p=self.dropout, training=self.training)
-        z12c = self.fc1(z12c)
-        z12c = self.dropout1(z12c)
-        z12c = self.fc2(z12c)
+        # z12c = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
+        # z12c = z12c.view(z12c.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
+
+        # 将所有特征展平成一维向量
+        z3_flat = z3.reshape(z3.size(0), -1)
+        z6_flat = z6.reshape(z6.size(0), -1)
+        z9_flat = z9.reshape(z9.size(0), -1)
+        z12_flat = z12.reshape(z12.size(0), -1)
+
+        # 将所有特征连接成一个一维向量
+        z_concat = torch.cat((z3_flat, z6_flat, z9_flat, z12_flat), dim=1)
+
+        # 将一维向量输入到全连接层中
+        out = self.fc(z_concat)
+
+        # z12c = self.fc1(z12c)
+        # z12c = self.dropout1(z12c)
+        # z12c = self.fc2(z12c)
 
         # z3 = torch.mean(z3.view(z3.size(0), z3.size(1), -1), dim=2)  # shape: (batch_size, 768)
         # z6 = torch.mean(z6.view(z6.size(0), z6.size(1), -1), dim=2)  # shape: (batch_size, 768)
@@ -313,7 +325,7 @@ class UNETRcls(nn.Module):
         # input_size = features.size(1)
         # print('input_size is ', input_size)
 
-        return z12c
+        return out
 
 
 class UNETRseg(nn.Module):
@@ -672,7 +684,7 @@ class UNETRSwin(nn.Module):
 
 
 if __name__ == '__main__':
-    model = UNETRSwin()
+    model = UNETRcls()
     x = torch.randn(2, 1, 224, 224)
     y = model(x)
     print(y.shape)
