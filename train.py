@@ -31,7 +31,7 @@ from utils import utils
 from mymodels import OpenDataSet
 
 import warnings
-
+torch.cuda.empty_cache()
 warnings.filterwarnings('ignore',
                         message='Argument \'interpolation\' of type int is deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.')
 
