@@ -278,7 +278,7 @@ class UNETRcls(nn.Module):
         self.dropout = dropout
         self.num_layers = 12
         self.ext_layers = [3, 6, 9, 12]
-        self.fc = nn.Linear(embed_dim * 16 * 16 * 4, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
+        self.fc = nn.Linear(embed_dim * 1 * 1 * 4, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
         # self.fc1 = nn.Linear(embed_dim * 1, 512)
         # self.dropout1 = nn.Dropout(0.1)
         # self.fc2 = nn.Linear(512, self.output_dim)
@@ -298,17 +298,19 @@ class UNETRcls(nn.Module):
         z9 = z9.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
         z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)  # shape: (batch_size, 768, 16, 16)
         # 将z12用nn.AdaptiveAvgPool2d(1)降维
-        # z12c = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
-        # z12c = z12c.view(z12c.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
+        z12 = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
+        z12 = z12.view(z12.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
 
-        # 将所有特征展平成一维向量
-        z3_flat = z3.reshape(z3.size(0), -1)
-        z6_flat = z6.reshape(z6.size(0), -1)
-        z9_flat = z9.reshape(z9.size(0), -1)
-        z12_flat = z12.reshape(z12.size(0), -1)
+        z9 = nn.AdaptiveAvgPool2d(1)(z9)  # shape: (batch_size, 768, 1, 1)
+        z9 = z9.view(z9.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
 
-        # 将所有特征连接成一个一维向量
-        z_concat = torch.cat((z3_flat, z6_flat, z9_flat, z12_flat), dim=1)
+        z6 = nn.AdaptiveAvgPool2d(1)(z6)  # shape: (batch_size, 768, 1, 1)
+        z6 = z6.view(z6.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
+
+        z3 = nn.AdaptiveAvgPool2d(1)(z3)  # shape: (batch_size, 768, 1, 1)
+        z3 = z3.view(z3.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
+
+        z_concat = torch.cat((z3, z6, z9, z12), dim=1)  # shape: (batch_size, 768*4)
 
         # 将一维向量输入到全连接层中
         out = self.fc(z_concat)
