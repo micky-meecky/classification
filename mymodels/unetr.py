@@ -266,7 +266,7 @@ class UNETR(nn.Module):
 
 
 class UNETRcls(nn.Module):
-    def __init__(self, img_shape=(256, 256), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
+    def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
                  dropout=0.2, batch_size=10):
         super().__init__()
         self.input_dim = input_dim
@@ -316,7 +316,7 @@ class UNETRcls(nn.Module):
 
 
 class UNETRseg(nn.Module):
-    def __init__(self, img_shape=(256, 256), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
+    def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
                  dropout=0.1):
         super().__init__()
         self.input_dim = input_dim
