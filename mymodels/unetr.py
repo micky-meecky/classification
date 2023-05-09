@@ -279,6 +279,10 @@ class UNETRcls(nn.Module):
         self.num_layers = 12
         self.ext_layers = [3, 6, 9, 12]
         self.fc = nn.Linear(embed_dim, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
+        self.fc1 = nn.Linear(embed_dim * 1, 512)
+        self.dropout1 = nn.Dropout(0.2)
+        self.fc2 = nn.Linear(512, self.output_dim)
+
 
         self.patch_dim = [int(x / patch_size) for x in img_shape]
 
@@ -294,13 +298,11 @@ class UNETRcls(nn.Module):
         # 将z12用nn.AdaptiveAvgPool2d(1)降维
         z12 = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
         z12 = z12.view(z12.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
+        z12c = F.dropout(z12, p=self.dropout, training=self.training)
 
-        # 将一维向量输入到全连接层中
-        out = self.fc(z12)
-
-        # z12c = self.fc1(z12c)
-        # z12c = self.dropout1(z12c)
-        # z12c = self.fc2(z12c)
+        z12c = self.fc1(z12c)
+        z12c = self.dropout1(z12c)
+        out = self.fc2(z12c)
 
         # z3 = torch.mean(z3.view(z3.size(0), z3.size(1), -1), dim=2)  # shape: (batch_size, 768)
         # z6 = torch.mean(z6.view(z6.size(0), z6.size(1), -1), dim=2)  # shape: (batch_size, 768)
@@ -670,6 +672,6 @@ class UNETRSwin(nn.Module):
 
 if __name__ == '__main__':
     model = UNETRcls()
-    x = torch.randn(2, 1, 224, 224)
+    x = torch.randn(2, 1, 256, 256)
     y = model(x)
     print(y.shape)

@@ -545,9 +545,7 @@ def Train_Mnist():
 
 if __name__ == '__main__':
 
-    Train_breast('unetRcls_ocls2_0', 16, 300, 'unetr', 1e-3, False, False, False)
-    Train_breast('unetRcls_ocls2_1', 20, 300, 'unetr', 1e-3, False, False, False)
-    Train_breast('unetRcls_ocls2_2', 30, 300, 'unetr', 1e-3, False, False, False)
+    Train_breast('unetRcls_ocls2_3', 16, 300, 'unetr', 1e-3, False, False, False)
     # Train_breast('UNet_olseg_0', 10, 550, 'unet', 1e-4, False, True, True)
     # Train_breast('efficientnetb7_cls2_0', 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
