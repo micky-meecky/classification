@@ -546,7 +546,7 @@ def Train_Mnist():
 
 
 if __name__ == '__main__':
-    # Train_Mnist()
+    # Train_Mnist( )
     # Train_breast('unetRcls_ocls2_5', 30, 200, 'unetr', 1e-4, False, False, False, is_continue_train=False)
     # Train_breast('UNet_olseg_0', 10, 600, 'unet', 1e-2, False, True, True, False)
     Train_breast('unetRseg_olseg_0', 30, 300, 'unetr', 1e-3, False, True, True, is_continue_train=False)
