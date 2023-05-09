@@ -672,6 +672,6 @@ class UNETRSwin(nn.Module):
 
 if __name__ == '__main__':
     model = UNETRcls()
-    x = torch.randn(2, 1, 256, 256)
+    x = torch.randn(2, 1, 224, 224)
     y = model(x)
     print(y.shape)
