@@ -293,7 +293,7 @@ class UNETRcls(nn.Module):
 
     def forward(self, x):
         z = self.transformer(x)
-        z0, z3, z6, z9, z12 = x, *z
+        z12 = z[-1]
         z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)  # shape: (batch_size, 768, 16, 16)
         # 将z12用nn.AdaptiveAvgPool2d(1)降维
         z12 = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
