@@ -40,7 +40,7 @@ class SoftDiceLoss(nn.Module):
                 m1sum = m1.sum()
                 m2sum = m2.sum()
                 intersum = intersection.sum()
-                score = 2. * (intersum + smooth) / (m1sum + m2sum + smooth)
+                score = (2. * intersum + smooth) / (m1sum + m2sum + smooth)
             loss += 1 - score
         loss = loss / num
         return loss

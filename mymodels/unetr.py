@@ -267,7 +267,7 @@ class UNETR(nn.Module):
 
 class UNETRcls(nn.Module):
     def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
-                 dropout=0.2, batch_size=10):
+                 dropout=0.1, batch_size=10):
         super().__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -278,11 +278,10 @@ class UNETRcls(nn.Module):
         self.dropout = dropout
         self.num_layers = 12
         self.ext_layers = [3, 6, 9, 12]
-        self.fc = nn.Linear(embed_dim, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
+        # self.fc = nn.Linear(embed_dim, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
         self.fc1 = nn.Linear(embed_dim * 1, 512)
-        self.dropout1 = nn.Dropout(0.2)
+        self.dropout1 = nn.Dropout(0.1)
         self.fc2 = nn.Linear(512, self.output_dim)
-
 
         self.patch_dim = [int(x / patch_size) for x in img_shape]
 
