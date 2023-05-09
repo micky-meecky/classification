@@ -232,7 +232,7 @@ def breast_loader(batch_size, testbs, validate_flag):
     return train_loader, valid_loader, test_loader
 
 
-def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segtask, _only_segtask):
+def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segtask, _only_segtask, is_continue_train):
     project = Project  # project name-----------------------------------------------------
     epoch_num = epoch  # epoch_num -----------------------------------------------------
     class_num = 1  # class_num -----------------------------------------------------
@@ -260,7 +260,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     contenttotal = "----total cost: "
     is_train = True
     is_test = True  # False
-    is_continue_train = False
+    is_continue_train = is_continue_train
     _only_segtask = _only_segtask
     if _only_segtask:
         _have_segtask = True
@@ -545,8 +545,8 @@ def Train_Mnist():
 
 if __name__ == '__main__':
 
-    Train_breast('unetRcls_ocls2_3', 30, 300, 'unetr', 1e-4, True, False, False)
-    Train_breast('unetRseg_olseg_0', 30, 300, 'unetr', 1e-4, False, True, True)
+    Train_breast('unetRcls_ocls2_3', 30, 300, 'unetr', 1e-4, False, False, False, is_continue_train=True)
+    Train_breast('unetRseg_olseg_0', 30, 300, 'unetr', 1e-4, False, True, True, is_continue_train=False)
     # Train_breast('UNet_olseg_0', 10, 550, 'unet', 1e-4, False, True, True)
     # Train_breast('efficientnetb7_cls2_0', 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
