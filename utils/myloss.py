@@ -26,7 +26,10 @@ class SoftDiceLoss(nn.Module):
             GT = m2.data.cpu().numpy()
             # 将m1, m2中的值转换为0或1
             SR = (SR > 0.5).astype(np.float64)
-            GT = (GT == np.max(GT)).astype(np.float64)
+            if np.any(GT > 0):
+                GT = (GT == np.max(GT)).astype(np.float64)
+            else:
+                GT = np.zeros_like(GT, dtype=np.float64)
             intersection = (m1 * m2)
             # 计算acc
             corr = np.sum(SR == GT)
@@ -34,7 +37,10 @@ class SoftDiceLoss(nn.Module):
             score = 1.  # 转换为tensor
             score = torch.from_numpy(np.array(score)).float().cuda()
             if acc != 1:
-                score = 2. * (intersection.sum() + smooth) / (m1.sum() + m2.sum() + smooth)
+                m1sum = m1.sum()
+                m2sum = m2.sum()
+                intersum = intersection.sum()
+                score = 2. * (intersum + smooth) / (m1sum + m2sum + smooth)
             loss += 1 - score
         loss = loss / num
         return loss
@@ -56,7 +62,10 @@ class JaccardLoss(nn.Module):
             GT = m2.data.cpu().numpy()
             # 将m1, m2中的值转换为0或1
             SR = (SR > 0.5).astype(np.float64)
-            GT = (GT == np.max(GT)).astype(np.float64)
+            if np.any(GT > 0):
+                GT = (GT == np.max(GT)).astype(np.float64)
+            else:
+                GT = np.zeros_like(GT, dtype=np.float64)
             intersection = (m1 * m2)
             # 计算acc
             corr = np.sum(SR == GT)
