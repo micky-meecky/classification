@@ -178,6 +178,17 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
     return model
 
 
+def check_grad(model):
+    i = 0
+    for name, param in model.named_parameters():
+        if not param.requires_grad:
+            print(f'Parameter {name} does not require grad')
+            i += 1
+
+    print(f'There are {i} / {len(list(model.parameters()))} layers that do not require grad')
+
+
+
 def GetTPFP(predicted, targets4):
     predicted = predicted.squeeze().long()
     tp = torch.sum((predicted == 0) & (targets4 == 0)).item()

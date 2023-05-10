@@ -25,7 +25,7 @@ from dataset.class_divide import get_fold_filelist
 from dataset.data_loader import get_loader_difficult
 from utils.tictoc import TicToc
 import utils.evaluation as ue
-from utils.myloss import SoftDiceLoss, JaccardLoss
+from utils.myloss import SoftDiceLossNew, JaccardLoss
 import test
 from utils import utils
 from mymodels import OpenDataSet
@@ -238,8 +238,8 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     class_num = 1  # class_num -----------------------------------------------------
     lr = lr  # 学习率  -----------------------------------------------------
     validate_flag = False  # 是否使用验证集 -----------------------------------------------------
-    lr_low = 1e-12  # 学习率下限  ------------------------------------------------------
-    lr_warm_epoch = 5  # warm up 的 epoch 数 -----------------------------------------------------
+    lr_low = lr/1.1  # 学习率下限  ------------------------------------------------------
+    lr_warm_epoch = 1  # warm up 的 epoch 数 -----------------------------------------------------
     lr_cos_epoch = 490  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
@@ -281,7 +281,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
     pos_weight = torch.tensor([515 / 108]).to(device)
     criterion_cls = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
-    criterion_seg = SoftDiceLoss()  # -----------------------------------------------------
+    criterion_seg = SoftDiceLossNew()  # -----------------------------------------------------
     # criterion_seg = nn.BCELoss()  # -----------------------------------------------------
     optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))  # ------------------------------------------
     lr_sch = utils.LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer)  # -------------------------------
@@ -307,6 +307,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         utils.Mkdir(log_dir)
         writer = SummaryWriter(log_dir=log_dir)
         datas = train_loader  # -----------------------------------------------------
+        utils.check_grad(model)
         for epoch in range(epoch_num):
             t.ticbegin()
             te.ticbegin()
@@ -344,7 +345,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                     segout = torch.sigmoid(segout)
                     SR_flat = segout.view(segout.size(0), -1)
                     GT_flat = targets1.view(targets1.size(0), -1)
-                    loss = criterion_seg(SR_flat, GT_flat)
+                    loss = criterion_seg(SR_flat, GT_flat, device)
                     if loss < 0:
                         print('loss < 0')
                     seg_running_loss += loss
@@ -437,6 +438,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                 # test.trainvalid('train', datas, model, device, writer, Iter, class_num, _have_segtask)
                 test.trainvalid('valid', valid_loader, model, device, writer, Iter, class_num, _have_segtask,
                                 _only_segtask)
+            lr_low = 1e-12
 
             t.ticend()
             t.printtime(contentvalid)
@@ -549,7 +551,7 @@ if __name__ == '__main__':
     # Train_Mnist( )
     # Train_breast('unetRcls_ocls2_5', 30, 200, 'unetr', 1e-4, False, False, False, is_continue_train=False)
     # Train_breast('UNet_olseg_0', 10, 600, 'unet', 1e-2, False, True, True, False)
-    Train_breast('unetRseg_olseg_0', 5, 800, 'unetr', 1e-4, False, True, True, is_continue_train=False)
+    Train_breast('unetRseg_olseg_1', 5, 532, 'unetr', 4.47e-5, False, True, True, is_continue_train=True)
     # Train_breast('efficientnetb7_cls2_0', 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
     # Train_breast('xception_cls2bce_1', 20, 'xception', 1e-5, True, False)
