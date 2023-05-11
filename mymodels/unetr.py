@@ -205,7 +205,10 @@ class UNETR(nn.Module):
         self.dropout = dropout
         self.num_layers = 12
         self.ext_layers = [3, 6, 9, 12]
-        self.linear = nn.Linear(embed_dim * 1, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
+        # self.linear = nn.Linear(embed_dim * 1, self.output_dim, bias=True)
+        self.fc1 = nn.Linear(embed_dim * 1, 512)
+        self.dropout1 = nn.Dropout(0.3)
+        self.fc2 = nn.Linear(512, self.output_dim)
 
         self.patch_dim = [int(x / patch_size) for x in img_shape]
 
@@ -228,6 +231,7 @@ class UNETR(nn.Module):
         self.decoder0_header = nn.Sequential(Conv2DBlock(128, 64), Conv2DBlock(64, 64),
                                              SingleConv2DBlock(64, output_dim, 1))
 
+
     def forward(self, x):
         z = self.transformer(x)
         z0, z3, z6, z9, z12 = x, *z
@@ -235,14 +239,15 @@ class UNETR(nn.Module):
         z6 = z6.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
         z9 = z9.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
         z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)   # shape: (batch_size, 768, 16, 16)
+
         # 将z12用nn.AdaptiveAvgPool2d(1)降维
         z12c = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
-        # flatten
         z12c = z12c.view(z12c.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
-        # dropout
-        # z12c = F.dropout(z12c, p=self.dropout, training=self.training)
-        # linear
-        z12c = self.linear(z12c)  # shape: (batch_size, 3)
+        z12c = F.dropout(z12c, p=self.dropout, training=self.training)
+
+        z12c = self.fc1(z12c)
+        z12c = self.dropout1(z12c)
+        clsout = self.fc2(z12c)
 
         # z3 = torch.mean(z3.view(z3.size(0), z3.size(1), -1), dim=2)  # shape: (batch_size, 768)
         # z6 = torch.mean(z6.view(z6.size(0), z6.size(1), -1), dim=2)  # shape: (batch_size, 768)
@@ -262,7 +267,7 @@ class UNETR(nn.Module):
         z0 = self.decoder0(z0)
         output = self.decoder0_header(torch.cat([z0, z3], dim=1))
 
-        return z12c, output
+        return clsout, output
 
 
 class UNETRcls(nn.Module):
@@ -670,7 +675,8 @@ class UNETRSwin(nn.Module):
 
 
 if __name__ == '__main__':
-    model = UNETRseg()
+    model = UNETR()
     x = torch.randn(2, 1, 224, 224)
-    y = model(x)
+    y, ys = model(x)
     print(y.shape)
+    print(ys.shape)

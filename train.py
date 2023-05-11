@@ -31,6 +31,7 @@ from utils import utils
 from mymodels import OpenDataSet
 
 import warnings
+
 torch.cuda.empty_cache()
 warnings.filterwarnings('ignore',
                         message='Argument \'interpolation\' of type int is deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.')
@@ -246,7 +247,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     decay_ratio = 0.01  # 学习率下降的比例 -----------------------------------------------------
     bs = Bs  # batch_size -----------------------------------------------------
     testbs = Bs  # test_batch_size -----------------------------------------------------
-    L = 0.5  # 代表的是seg_loss的权重 -----------------------------------------------------
+    L = 0.6  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = Use_pretrained  # 是否使用预训练模型 -----------------------------------------------------
     model_name = Model_name  # 模型名字 -----------------------------------------------------
     log_dir = './log/log'
@@ -267,7 +268,8 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     else:
         _have_segtask = _have_segtask
 
-    model = utils.InitModel(model_name, use_pretrained, class_num, _have_segtask, _only_segtask)  # ---------------------------------------------
+    model = utils.InitModel(model_name, use_pretrained, class_num, _have_segtask,
+                            _only_segtask)  # ---------------------------------------------
     utils.init_weights(model)
 
     print(getModelSize(model))
@@ -306,7 +308,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         log_dir = os.path.join(log_dir, project)
         utils.Mkdir(log_dir)
         writer = SummaryWriter(log_dir=log_dir)
-        datas = train_loader  # -----------------------------------------------------
+        datas = test_loader  # -----------------------------------------------------
         utils.check_grad(model)
         for epoch in range(epoch_num):
             t.ticbegin()
@@ -346,8 +348,6 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                     SR_flat = segout.view(segout.size(0), -1)
                     GT_flat = targets1.view(targets1.size(0), -1)
                     loss = criterion_seg(SR_flat, GT_flat, device)
-                    if loss < 0:
-                        print('loss < 0')
                     seg_running_loss += loss
                     SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
                     # 将这些指标存到一个list里面，方便后面计算平均值
@@ -365,8 +365,19 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                     if _have_segtask:
                         outputs, segout = model(inputs)
                         segout = torch.sigmoid(segout)
-                        seg_loss = criterion_seg(segout, targets1)
+                        SR_flat = segout.view(segout.size(0), -1)
+                        GT_flat = targets1.view(targets1.size(0), -1)
+                        seg_loss = criterion_seg(SR_flat, GT_flat, device)
                         seg_running_loss += seg_loss.item()
+                        SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
+                        # 将这些指标存到一个list里面，方便后面计算平均值
+                        SElist.append(SE)
+                        PClist.append(PC)
+                        F1list.append(F1)
+                        JSlist.append(JS)
+                        DClist.append(DC)
+                        IOUlist.append(IOU)
+                        Acclist.append(Acc)
                     else:
                         outputs = model(inputs)
 
@@ -402,10 +413,8 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                     optimizer.step()
 
                 running_loss += loss.item()
-
-            precision, recall, f1_score, acc = \
-                utils.PrintTrainInfo(_only_segtask, epoch, epoch_num, epoch_tp, epoch_fp, epoch_tn, epoch_fn, num_zero,
-                                     num_one, tmp_pre, tmp_tar, writer, Iter)
+            utils.PrintTrainInfo(_only_segtask, epoch, epoch_num, epoch_tp, epoch_fp, epoch_tn, epoch_fn, num_zero,
+                                 num_one, tmp_pre, tmp_tar, writer, Iter)
             # 计时结束
             t.ticend()
             t.printtime(content)
@@ -435,7 +444,6 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             print('Iter = ', Iter)
             writer.add_scalars('Lr', {'lr': utils.GetCurrentLr(optimizer)}, epoch)
             if epoch % 3 == 0:
-                # test.trainvalid('train', datas, model, device, writer, Iter, class_num, _have_segtask)
                 test.trainvalid('valid', valid_loader, model, device, writer, Iter, class_num, _have_segtask,
                                 _only_segtask)
 
@@ -550,10 +558,9 @@ if __name__ == '__main__':
     # Train_Mnist()
     # Train_breast('unetRcls_ocls2_5', 30, 200, 'unetr', 1e-4, False, False, False, is_continue_train=False)
     # Train_breast('UNet_olseg_0', 10, 600, 'unet', 1e-2, False, True, True, False)
-    Train_breast('unetRseg_olseg_2', 6, 800, 'unetr', 1e-4, False, True, True, is_continue_train=False)
+    Train_breast('unetRseg_cls&seg_0', 6, 800, 'unetr', 1e-3, False, True, _only_segtask=False, is_continue_train=False)
     # Train_breast('efficientnetb7_cls2_0', 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
     # Train_breast('xception_cls2bce_1', 20, 'xception', 1e-5, True, False)
     # Train_breast('mobilenetv3_cls2bce_0', 40, 'mobilenetv3', 1e-6, True, False)
     # Train_breast('vgg16_bn_cls2_bce_1', 10, 500, 'vgg16_bn', 1e-6, True, False, False)
-
