@@ -104,8 +104,8 @@ class UNet(nn.Module):
         # self.linear = nn.Linear(1984, 3)
         self.linear1 = nn.Linear(1024, 512)
         self.dropout = nn.Dropout(0.2)
-        self.linear2 = nn.Linear(512, 2)
-        self.logsoftmax = nn.LogSoftmax(dim=1)
+        self.linear2 = nn.Linear(512, 1)
+        # self.logsoftmax = nn.LogSoftmax(dim=1)
 
     def forward(self, x):
         # encoder
