@@ -280,7 +280,7 @@ class UNETRcls(nn.Module):
         self.img_shape = img_shape
         self.patch_size = patch_size
         self.num_heads = num_heads
-        self.dropout = dropout10
+        self.dropout = dropout
         self.num_layers = 12
         self.ext_layers = [3, 6, 9, 12]
         # self.fc = nn.Linear(embed_dim, self.output_dim, bias=True)  # bias=True 是指是否使用偏置

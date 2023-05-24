@@ -102,10 +102,10 @@ class UNet(nn.Module):
 
         # classification head
         # self.linear = nn.Linear(1984, 3)
-        # self.linear1 = nn.Linear(1024, 512)
-        # self.dropout = nn.Dropout(0.5)
-        # self.linear2 = nn.Linear(512, 10)
-        # self.logsoftmax = nn.LogSoftmax(dim=1)
+        self.linear1 = nn.Linear(1024, 512)
+        self.dropout = nn.Dropout(0.2)
+        self.linear2 = nn.Linear(512, 2)
+        self.logsoftmax = nn.LogSoftmax(dim=1)
 
     def forward(self, x):
         # encoder
@@ -151,14 +151,14 @@ class UNet(nn.Module):
         # logits = self.activation(logits)
 
         # classification head
-        # clsx = F.adaptive_avg_pool2d(x5, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
-        # clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
-        # label = self.linear1(clsx)  # [1024, 512]
-        # label = self.dropout(label)
-        # label = self.linear2(label)  # [512, 10]
+        clsx = F.adaptive_avg_pool2d(x5, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
+        clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
+        label = self.linear1(clsx)  # [1024, 512]
+        label = self.dropout(label)
+        label = self.linear2(label)  # [512, 2]
         # label = self.logsoftmax(label)  # [batch_size, 3]
 
-        return logits
+        return label, logits
 
     def use_checkpointing(self):
         self.inc = torch.utils.checkpoint(self.inc)
@@ -173,12 +173,13 @@ class UNet(nn.Module):
         self.outc = torch.utils.checkpoint(self.outc)
 
 if __name__ == '__main__':
-    model = UNet(3, 3)
+    model = UNet(1, 1)
     model.eval()
-    input = torch.randn(1, 3, 256, 256)
-    label = torch.randn(1, 3, 256, 256)
-    output = model(input)
+    input = torch.randn(10, 1, 256, 256)
+    label = torch.randn(10, 1, 256, 256)
+    clsout, output = model(input)
     print(output.shape)
+    print(clsout.shape)
 
 
 
