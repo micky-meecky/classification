@@ -61,7 +61,7 @@ def Device(model):
             device_ids = [1, 2, 3]   # 使用的是3个GPU，哪三个呢，当然是1,2,3号了
             print("\n Using GPU device: {}".format(device_ids))
         else:
-            device_ids = [0]
+            device_ids = [0]  # 使用的是1个GPU，哪一个呢，当然是0号了
             print("\n Using GPU device: {}".format(device_ids[0]))
         device = f"cuda:{device_ids[0]}"
         model.to(device)
