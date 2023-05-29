@@ -79,7 +79,7 @@ def mnist_loader():
 
 
 def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, testbs, num_workers, validate_flag=True):
-    augmentation_prob = 0.5
+    augmentation_prob = 0.8
     if validate_flag:
         train, valid, test = get_fold_filelist(csv_file, K=fold_K, fold=fold_idx, validation=True)
     else:
@@ -560,7 +560,7 @@ if __name__ == '__main__':
     # Train_breast('UNet_olseg_0', 10, 600, 'unet', 1e-2, False, True, True, False)
     # Train_breast('unetRseg_cls_seg_8', 5, 100, 'unetr', 9.63366620781354e-14, False, True, _only_segtask=False,
     #              is_continue_train=True)
-    Train_breast('Unet_cls_seg_5', 5, 1000, 'unet', 1e-4, False, True, _only_segtask=False,
+    Train_breast('Unet_cls_seg_6', 5, 1000, 'unet', 1e-4, False, True, _only_segtask=False,
                  is_continue_train=False)
     # Train_breast('efficientnetb7_cls2_0' , 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
