@@ -55,9 +55,15 @@ def WriteIntoTxt(txtcontent, txtdir):
 
 def Device(model):
     if torch.cuda.is_available():
-        device_ids = [i for i in range(torch.cuda.device_count())]
+        # device_ids = [i for i in range(torch.cuda.device_count())]
+        if torch.cuda.device_count() > 1:
+            # 设置为使用1,2,3号GPU
+            device_ids = [1, 2, 3]   # 使用的是3个GPU，哪三个呢，当然是1,2,3号了
+            print("\n Using GPU device: {}".format(device_ids))
+        else:
+            device_ids = [0]
+            print("\n Using GPU device: {}".format(device_ids[0]))
         device = f"cuda:{device_ids[0]}"
-        print("\n Using GPU \n")
         model.to(device)
         model = DataParallel(model, device_ids=device_ids) if torch.cuda.is_available() else model
     else:
