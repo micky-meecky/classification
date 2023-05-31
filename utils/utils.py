@@ -3,6 +3,7 @@ import shutil
 import timm
 import torch
 import torch.nn as nn
+from matplotlib import pyplot as plt
 from torch.nn.parallel import DataParallel
 import pretrainedmodels
 import pretrainedmodels.utils as utils
@@ -18,6 +19,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torchvision import models
 from torchvision.models.googlenet import GoogLeNet
 import torch.nn.init as init
+
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 
@@ -58,7 +60,7 @@ def Device(model):
         # device_ids = [i for i in range(torch.cuda.device_count())]
         if torch.cuda.device_count() > 1:
             # 设置为使用1,2,3号GPU
-            device_ids = [1, 2, 3]   # 使用的是3个GPU，哪三个呢，当然是1,2,3号了
+            device_ids = [1, 2, 3]  # 使用的是3个GPU，哪三个呢，当然是1,2,3号了
             print("\n Using GPU device: {}".format(device_ids))
         else:
             device_ids = [0]  # 使用的是1个GPU，哪一个呢，当然是0号了
@@ -126,7 +128,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
         if modelname.startswith('efficientnet'):
             torch.hub.set_dir("./mymodels/downloaded_models")
             model = timm.create_model('efficientnet_b7', pretrained=True, in_chans=1, num_classes=1)
-        if modelname.startswith('googlenet'):   # 有很多问题
+        if modelname.startswith('googlenet'):  # 有很多问题
             model = CustomGoogLeNet(pretrained=True)
             # 替换输出层
             num_classes = class_num
@@ -180,7 +182,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
         elif modelname == 'resnet152':
             model = resnet152(class_num)
         elif modelname == 'ViT':
-            model = ViT_model(256, 32, 3)   # 256是输入图片的大小，32是patch的大小，3是类别数
+            model = ViT_model(256, 32, 3)  # 256是输入图片的大小，32是patch的大小，3是类别数
     return model
 
 
@@ -192,7 +194,6 @@ def check_grad(model):
             i += 1
 
     print(f'There are {i} / {len(list(model.parameters()))} layers that do not require grad')
-
 
 
 def GetTPFP(predicted, targets4):
@@ -274,10 +275,14 @@ def LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer):
     return lr_sch
 
 
-def AdjustLr(lr_sch, optimizer, epoch, lr_cos_epoch, lr_warm_epoch, num_epochs_decay, current_lr, lr_low, decay_step, decay_ratio):
+def AdjustLr(lr_sch, optimizer, epoch, lr_cos_epoch, lr_warm_epoch, num_epochs_decay, current_lr, lr_low, decay_step,
+             decay_ratio):
     # 学习率策略部分 =========================
     # lr scha way 1:
     if lr_sch is not None:
+        if current_lr > lr_low and (epoch + 1) > lr_cos_epoch:
+            lr = current_lr * decay_ratio
+            update_lr(lr, optimizer)
         if (epoch + 1) <= (lr_cos_epoch + lr_warm_epoch):
             lr_sch.step()
 
@@ -381,6 +386,27 @@ class GradualWarmupScheduler(_LRScheduler):
         else:
             self.step_ReduceLROnPlateau(metrics, epoch)
 
+
+if __name__ == '__main__':
+    print('main')
+    # 测试一下学习率衰减的方式，以及warmup的方式
+    lr = 0.0001  # 初始学习率
+    lr_low = 1e-16  # 最低学习率
+    decay_step = 10  # 每decay_step个epoch衰减一次
+    decay_ratio = 0.9012  # 每decay_step个epoch衰减一次，衰减比例为decay_ratio
+    num_epochs_decay = 100   # 从第几个epoch开始衰减
+    lr_warm_epoch = 5   # warmup的epoch数
+    lr_cos_epoch = 650  # cos衰减的epoch数
+    optimizer = torch.optim.Adam([torch.randn(3, 3)], lr=lr)
+    lr_sch = LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer)
+    # 初始化一个学习率列表
+    lr_list = []
+    for epoch in range(800):
+        lr_sch, optimizer = AdjustLr(lr_sch, optimizer, epoch, lr_cos_epoch, lr_warm_epoch, num_epochs_decay,
+                                     GetCurrentLr(optimizer), lr_low, decay_step, decay_ratio)
+        # 将学习率记录在一个列表lr_list中
+        lr_list.append(GetCurrentLr(optimizer))
+        print('epoch: {}, lr: {}'.format(epoch, GetCurrentLr(optimizer)))
 
 
 
