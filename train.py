@@ -289,7 +289,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     lr_sch = utils.LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer)  # -------------------------------
 
     if is_continue_train:
-        model_dir = './savemodel/' + project + '/miniclsloss.pth'
+        model_dir = './savemodel/' + project + '/miniloss.pth'
         model.load_state_dict(torch.load(model_dir))
         print('load model')
 
