@@ -289,7 +289,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     lr_sch = utils.LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer)  # -------------------------------
 
     if is_continue_train:
-        model_dir = './savemodel/' + project + '/model360.pth'
+        model_dir = './savemodel/' + project + '/miniclsloss.pth'
         model.load_state_dict(torch.load(model_dir))
         print('load model')
 
@@ -425,11 +425,11 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                                                utils.GetCurrentLr(optimizer), lr_low, decay_step, decay_ratio)
 
             # 计算平均epoch_cls_loss
-            epoch_cls_loss = utils.LossExport(cls_running_loss, seg_running_loss, running_loss, datas, writer, epoch,
+            epoch_cls_loss, epoch_loss = utils.LossExport(cls_running_loss, seg_running_loss, running_loss, datas, writer, epoch,
                                               _have_segtask)
 
             # 保存模型策略
-            utils.SaveModel(model, epoch, epoch_cls_loss, save_model_dir)
+            utils.SaveModel(model, epoch, epoch_loss, save_model_dir)
 
             # 输出分割指标
             if _have_segtask:
