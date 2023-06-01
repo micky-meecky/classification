@@ -390,18 +390,18 @@ class GradualWarmupScheduler(_LRScheduler):
 if __name__ == '__main__':
     print('main')
     # 测试一下学习率衰减的方式，以及warmup的方式
-    lr = 0.0001  # 初始学习率
+    lr = 4.445323807242666e-05  # 初始学习率
     lr_low = 1e-16  # 最低学习率
     decay_step = 10  # 每decay_step个epoch衰减一次
-    decay_ratio = 0.9012  # 每decay_step个epoch衰减一次，衰减比例为decay_ratio
+    decay_ratio = 0.9042  # 每decay_step个epoch衰减一次，衰减比例为decay_ratio
     num_epochs_decay = 100   # 从第几个epoch开始衰减
-    lr_warm_epoch = 5   # warmup的epoch数
-    lr_cos_epoch = 650  # cos衰减的epoch数
+    lr_warm_epoch = 1   # warmup的epoch数
+    lr_cos_epoch = 550  # cos衰减的epoch数
     optimizer = torch.optim.Adam([torch.randn(3, 3)], lr=lr)
     lr_sch = LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer)
     # 初始化一个学习率列表
     lr_list = []
-    for epoch in range(800):
+    for epoch in range(700):
         lr_sch, optimizer = AdjustLr(lr_sch, optimizer, epoch, lr_cos_epoch, lr_warm_epoch, num_epochs_decay,
                                      GetCurrentLr(optimizer), lr_low, decay_step, decay_ratio)
         # 将学习率记录在一个列表lr_list中
