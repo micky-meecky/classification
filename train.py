@@ -249,7 +249,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     testbs = Bs  # test_batch_size -----------------------------------------------------
     L = 0.85  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = Use_pretrained  # 是否使用预训练模型 -----------------------------------------------------
-    model_name = Model_name  # 模型名字 -----------------------------------------------------
+    model_name = Model_name  # 模型名字 ------------------------------------------------------
     log_dir = './log/log'
     model_dir = './savemodel'
     save_model_dir = os.path.join(model_dir, project)
