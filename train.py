@@ -79,7 +79,7 @@ def mnist_loader():
 
 
 def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, testbs, num_workers, validate_flag=True):
-    augmentation_prob = 0.5
+    augmentation_prob = 0.8
     if validate_flag:
         train, valid, test = get_fold_filelist(csv_file, K=fold_K, fold=fold_idx, validation=True)
     else:
@@ -239,15 +239,15 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     class_num = 1  # class_num -----------------------------------------------------
     lr = lr  # 学习率  -----------------------------------------------------
     validate_flag = False  # 是否使用验证集 -----------------------------------------------------
-    lr_low = 1e-16  # 学习率下限  ------------------------------------------------------
-    lr_warm_epoch = 0  # warm up 的 epoch 数 -----------------------------------------------------
-    lr_cos_epoch = 380  # 学习率下降的epoch数 -----------------------------------------------------
+    lr_low = 1e-15  # 学习率下限  ------------------------------------------------------
+    lr_warm_epoch = 5  # warm up 的 epoch 数 -----------------------------------------------------
+    lr_cos_epoch = 250  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
-    decay_ratio = 0.855  # 学习率下降的比例 -----------------------------------------------------
+    decay_ratio = 0.70  # 学习率下降的比例 -----------------------------------------------------
     bs = Bs  # batch_size -----------------------------------------------------
     testbs = Bs  # test_batch_size -----------------------------------------------------
-    L = 0.85  # 代表的是seg_loss的权重 -----------------------------------------------------
+    L = 0.80  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = Use_pretrained  # 是否使用预训练模型 -----------------------------------------------------
     model_name = Model_name  # 模型名字 ------------------------------------------------------
     log_dir = './log/log'
@@ -560,8 +560,8 @@ if __name__ == '__main__':
     # Train_breast('UNet_olseg_0', 10, 600, 'unet', 1e-2, False, True, True, False)
     # Train_breast('unetRseg_cls_seg_8', 5, 100, 'unetr', 9.63366620781354e-14, False, True, _only_segtask=False,
     #              is_continue_train=True)
-    Train_breast('Unet_cls_seg_8x2', 5, 400, 'unet', 1.0107647864302958e-06, False, True, _only_segtask=False,
-                 is_continue_train=True)  # 0.0001
+    Train_breast('Unet_cls_seg_9', 5, 300, 'unet', 1e-03, False, True, _only_segtask=False,
+                 is_continue_train=False)  # 0.0001
     # Train_breast('efficientnetb7_cls2_0' , 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
     # Train_breast('xception_cls2bce_1', 20, 'xception', 1e-5, True, False)
