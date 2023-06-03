@@ -459,7 +459,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
 
     print('Finished Training\n')
     if is_test:
-        mini_loss_model = save_model_dir + '/miniclsloss' + '.pth'
+        mini_loss_model = save_model_dir + '/miniloss' + '.pth'
         model.load_state_dict(torch.load(mini_loss_model))
         test.test('test', test_loader, model, device, class_num, _have_segtask, _only_segtask)
     print('\nFinished Testing\n')
