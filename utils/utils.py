@@ -61,7 +61,7 @@ def Device(model):
         # device_ids = [i for i in range(torch.cuda.device_count())]
         if torch.cuda.device_count() > 1:
             # 设置为使用1,2,3号GPU
-            device_ids = [0, 1, 2, 3]  # 使用的是3个GPU，哪三个呢，当然是1,2,3号了
+            device_ids = [2, 3]  # 使用的是3个GPU，哪三个呢，当然是1,2,3号了
             print("\n Using GPU device: {}".format(device_ids))
         else:
             device_ids = [0]  # 使用的是1个GPU，哪一个呢，当然是0号了
@@ -80,9 +80,7 @@ class MultiTaskLossWrapper(nn.Module):
     def __init__(self, task_num, model, device):
         super(MultiTaskLossWrapper, self).__init__()
         self.device = device
-        self.model = model
         self.task_num = 2
-        # 随机初始化log_vars为0
         self.log_vars = nn.Parameter(torch.zeros(self.task_num))
 
     def forward(self,
@@ -92,19 +90,10 @@ class MultiTaskLossWrapper(nn.Module):
                 GT_flat,
                 criterion_seg,
                 criterion_cls):
-
-        # outputs, cls = self.model(input)
-        # cls 是4*1的tensor，需要转换成4的tensor
-        # cls = cls.squeeze(1)
-
         seg_loss = criterion_seg(SR_flat, GT_flat, self.device, self.log_vars[0])
-
         cls_loss = criterion_cls(cls_out, targets4v, self.log_vars[1])
-
         loss = seg_loss + cls_loss
-
         loss = torch.mean(loss)
-
         return seg_loss, cls_loss, loss, self.log_vars
 
     def seg_loss(self, SR_flat, GT_flat, criterion1):
