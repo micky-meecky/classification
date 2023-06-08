@@ -9,8 +9,11 @@
 @file: test.py
 @datatime: 4/21/2023 10:24 AM
 """
+import os
 
+import numpy as np
 import torch
+from PIL import Image
 from torch.utils.data import DataLoader
 import utils.evaluation as ue
 import torch.nn.functional as F
@@ -135,11 +138,12 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
 
 
 
-def test(mode: str, dataloader: DataLoader, model, device: torch.device,
+def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch.device,
          class_num, _have_segtask: bool, _only_segtask: bool):
     printcontent = mode + 'set testing...'
     print(printcontent)
     segoutputcontent = mode + ' segmentation output'
+    SegImgSavePath = SegImgSavePath
 
     # 训练集上测试
     i = 0
@@ -226,6 +230,24 @@ def test(mode: str, dataloader: DataLoader, model, device: torch.device,
                     print('targets4 = ', targets4)
                     i += 1
 
+                # 输出并保存分割图像
+                if _have_segtask:
+                    segout = segout.squeeze()
+                    segout = segout.cpu()
+                    segout = segout.detach().numpy()
+                    segout = np.round(segout)
+                    segout = segout.astype(np.uint8)
+                    segout = segout * 255
+                    segout = Image.fromarray(segout)
+                    # 获取图片名字, ./class_out/stage1/p_image\\86.png
+                    img_file_name = img_file_name[0].split('\\')[1].split('.')  # ['86', 'png']
+                    img_file_name = img_file_name[0]  # '86'
+                    # 将分类的结果predicted转为str
+                    predicted = str(predicted.item())
+                    # 将predicted添加到图片名字后面没比如86_0.png
+                    img_file_name = img_file_name + '_' + predicted
+                    segout.save(SegImgSavePath + '/' + img_file_name + '.png')
+
         if not _only_segtask:
             # 计算精确率（Precision）、召回率（Recall）和F1分数
             precision = epoch_tp / (epoch_tp + epoch_fp) if epoch_tp + epoch_fp > 0 else 0
@@ -244,4 +266,6 @@ def test(mode: str, dataloader: DataLoader, model, device: torch.device,
                 sum(SElist) / len(SElist), sum(PClist) / len(PClist), sum(F1list) / len(F1list),
                 sum(JSlist) / len(JSlist),
                 sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))
+
+
 

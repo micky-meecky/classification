@@ -25,7 +25,7 @@ from dataset.class_divide import get_fold_filelist
 from dataset.data_loader import get_loader_difficult
 from utils.tictoc import TicToc
 import utils.evaluation as ue
-from utils.myloss import SoftDiceLossNew, JaccardLoss
+from utils.myloss import SoftDiceLossNew, JaccardLoss, BCEWithLogitsLossCustom
 import test
 from utils import utils
 from mymodels import OpenDataSet
@@ -191,7 +191,7 @@ def breast_loader(batch_size, testbs, validate_flag):
     fold_id = 1
     distance_type = "dist_mask"
     normal_flag = False
-    image_size = 512
+    image_size = 224
     num_workers = 1
 
     print('batch_size: ', batch_size)
@@ -239,19 +239,20 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     class_num = 1  # class_num -----------------------------------------------------
     lr = lr  # 学习率  -----------------------------------------------------
     validate_flag = False  # 是否使用验证集 -----------------------------------------------------
-    lr_low = 1e-17  # 学习率下限  ------------------------------------------------------
+    lr_low = 1e-15  # 学习率下限  ------------------------------------------------------
     lr_warm_epoch = 10  # warm up 的 epoch 数 -----------------------------------------------------
-    lr_cos_epoch = 1100  # 学习率下降的epoch数 -----------------------------------------------------
+    lr_cos_epoch = 600  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 100  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
-    decay_ratio = 0.9642  # 学习率下降的比例 -----------------------------------------------------
+    decay_ratio = 0.9432  # 学习率下降的比例 -----------------------------------------------------
     bs = Bs  # batch_size -----------------------------------------------------
-    testbs = Bs  # test_batch_size -----------------------------------------------------
+    testbs = 1  # test_batch_size -----------------------------------------------------
     L = 0.80  # 代表的是seg_loss的权重 -----------------------------------------------------
     use_pretrained = Use_pretrained  # 是否使用预训练模型 -----------------------------------------------------
     model_name = Model_name  # 模型名字 ------------------------------------------------------
     log_dir = './log/log'
     model_dir = './savemodel'
+    SegImgSavePath = './SegImgSavePath/' + project
     save_model_dir = os.path.join(model_dir, project)
     t = TicToc()
     te = TicToc()
@@ -276,22 +277,25 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     print('project: ', project)
 
     model, device = utils.Device(model)
+    mtl = utils.MultiTaskLossWrapper(2, model, device)
     print(device)
     train_loader, valid_loader, test_loader = breast_loader(bs, testbs, validate_flag)
     # train_loader, test_loader = OpenDataSet.SelectDataSet('Cifar_10', bs)
 
     # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
     pos_weight = torch.tensor([515 / 108]).to(device)
-    criterion_cls = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    criterion_cls = BCEWithLogitsLossCustom(pos_weight=pos_weight)
     criterion_seg = SoftDiceLossNew()  # -----------------------------------------------------
     # criterion_seg = nn.BCELoss()  # -----------------------------------------------------
-    optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))  # ------------------------------------------
+    optimizer = optim.Adam(mtl.parameters(), lr, (0.5, 0.99))  # ----------------------------------------
     lr_sch = utils.LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer)  # -------------------------------
 
     if is_continue_train:
         model_dir = './savemodel/' + project + '/miniloss.pth'
         model.load_state_dict(torch.load(model_dir))
         print('load model')
+
+    utils.Mkdir(SegImgSavePath)
 
     if is_train:
         SElist = []
@@ -310,6 +314,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         writer = SummaryWriter(log_dir=log_dir)
         datas = train_loader  # -----------------------------------------------------
         utils.check_grad(model)
+        log_vars = None
         for epoch in range(epoch_num):
             t.ticbegin()
             te.ticbegin()
@@ -328,7 +333,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                 Iter += 1
                 # (inputs, targets4) = data
                 if class_num <= 2:
-                    # 将标签进行修改
+                    # 将标签进行修改, 0->0, 1->0, 2->1
                     targets4[targets4 == 0] = 0
                     targets4[targets4 == 1] = 0
                     targets4[targets4 == 2] = 1
@@ -342,6 +347,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                     targets4 = targets4.to(device)
                     if _have_segtask:
                         targets1 = targets1.to(device)
+
                 if _only_segtask:
                     segout = model(inputs)
                     segout = torch.sigmoid(segout)
@@ -367,8 +373,9 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                         segout = torch.sigmoid(segout)
                         SR_flat = segout.view(segout.size(0), -1)
                         GT_flat = targets1.view(targets1.size(0), -1)
-                        seg_loss = criterion_seg(SR_flat, GT_flat, device)
-                        seg_running_loss += seg_loss.item()
+                        # seg_loss = criterion_seg(SR_flat, GT_flat, device)
+                        # seg_loss = mtl.seg_loss(SR_flat, GT_flat, criterion_seg)
+                        # seg_running_loss += seg_loss.item()
                         SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
                         # 将这些指标存到一个list里面，方便后面计算平均值
                         SElist.append(SE)
@@ -384,18 +391,26 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                     if class_num > 2:
                         labels = F.softmax(outputs, dim=1)  # -----------------------------------------------------
                         _, predicted = torch.max(labels.data, 1)
-                        cls_loss = criterion_cls(outputs, targets4)
+                        # cls_loss = criterion_cls(outputs, targets4)
+                        cls_loss = mtl.cls_loss(outputs, targets4, criterion_cls)
                     else:  # 如果是二分类，就用sigmoid
                         labels = torch.sigmoid(outputs)
                         predicted = torch.round(labels)
                         targets4v = targets4.view(-1, 1)
                         targets4v = targets4v.to(torch.float)
-                        cls_loss = criterion_cls(outputs, targets4v)
+                        # cls_loss = criterion_cls(outputs, targets4v)
+                        # cls_loss = mtl.cls_loss(outputs, targets4v, criterion_cls)
+
                     if _have_segtask:
-                        loss = L * seg_loss + (1 - L) * cls_loss
+                        seg_loss, cls_loss, loss, log_vars = mtl(outputs, SR_flat, targets4v, GT_flat, criterion_seg,
+                                                                 criterion_cls)
+                        seg_running_loss += seg_loss.item()
                     else:
+                        cls_loss = criterion_cls(outputs, targets4v)
                         loss = cls_loss
+
                     cls_running_loss += cls_loss.item()
+
 
                     # 计算TP, FP, TN, FN
                     tp, fp, tn, fn = utils.GetTPFP(predicted, targets4)
@@ -413,6 +428,12 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                     optimizer.step()
 
                 running_loss += loss.item()
+            print('log_vars:', log_vars.data.tolist())
+            # log_vars: [0.02311073988676071, -0.027175873517990112], 将这个里的每个元素分别求个exp再输出
+            exp_log_vars = [torch.exp(-log_var) for log_var in log_vars]
+            print('exp_log_vars:', exp_log_vars)
+
+
             utils.PrintTrainInfo(_only_segtask, epoch, epoch_num, epoch_tp, epoch_fp, epoch_tn, epoch_fn, num_zero,
                                  num_one, tmp_pre, tmp_tar, writer, Iter)
             # 计时结束
@@ -425,8 +446,9 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                                                utils.GetCurrentLr(optimizer), lr_low, decay_step, decay_ratio)
 
             # 计算平均epoch_cls_loss
-            epoch_cls_loss, epoch_loss = utils.LossExport(cls_running_loss, seg_running_loss, running_loss, datas, writer, epoch,
-                                              _have_segtask)
+            epoch_cls_loss, epoch_loss = utils.LossExport(cls_running_loss, seg_running_loss, running_loss, datas,
+                                                          writer, epoch,
+                                                          _have_segtask)
 
             # 保存模型策略
             utils.SaveModel(model, epoch, epoch_loss, save_model_dir)
@@ -440,6 +462,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                           sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))
                 writer.add_scalars('train/IOU', {'IOU': sum(IOUlist) / len(IOUlist)}, epoch)
                 writer.add_scalars('train/DC', {'DC': sum(DClist) / len(DClist)}, epoch)
+                writer.add_scalars('train/log_vars0', {'log_vars0': log_vars[0]}, epoch)
 
             print('Iter = ', Iter)
             writer.add_scalars('Lr', {'lr': utils.GetCurrentLr(optimizer)}, epoch)
@@ -460,8 +483,8 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     print('Finished Training\n')
     if is_test:
         mini_loss_model = save_model_dir + '/miniloss' + '.pth'
-        model.load_state_dict(torch.load(mini_loss_model))
-        test.test('test', test_loader, model, device, class_num, _have_segtask, _only_segtask)
+        model.load_state_dict(torch.load(mini_loss_model, map_location=device))
+        test.test('test', test_loader, model, SegImgSavePath, device, class_num, _have_segtask, _only_segtask)
     print('\nFinished Testing\n')
 
 
@@ -560,7 +583,7 @@ if __name__ == '__main__':
     # Train_breast('UNet_olseg_0', 10, 600, 'unet', 1e-2, False, True, True, False)
     # Train_breast('unetRseg_cls_seg_8', 5, 100, 'unetr', 9.63366620781354e-14, False, True, _only_segtask=False,
     #              is_continue_train=True)
-    Train_breast('UnetR_cls_seg_0', 6, 1500, 'unetr', 1e-05, False, True, _only_segtask=False,
+    Train_breast('Unet_cls_seg_9', 5, 800, 'unet', 1e-04, False, True, _only_segtask=False,
                  is_continue_train=False)  # 0.0001
     # Train_breast('efficientnetb7_cls2_0' , 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)

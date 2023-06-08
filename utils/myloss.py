@@ -2,6 +2,9 @@
 import torch
 import torch.nn as nn
 import numpy as np
+import torch.nn.functional as F
+from torch.utils.data import Dataset, DataLoader
+import utils
 
 
 class SoftDiceLoss(nn.Module):
@@ -73,16 +76,40 @@ class JaccardLoss(nn.Module):
                 score = (intersection.sum() + smooth) / (m1.sum() + m2.sum() - intersection.sum() + smooth)
             loss += 1 - score
 
+class BCEWithLogitsLossCustom(nn.Module):
+    def __init__(self, weight=None, reduction='sum', pos_weight=None):
+        super(BCEWithLogitsLossCustom, self).__init__()
+        self.weight = weight
+        self.reduction = reduction
+        self.pos_weight = pos_weight
+
+    def forward(self, input, target, log_vars):
+        # 计算二分类损失
+        loss = F.binary_cross_entropy_with_logits(input, target, weight=self.weight, reduction='none',
+                                                  pos_weight=self.pos_weight)
+
+        if self.reduction == 'mean':
+            # 计算均值
+            loss = torch.mean(loss)
+        elif self.reduction == 'sum':
+            precision2 = torch.exp(-log_vars)
+            # 计算总和
+            loss = torch.sum(loss * precision2 + log_vars)
+            # 求平均
+            loss = loss / input.size(0)
+
+        return loss
 
 class SoftDiceLossNew(nn.Module):
     def __init__(self, weight=None, size_average=True):
         super(SoftDiceLossNew, self).__init__()
 
-    def forward(self, probs, targets, device):
+    def forward(self, probs, targets, device, log_vars):
         num = targets.size(0)  # 获取batch_size
         smooth = 1
         # 初始化损失为0
         loss = 0
+        precision1 = torch.exp(-log_vars)
         for i in range(num):
             m1 = probs[i]
             m2 = targets[i]
@@ -106,30 +133,151 @@ class SoftDiceLossNew(nn.Module):
             else:
                 score = torch.tensor(1., requires_grad=True).to(device)  # 创建需要求导的tensor
             loss = loss + 1 - score
+            loss = loss * precision1 + log_vars  # 乘以权重
         loss = loss / num
         return loss
 
+class MTLModel(torch.nn.Module):
+    def __init__(self, n_hidden, n_output):
+        super(MTLModel, self).__init__()
+
+        self.net1 = nn.Sequential(nn.Linear(1, n_hidden), nn.ReLU(), nn.Linear(n_hidden, n_output))
+        self.net2 = nn.Sequential(nn.Linear(1, n_hidden), nn.ReLU(), nn.Linear(n_hidden, n_output))
+
+    def forward(self, x):
+        return [self.net1(x), self.net2(x)]
+
+
+class UNet(nn.Module):
+    def __init__(self):
+        super(UNet, self).__init__()
+
+        # 编码器
+        self.encoder1 = self.contracting_block(1, 64)
+        self.encoder2 = self.contracting_block(64, 128)
+        self.mlp = nn.Linear(128, 1)
+
+        # 解码器
+        self.decoder1 = self.expanding_block(128, 64)
+        self.decoder2 = self.expanding_block(64, 1)
+        self.outcov = nn.Conv2d(32, 1, kernel_size=1)
+
+
+    def contracting_block(self, in_channels, out_channels):
+        block = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2)
+        )
+        return block
+
+    def expanding_block(self, in_channels, out_channels):
+        block = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(out_channels, in_channels // 2, kernel_size=2, stride=2)
+        )
+        return block
+
+    def forward(self, x):
+        # 编码器
+        encoder1_output = self.encoder1(x)
+        encoder2_output = self.encoder2(encoder1_output)
+        # 分类器
+        # 先对特征进行平均池化
+        encoder2_output_cls = F.avg_pool2d(encoder2_output, kernel_size=encoder2_output.size()[2:])
+        encoder2_output_cls = encoder2_output_cls.view(encoder2_output_cls.size(0), -1)
+        cls = self.mlp(encoder2_output_cls)
+
+        # 解码器
+        decoder1_output = self.decoder1(encoder2_output)
+        decoder2_output = self.decoder2(decoder1_output)
+        # 出来通道还不是1，需要在进行一次卷积
+        decoder2_output = self.outcov(decoder2_output)
+
+        seg = torch.sigmoid(decoder2_output)
+        return seg, cls
+
+
+class CustomDataset(Dataset):
+    def __init__(self, num_samples, image_size):
+        self.num_samples = num_samples
+        self.image_size = image_size
+
+    def __len__(self):
+        return self.num_samples
+
+    def __getitem__(self, idx):
+        image = np.random.rand(self.image_size, self.image_size, 1)
+        mask = np.random.randint(0, 2, size=(self.image_size, self.image_size), dtype=np.uint8)
+
+        image_tensor = torch.from_numpy(image.transpose((2, 0, 1))).float()
+        mask_tensor = torch.from_numpy(mask).float()
+        label_tensor = torch.tensor(np.random.randint(0, 2), dtype=torch.float32)
+
+        return image_tensor, mask_tensor, label_tensor
+
 
 if __name__ == "__main__":
+    np.random.seed(0)
+
+    # 创建虚拟数据集
+    num_samples = 10  # 数据集样本数量
+    image_size = 256  # 图像大小
+    dataset = CustomDataset(num_samples, image_size)
+
+    # 遍历数据集并打印示例数据
+    for i in range(len(dataset)):
+        image, mask, label = dataset[i]
+
+        print(f"Sample {i + 1}:")
+        print("Image shape:", image.shape)
+        print("Mask shape:", mask.shape)
+        print("Label:", label.item())
+        print()
+
+    # 设置训练参数
+    num_epochs = 100
+    batch_size = 4
+    learning_rate = 0.01
+
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    # 创建模型
+    model = UNet()
     # 创建损失函数
     criterion = SoftDiceLossNew()
+    # 使用手写的 BCEWithLogitsLossCustom
+    custom_loss = BCEWithLogitsLossCustom()
 
     # 定义设备，如果有GPU可以使用，否则使用CPU
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    mtl = utils.MultiTaskLossWrapper(2, model, device)
 
-    # 创建一些模拟数据,probs是预测的概率图像，创建一个全0的概率图像
-    probs = torch.zeros((10, 1, 256, 256)).float().to(device)  # 10个1通道256x256的概率图像
-    targets = torch.ones((10, 1, 256, 256)).float().to(device)  # 10个1通道256x256的标签图像
+    optimizer = torch.optim.Adam(mtl.parameters(), lr=0.001, eps=1e-07)
+    # 训练模型
+    total_step = len(dataloader)
+    for epoch in range(num_epochs):
+        for i, (images, masks, labels) in enumerate(dataloader):
+            images = images.to(device)
+            masks = masks.to(device)
+            labels = labels.to(device)
+            # 前向传播
+            seg_loss, cls_loss, loss, log_vars = mtl(images, masks, labels, criterion, custom_loss)
 
-    # 除了第一维，flatten predictions and targets
-    probs = probs.view(probs.shape[0], -1)
-    targets = targets.view(targets.shape[0], -1)
+            # 反向传播和优化
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-    # 计算损失
-    loss = criterion(probs, targets, device)
+            print('log_vars', log_vars)
 
-    # 反向传播一下测试
-    loss.backward()
+            # 打印训练信息
+            if (i + 1) % 2 == 0:
+                print(f"Epoch [{epoch + 1}/{num_epochs}], Step [{i + 1}/{total_step}], Loss: {loss.item()}")
 
-    # 输出损失
-    print("Loss:", loss.item())
+    print("Training finished!")
