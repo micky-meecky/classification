@@ -61,7 +61,7 @@ def Device(model):
         # device_ids = [i for i in range(torch.cuda.device_count())]
         if torch.cuda.device_count() > 1:
             # 设置为使用1,2,3号GPU
-            device_ids = [2, 3]  # 使用的是3个GPU，哪三个呢，当然是1,2,3号了
+            device_ids = [0, 1, 2, 3]  # 使用的是3个GPU，哪三个呢，当然是1,2,3号了
             print("\n Using GPU device: {}".format(device_ids))
         else:
             device_ids = [0]  # 使用的是1个GPU，哪一个呢，当然是0号了
@@ -77,11 +77,11 @@ def Device(model):
 
 
 class MultiTaskLossWrapper(nn.Module):
-    def __init__(self, task_num, model, device):
+    def __init__(self, model, device):
         super(MultiTaskLossWrapper, self).__init__()
+        self.log_vars = nn.Parameter(torch.zeros(2))
+        self.model = model
         self.device = device
-        self.task_num = 2
-        self.log_vars = nn.Parameter(torch.zeros(self.task_num))
 
     def forward(self,
                 cls_out,
@@ -93,21 +93,7 @@ class MultiTaskLossWrapper(nn.Module):
         seg_loss = criterion_seg(SR_flat, GT_flat, self.device, self.log_vars[0])
         cls_loss = criterion_cls(cls_out, targets4v, self.log_vars[1])
         loss = seg_loss + cls_loss
-        loss = torch.mean(loss)
         return seg_loss, cls_loss, loss, self.log_vars
-
-    def seg_loss(self, SR_flat, GT_flat, criterion1):
-        loss = criterion1(SR_flat, GT_flat, self.device, self.log_vars[0])
-        loss = torch.mean(loss)
-        self.log_vars.data.tolist()
-        return loss
-
-    def cls_loss(self, SR_cls, GT_cls, criterion2):
-        loss = criterion2(SR_cls, GT_cls, self.log_vars[1])
-        loss = torch.mean(loss)
-        self.log_vars.data.tolist()
-        return loss
-
 
 
 class CustomGoogLeNet(GoogLeNet):

@@ -77,7 +77,7 @@ class JaccardLoss(nn.Module):
             loss += 1 - score
 
 class BCEWithLogitsLossCustom(nn.Module):
-    def __init__(self, weight=None, reduction='sum', pos_weight=None):
+    def __init__(self, weight=None, reduction='mean', pos_weight=None):
         super(BCEWithLogitsLossCustom, self).__init__()
         self.weight = weight
         self.reduction = reduction
@@ -87,8 +87,11 @@ class BCEWithLogitsLossCustom(nn.Module):
         # 计算二分类损失
         loss = F.binary_cross_entropy_with_logits(input, target, weight=self.weight, reduction='none',
                                                   pos_weight=self.pos_weight)
-
         if self.reduction == 'mean':
+            # 针对loss中的每一个元素，计算exp(-log_vars)
+            precision2 = torch.exp(-log_vars)
+            # 将loss中的每一个元素乘以precision2，并加上log_vars
+            loss = loss * precision2 + log_vars
             # 计算均值
             loss = torch.mean(loss)
         elif self.reduction == 'sum':
@@ -100,9 +103,9 @@ class BCEWithLogitsLossCustom(nn.Module):
 
         return loss
 
-class SoftDiceLossNew(nn.Module):
+class SoftDiceLossNewvar(nn.Module):
     def __init__(self, weight=None, size_average=True):
-        super(SoftDiceLossNew, self).__init__()
+        super(SoftDiceLossNewvar, self).__init__()
 
     def forward(self, probs, targets, device, log_vars):
         num = targets.size(0)  # 获取batch_size
@@ -134,6 +137,42 @@ class SoftDiceLossNew(nn.Module):
                 score = torch.tensor(1., requires_grad=True).to(device)  # 创建需要求导的tensor
             loss = loss + 1 - score
             loss = loss * precision1 + log_vars  # 乘以权重
+        loss = loss / num
+        return loss
+
+
+class SoftDiceLossNew(nn.Module):
+    def __init__(self, weight=None, size_average=True):
+        super(SoftDiceLossNew, self).__init__()
+
+    def forward(self, probs, targets, device):
+        num = targets.size(0)  # 获取batch_size
+        smooth = 1
+        # 初始化损失为0
+        loss = 0
+        for i in range(num):
+            m1 = probs[i]
+            m2 = targets[i]
+
+            # 直接在PyTorch的tensor上进行操作，避免转化为numpy
+            SR = (m1 > 0.5).float()
+            if torch.any(m2 > 0):
+                GT = (m2 == torch.max(m2)).float()
+            else:
+                GT = torch.zeros_like(m2)
+            intersection = (m1 * m2)
+
+            # 计算acc
+            corr = torch.sum(SR == GT)
+            acc = float(corr) / float(SR.shape[0])
+            if acc != 1:
+                m1sum = m1.sum()
+                m2sum = m2.sum()
+                intersum = intersection.sum()
+                score = (2. * intersum + smooth) / (m1sum + m2sum + smooth)
+            else:
+                score = torch.tensor(1., requires_grad=True).to(device)  # 创建需要求导的tensor
+            loss = loss + 1 - score
         loss = loss / num
         return loss
 
