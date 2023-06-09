@@ -195,7 +195,7 @@ def breast_loader(batch_size, testbs, device, validate_flag):
     distance_type = "dist_mask"
     normal_flag = False
     image_size = 224
-    num_workers = 0
+    num_workers = 1
 
     print('batch_size: ', batch_size)
     train_loader, valid_loader, test_loader = getdataset(device, csv_path, fold_k, fold_idx, image_size, batch_size,
@@ -585,7 +585,7 @@ if __name__ == '__main__':
     # Train_breast('UNet_olseg_0', 10, 600, 'unet', 1e-2, False, True, True, False)
     # Train_breast('unetRseg_cls_seg_8', 5, 100, 'unetr', 9.63366620781354e-14, False, True, _only_segtask=False,
     #              is_continue_train=True)
-    Train_breast('Unet_cls_seg_11', 5, 800, 'unet', 1e-04, False, True, _only_segtask=False,
+    Train_breast('Unet_cls_seg_12', 5, 800, 'unet', 1e-04, False, True, _only_segtask=False,
                  is_continue_train=False)  # 1e04
     # Train_breast('efficientnetb7_cls2_0' , 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
