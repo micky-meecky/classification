@@ -10,11 +10,11 @@ import warnings
 from utils import utils
 import matplotlib.pyplot as plt
 import numpy as np
+from dataset import img_mask_aug
 
 warnings.filterwarnings('ignore',
                         message='Argument \'interpolation\' of type int is deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.')
 # from torchvision.transforms import InterpolationMode
-# import img_mask_aug
 from torchvision import models
 import torch.nn as nn
 import torch.optim as optim
@@ -275,9 +275,12 @@ class ImageFolder_new(data.Dataset):
 
 
 class ImageFolder_new_difficult(data.Dataset):
-    def __init__(self, seg_list, GT_list, class_list, contour_list, dist_list, image_list, load_preseg=False,
-                 image_size=512, mode='train', augmentation_prob=0.4, device='cpu'):
+    def __init__(self, seg_list, GT_list, class_list, contour_list, dist_list, image_list, load_preseg=False, image_size=512, mode='train',
+                 augmentation_prob=0.4):
         """Initializes image paths and preprocessing module."""
+        # self.root = root
+        # GT : Ground Truth
+        # self.GT_paths = os.path.join(root, 'p_mask')
         self.GT_paths = GT_list
         self.image_paths = image_list
         self.contour_paths = contour_list
@@ -295,7 +298,6 @@ class ImageFolder_new_difficult(data.Dataset):
         self.augmentation_prob = augmentation_prob
         self.resize_range = [520, 560]
         self.CropRange = [400, 519]  # 注意,上界貌似不能大于resize的下界,待验证
-        self.device = device
 
     # print("image count in {} path :{}".format(self.mode,len(self.image_paths)))
 
@@ -310,6 +312,7 @@ class ImageFolder_new_difficult(data.Dataset):
         # 将class_item转化为tensor
         class_item = torch.tensor(int(class_item))
 
+
         image_o = image = Image.open(image_path)
         contour_o = contour = Image.open(contour_path)
         dist_o = dist = Image.open(dist_path)
@@ -318,7 +321,6 @@ class ImageFolder_new_difficult(data.Dataset):
         if self.load_preseg:
             seg_path = self.seg_paths[index]
             seg_o = seg = Image.open(seg_path)
-            seg = seg.to(self.device)
 
         aspect_ratio = image.size[1] / image.size[0]
 
@@ -327,6 +329,7 @@ class ImageFolder_new_difficult(data.Dataset):
         Transform_contour = []
         Transform_dist = []
 
+
         p_transform = random.random()
 
         if (self.mode == 'train') and p_transform <= self.augmentation_prob:
@@ -334,9 +337,9 @@ class ImageFolder_new_difficult(data.Dataset):
             # ----------------------------------- my TTA ------------------------------------
 
             if self.load_preseg:
-                [image, GT, contour, dist, seg] = img_mask_aug.data_aug(image, GT, contour, dist, self.device, seg)
+                [image, GT, contour, dist, seg] = img_mask_aug.data_aug(image, GT, contour, dist, seg)
             else:
-                [image, GT, contour, dist] = img_mask_aug.data_aug(image, GT, contour, dist, self.device)
+                [image, GT, contour, dist] = img_mask_aug.data_aug(image, GT, contour, dist)
 
             image = Image.fromarray(image)
             GT = Image.fromarray(GT)
@@ -360,6 +363,7 @@ class ImageFolder_new_difficult(data.Dataset):
         Transform_GT = T.Compose(Transform_GT)
         Transform_contour = T.Compose(Transform_contour)
         Transform_dist = T.Compose(Transform_dist)
+
 
         image = Transform(image)
         GT = Transform_GT(GT)
@@ -433,8 +437,7 @@ def get_loader_difficult(seg_list,
                          load_preseg=False,
                          num_workers=2,
                          mode='train',
-                         augmentation_prob=0.4,
-                         device='cpu'):
+                         augmentation_prob=0.4):
     """Builds and returns Dataloader."""
     dataset = ImageFolder_new_difficult(load_preseg=load_preseg,
                                         seg_list=seg_list,
@@ -445,8 +448,7 @@ def get_loader_difficult(seg_list,
                                         image_list=image_list,
                                         image_size=image_size,
                                         mode=mode,
-                                        augmentation_prob=augmentation_prob,
-                                        device=device)
+                                        augmentation_prob=augmentation_prob)
     # print(char_color('@,,@   doing with difficult augmentation'))
     data_loader = data.DataLoader(dataset=dataset,
                                   batch_size=batch_size,
@@ -503,6 +505,7 @@ def DrawSavePic(img_file_name, inputs, targets1, targets2, targets3, train_pic_l
 
 if __name__ == '__main__':
     import class_divide
+    import img_mask_aug
 
     csv_file = '../class_out/train.csv'
     fold_K = 5

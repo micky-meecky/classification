@@ -144,7 +144,7 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
     utils.WriteIntoTxt(valid_list, valid_list_txt)
     utils.WriteIntoTxt(test_list, test_list_txt)
 
-    train_loader = get_loader(seg_list=None,
+    train_loader = get_loader_difficult(seg_list=None,
                               GT_list=train_list_GT,
                               class_list=train_class_list_GT,
                               image_list=train_list,
@@ -154,10 +154,10 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
                               batch_size=batch_size,
                               num_workers=num_workers,
                               mode='train',
-                              augmentation_prob=augmentation_prob,
-                              device=device)
+                              augmentation_prob=augmentation_prob,)
+                              # device=device)
 
-    valid_loader = get_loader(seg_list=None,
+    valid_loader = get_loader_difficult(seg_list=None,
                               GT_list=valid_list_GT,
                               class_list=valid_class_list_GT,
                               image_list=valid_list,
@@ -167,10 +167,10 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
                               batch_size=batch_size,
                               num_workers=num_workers,
                               mode='val',
-                              augmentation_prob=0.,
-                              device=device)
+                              augmentation_prob=0.,)
+                              # device=device)
 
-    test_loader = get_loader(seg_list=None,
+    test_loader = get_loader_difficult(seg_list=None,
                              GT_list=test_list_GT,
                              class_list=test_class_list_GT,
                              image_list=test_list,
@@ -180,8 +180,8 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
                              batch_size=testbs,
                              num_workers=num_workers,
                              mode='test',
-                             augmentation_prob=0.,
-                             device=device)
+                             augmentation_prob=0.,)
+                             # device=device)
 
     return train_loader, valid_loader, test_loader
 
@@ -334,7 +334,9 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             model.train()
             for i, data in tqdm(enumerate(datas, 0), total=len(datas)):
                 (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
-                DrawSavePic(img_file_name, inputs, targets1, targets2, targets3, train_pic_list)
+                if epoch == 0:
+                    pass
+                    # DrawSavePic(img_file_name, inputs, targets1, targets2, targets3, train_pic_list)
                 optimizer.zero_grad()
                 Iter += 1
                 # (inputs, targets4) = data
@@ -584,8 +586,8 @@ if __name__ == '__main__':
     # Train_breast('UNet_olseg_0', 10, 600, 'unet', 1e-2, False, True, True, False)
     # Train_breast('unetRseg_cls_seg_8', 5, 100, 'unetr', 9.63366620781354e-14, False, True, _only_segtask=False,
     #              is_continue_train=True)
-    Train_breast('Unet_cls_seg_10', 5, 800, 'unet', 1e-04, False, True, _only_segtask=False,
-                 is_continue_train=False)  # 0.0001
+    Train_breast('Unet_cls_seg_11', 5, 800, 'unet', 1e-04, False, True, _only_segtask=False,
+                 is_continue_train=False)  # 1e-04
     # Train_breast('efficientnetb7_cls2_0' , 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
     # Train_breast('xception_cls2bce_1', 20, 'xception', 1e-5, True, False)

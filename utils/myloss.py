@@ -91,13 +91,13 @@ class BCEWithLogitsLossCustom(nn.Module):
             # 针对loss中的每一个元素，计算exp(-log_vars)
             precision2 = torch.exp(-log_vars)
             # 将loss中的每一个元素乘以precision2，并加上log_vars
-            loss = loss * precision2 + log_vars
+            loss = loss + (loss * (0.5 * precision2 ** 2) + log_vars)
             # 计算均值
             loss = torch.mean(loss)
         elif self.reduction == 'sum':
             precision2 = torch.exp(-log_vars)
             # 计算总和
-            loss = torch.sum(loss * precision2 + log_vars)
+            loss = torch.sum(loss * (0.5 * precision2 ** 2) + log_vars)
             # 求平均
             loss = loss / input.size(0)
 
@@ -136,7 +136,7 @@ class SoftDiceLossNewvar(nn.Module):
             else:
                 score = torch.tensor(1., requires_grad=True).to(device)  # 创建需要求导的tensor
             loss = loss + 1 - score
-            loss = loss * precision1 + log_vars  # 乘以权重
+            loss = loss + (loss * (0.5 * precision1 ** 2) + log_vars)  # 乘以权重
         loss = loss / num
         return loss
 
