@@ -22,7 +22,7 @@ from tqdm import tqdm
 from tensorboardX import SummaryWriter
 from utils.BackupCode import *
 from dataset.class_divide import get_fold_filelist
-from dataset.data_loader import get_loader_difficult
+from dataset.data_loader import get_loader_difficult, get_loader, DrawSavePic
 from utils.tictoc import TicToc
 import utils.evaluation as ue
 from utils.myloss import SoftDiceLossNew, JaccardLoss, BCEWithLogitsLossCustom, SoftDiceLossNewvar
@@ -78,7 +78,7 @@ def mnist_loader():
     return train_loader, val_loader, test_loader
 
 
-def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, testbs, num_workers, validate_flag=True):
+def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testbs, num_workers, validate_flag=True):
     augmentation_prob = 0.5
     if validate_flag:
         train, valid, test = get_fold_filelist(csv_file, K=fold_K, fold=fold_idx, validation=True)
@@ -144,46 +144,49 @@ def getdataset(csv_file, fold_K, fold_idx, image_size, batch_size, testbs, num_w
     utils.WriteIntoTxt(valid_list, valid_list_txt)
     utils.WriteIntoTxt(test_list, test_list_txt)
 
-    train_loader = get_loader_difficult(seg_list=None,
-                                        GT_list=train_list_GT,
-                                        class_list=train_class_list_GT,
-                                        image_list=train_list,
-                                        contour_list=trian_list_contour,
-                                        dist_list=train_list_dist,
-                                        image_size=image_size,
-                                        batch_size=batch_size,
-                                        num_workers=num_workers,
-                                        mode='train',
-                                        augmentation_prob=augmentation_prob, )
+    train_loader = get_loader(seg_list=None,
+                              GT_list=train_list_GT,
+                              class_list=train_class_list_GT,
+                              image_list=train_list,
+                              contour_list=trian_list_contour,
+                              dist_list=train_list_dist,
+                              image_size=image_size,
+                              batch_size=batch_size,
+                              num_workers=num_workers,
+                              mode='train',
+                              augmentation_prob=augmentation_prob,
+                              device=device)
 
-    valid_loader = get_loader_difficult(seg_list=None,
-                                        GT_list=valid_list_GT,
-                                        class_list=valid_class_list_GT,
-                                        image_list=valid_list,
-                                        contour_list=valid_list_contour,
-                                        dist_list=valid_list_dist,
-                                        image_size=image_size,
-                                        batch_size=batch_size,
-                                        num_workers=num_workers,
-                                        mode='val',
-                                        augmentation_prob=0., )
+    valid_loader = get_loader(seg_list=None,
+                              GT_list=valid_list_GT,
+                              class_list=valid_class_list_GT,
+                              image_list=valid_list,
+                              contour_list=valid_list_contour,
+                              dist_list=valid_list_dist,
+                              image_size=image_size,
+                              batch_size=batch_size,
+                              num_workers=num_workers,
+                              mode='val',
+                              augmentation_prob=0.,
+                              device=device)
 
-    test_loader = get_loader_difficult(seg_list=None,
-                                       GT_list=test_list_GT,
-                                       class_list=test_class_list_GT,
-                                       image_list=test_list,
-                                       contour_list=test_list_contour,
-                                       dist_list=test_list_dist,
-                                       image_size=image_size,
-                                       batch_size=testbs,
-                                       num_workers=num_workers,
-                                       mode='test',
-                                       augmentation_prob=0., )
+    test_loader = get_loader(seg_list=None,
+                             GT_list=test_list_GT,
+                             class_list=test_class_list_GT,
+                             image_list=test_list,
+                             contour_list=test_list_contour,
+                             dist_list=test_list_dist,
+                             image_size=image_size,
+                             batch_size=testbs,
+                             num_workers=num_workers,
+                             mode='test',
+                             augmentation_prob=0.,
+                             device=device)
 
     return train_loader, valid_loader, test_loader
 
 
-def breast_loader(batch_size, testbs, validate_flag):
+def breast_loader(batch_size, testbs, device, validate_flag):
     train_path_m = './train_path/fold/fold'
     csv_path = './class_out/train.csv'
     fold_k = 5
@@ -192,10 +195,11 @@ def breast_loader(batch_size, testbs, validate_flag):
     distance_type = "dist_mask"
     normal_flag = False
     image_size = 224
-    num_workers = 1
+    num_workers = 0
 
     print('batch_size: ', batch_size)
-    train_loader, valid_loader, test_loader = getdataset(csv_path, fold_k, fold_idx, image_size, batch_size, testbs,
+    train_loader, valid_loader, test_loader = getdataset(device, csv_path, fold_k, fold_idx, image_size, batch_size,
+                                                         testbs,
                                                          num_workers, validate_flag)
 
     # train_path = train_path_m + str(fold_id) + '/train/images/'  # train_path是指训练集图片路径
@@ -247,11 +251,12 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     decay_ratio = 0.9432  # 学习率下降的比例 -----------------------------------------------------
     bs = Bs  # batch_size -----------------------------------------------------
     testbs = 1  # test_batch_size -----------------------------------------------------
-    L = 0.80  # 代表的是seg_loss的权重 -----------------------------------------------------
+    L = 0.80  # 代表的是seg_loss的权重[现已作废，已有自适应调整策略] -----------------------------------------------------
     use_pretrained = Use_pretrained  # 是否使用预训练模型 -----------------------------------------------------
     model_name = Model_name  # 模型名字 ------------------------------------------------------
     log_dir = './log/log'
     model_dir = './savemodel'
+    train_pic_list = './foldinfo/' + project + '/'
     SegImgSavePath = './SegImgSavePath/' + project
     save_model_dir = os.path.join(model_dir, project)
     t = TicToc()
@@ -276,7 +281,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
 
     print(getModelSize(model))
     print('project: ', project)
-    train_loader, valid_loader, test_loader = breast_loader(bs, testbs, validate_flag)
+    train_loader, valid_loader, test_loader = breast_loader(bs, testbs, device, validate_flag)
     # train_loader, test_loader = OpenDataSet.SelectDataSet('Cifar_10', bs)
 
     # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
@@ -295,6 +300,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     lr_sch = utils.LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer)  # -------------------------------
 
     utils.Mkdir(SegImgSavePath)
+    utils.Mkdir(train_pic_list)
 
     if is_train:
         SElist = []
@@ -328,6 +334,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             model.train()
             for i, data in tqdm(enumerate(datas, 0), total=len(datas)):
                 (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
+                DrawSavePic(img_file_name, inputs, targets1, targets2, targets3, train_pic_list)
                 optimizer.zero_grad()
                 Iter += 1
                 # (inputs, targets4) = data
@@ -427,7 +434,6 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             # log_vars: [0.02311073988676071, -0.027175873517990112], 将这个里的每个元素分别求个exp再输出
             exp_log_vars = [torch.exp(-log_var) for log_var in log_vars]
             print('exp_log_vars:', exp_log_vars)
-
 
             utils.PrintTrainInfo(_only_segtask, epoch, epoch_num, epoch_tp, epoch_fp, epoch_tn, epoch_fn, num_zero,
                                  num_one, tmp_pre, tmp_tar, writer, Iter)

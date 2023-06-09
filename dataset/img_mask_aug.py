@@ -1,9 +1,10 @@
 import imgaug as ia
 from imgaug import augmenters as iaa
 import numpy as np
+import torch
 
 
-def data_aug(imgs, masks, contour, dist, segs=None):     # 输入图像和标签,输入输出格式为numpy
+def data_aug(imgs, masks, contour, dist, device, segs=None):     # 输入图像和标签,输入输出格式为numpy
     # 标准化格式
     imgs = np.array(imgs)
     masks = np.array(masks).astype(np.uint8)
@@ -11,6 +12,12 @@ def data_aug(imgs, masks, contour, dist, segs=None):     # 输入图像和标签
     dists = np.array(dist).astype(np.uint8)
     if segs is not None:
         segs = np.array(segs).astype(np.uint8)
+
+    # imgs = torch.from_numpy(imgs).to(device).float()
+    # masks = torch.from_numpy(masks).to(device).float()
+    # contours = torch.from_numpy(contours).to(device).float()
+    # dists = torch.from_numpy(dists).to(device).float()
+
 
     # print('imgs shape',imgs.shape)
     # 确定batch数
@@ -137,6 +144,10 @@ def data_aug(imgs, masks, contour, dist, segs=None):     # 输入图像和标签
             segmap_seg = ia.SegmentationMapsOnImage(segs, shape=segs.shape)  # 分割标签格式
             segmaps_aug_seg = seq_det.augment_segmentation_maps(segmap_seg).get_arr().astype(np.uint8)
 
+    # images_aug = torch.from_numpy(images_aug).to(device).float()
+    # segmaps_aug = torch.from_numpy(segmaps_aug).to(device).float()
+    # contours_aug = torch.from_numpy(contours_aug).to(device).float()
+    # distances_aug = torch.from_numpy(distances_aug).to(device).float()
 
     if  segs is not None:
         return images_aug, segmaps_aug, segmaps_aug_seg
