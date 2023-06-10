@@ -136,7 +136,7 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
     print("images count in valid:{}".format(len(valid_list)))
     print("images count in test :{}".format(len(test_list)))
 
-    # 将train_list, valid_list, test_list保存到一个txt文件中
+    # 将train_list, valid_list, test_list保存到一个txt文件中ha
     train_list_txt = './foldinfo/train_list_' + str(fold_idx) + '.txt'
     valid_list_txt = './foldinfo/valid_list_' + str(fold_idx) + '.txt'
     test_list_txt = './foldinfo/test_list_' + str(fold_idx) + '.txt'
