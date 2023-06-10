@@ -95,6 +95,11 @@ class MultiTaskLossWrapper(nn.Module):
         seg_loss = criterion_seg(SR_flat, GT_flat, self.device, self.log_vars[0])
         cls_loss = criterion_cls(cls_out, targets4v, self.log_vars[1])
         loss = seg_loss + cls_loss
+        # 求平均
+        num = GT_flat.size(0)
+        seg_loss = seg_loss / num
+        cls_loss = cls_loss / num
+        loss = loss / num
         return seg_loss, cls_loss, loss, self.log_vars
 
 
