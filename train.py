@@ -307,6 +307,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             for i, data in tqdm(enumerate(datas, 0), total=len(datas)):
                 (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
                 if epoch == 0:
+                    # 没必要每次试验，因为只需要案例图像就够了，不需要在每次实验的时候都保存。况且每一epoch的图都不一样
                     # DrawSavePic(img_file_name, inputs, targets1, targets2, targets3, train_pic_list)
                     pass
                 optimizer.zero_grad()
@@ -558,7 +559,7 @@ if __name__ == '__main__':
     # Train_breast('UNet_olseg_0', 10, 600, 'unet', 1e-2, False, True, True, False)
     # Train_breast('unetRseg_cls_seg_8', 5, 100, 'unetr', 9.63366620781354e-14, False, True, _only_segtask=False,
     #              is_continue_train=True)
-    Train_breast('UnetR_cls_seg_1', 6, 1500, 'unetr', 3e-04, False, True, _only_segtask=False,
+    Train_breast('UnetR_cls_seg_1', 16, 1500, 'unetr', 3e-04, False, True, _only_segtask=False,
                  is_continue_train=False)  # 1e-04
     # Train_breast('efficientnetb7_cls2_0' , 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
