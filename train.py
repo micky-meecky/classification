@@ -426,7 +426,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             # 保存模型策略
             utils.SaveModel(model, epoch, epoch_loss, save_model_dir)
 
-            # 输出分割de指标
+            # 输出分割指标
             if _have_segtask:
                 print('train set segmentation output',
                       'SE = %.3f, PC = %.3f, F1 = %.3f, JS = %.3f, DC = %.3f, IOU = %.3f, Acc = %.3f' % (
