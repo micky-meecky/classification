@@ -214,12 +214,12 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     class_num = 1  # class_num -----------------------------------------------------
     lr = lr  # 学习率  -----------------------------------------------------
     validate_flag = False  # 是否使用验证集 -----------------------------------------------------
-    lr_low = 1e-15  # 学习率下限  ------------------------------------------------------
+    lr_low = 1e-17  # 学习率下限  ------------------------------------------------------
     lr_warm_epoch = 10  # warm up 的 epoch 数 -----------------------------------------------------
-    lr_cos_epoch = 600  # 学习率下降的epoch数 -----------------------------------------------------
+    lr_cos_epoch = 1200  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 100  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
-    decay_ratio = 0.9432  # 学习率下降的比例 -----------------------------------------------------
+    decay_ratio = 0.949  # 学习率下降的比例 -----------------------------------------------------
     bs = Bs  # batch_size -----------------------------------------------------
     testbs = 1  # test_batch_size -----------------------------------------------------
     L = 0.80  # 代表的是seg_loss的权重[现已作废，已有自适应调整策略] -----------------------------------------------------
@@ -559,7 +559,7 @@ if __name__ == '__main__':
     # Train_breast('UNet_olseg_0', 10, 600, 'unet', 1e-2, False, True, True, False)
     # Train_breast('unetRseg_cls_seg_8', 5, 100, 'unetr', 9.63366620781354e-14, False, True, _only_segtask=False,
     #              is_continue_train=True)
-    Train_breast('UnetR_cls_seg_1', 16, 1500, 'unetr', 3e-04, False, True, _only_segtask=False,
+    Train_breast('UnetR_cls_seg_1', 10, 1500, 'unetr', 3e-04, False, True, _only_segtask=False,
                  is_continue_train=False)  # 1e-04
     # Train_breast('efficientnetb7_cls2_0' , 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
