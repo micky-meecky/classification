@@ -148,7 +148,7 @@ class ImageFolder_new(data.Dataset):
             Transform_contour = T.Compose(Transform_contour)
             Transform_dist = T.Compose(Transform_dist)
 
-            image = Transform(image)
+            image = Transform(image) # 对image进行transform操作
             GT = Transform_GT(GT)
             contour = Transform_contour(contour)
             dist = Transform_dist(dist)
