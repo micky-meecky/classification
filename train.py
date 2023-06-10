@@ -28,6 +28,7 @@ import utils.evaluation as ue
 from utils.myloss import SoftDiceLossNew, JaccardLoss, BCEWithLogitsLossCustom, SoftDiceLossNewvar
 import test
 from utils import utils
+import multiprocessing as mp
 from mymodels import OpenDataSet
 
 import warnings
@@ -229,6 +230,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     train_pic_list = './foldinfo/' + project + '/'
     SegImgSavePath = './SegImgSavePath/' + project
     save_model_dir = os.path.join(model_dir, project)
+    mp.set_start_method('spawn')
     t = TicToc()
     te = TicToc()
     content = "----per epoch Time: "
