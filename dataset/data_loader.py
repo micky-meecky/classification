@@ -422,7 +422,7 @@ def get_loader(seg_list,
                                   num_workers=num_workers,
                                   drop_last=True,
                                   worker_init_fn=worker_init_fn,
-                                  pin_memory=True
+                                  # pin_memory=True
                                   )
     return data_loader
 

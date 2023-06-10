@@ -230,7 +230,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     train_pic_list = './foldinfo/' + project + '/'
     SegImgSavePath = './SegImgSavePath/' + project
     save_model_dir = os.path.join(model_dir, project)
-    mp.set_start_method('spawn')
+    # mp.set_start_method('spawn')
     t = TicToc()
     te = TicToc()
     content = "----per epoch Time: "
