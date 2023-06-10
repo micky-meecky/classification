@@ -131,11 +131,11 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
         # 输出seg的指标
         if _have_segtask:
             print(segoutputcontent, 'SE = %.3f, PC = %.3f, F1 = %.3f, JS = %.3f, DC = %.3f, IOU = %.3f, Acc = %.3f' % (
-                sum(SElist) / len(SElist), sum(PClist) / len(PClist), sum(F1list) / len(F1list), sum(JSlist) / len(JSlist),
+                sum(SElist) / len(SElist), sum(PClist) / len(PClist), sum(F1list) / len(F1list),
+                sum(JSlist) / len(JSlist),
                 sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))
             writer.add_scalars('valid/IOU', {'IOU': sum(IOUlist) / len(IOUlist)}, Iter)
             writer.add_scalars('valid/DC', {'DC': sum(DClist) / len(DClist)}, Iter)
-
 
 
 def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch.device,
@@ -266,6 +266,3 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
                 sum(SElist) / len(SElist), sum(PClist) / len(PClist), sum(F1list) / len(F1list),
                 sum(JSlist) / len(JSlist),
                 sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))
-
-
-

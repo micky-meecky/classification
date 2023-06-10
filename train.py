@@ -144,7 +144,8 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
     utils.WriteIntoTxt(valid_list, valid_list_txt)
     utils.WriteIntoTxt(test_list, test_list_txt)
 
-    train_loader = get_loader_difficult(seg_list=None,
+    # train_loader = get_loader_difficult(seg_list=None,
+    train_loader = get_loader(seg_list=None,
                               GT_list=train_list_GT,
                               class_list=train_class_list_GT,
                               image_list=train_list,
@@ -154,10 +155,11 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
                               batch_size=batch_size,
                               num_workers=num_workers,
                               mode='train',
-                              augmentation_prob=augmentation_prob,)
-                              # device=device)
+                              augmentation_prob=augmentation_prob,
+                              device=device)
 
-    valid_loader = get_loader_difficult(seg_list=None,
+    # valid_loader = get_loader_difficult(seg_list=None,
+    valid_loader = get_loader(seg_list=None,
                               GT_list=valid_list_GT,
                               class_list=valid_class_list_GT,
                               image_list=valid_list,
@@ -167,10 +169,11 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
                               batch_size=batch_size,
                               num_workers=num_workers,
                               mode='val',
-                              augmentation_prob=0.,)
-                              # device=device)
+                              augmentation_prob=0.,
+                              device=device)
 
-    test_loader = get_loader_difficult(seg_list=None,
+    # test_loader = get_loader_difficult(seg_list=None,
+    test_loader = get_loader(seg_list=None,
                              GT_list=test_list_GT,
                              class_list=test_class_list_GT,
                              image_list=test_list,
@@ -180,8 +183,8 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
                              batch_size=testbs,
                              num_workers=num_workers,
                              mode='test',
-                             augmentation_prob=0.,)
-                             # device=device)
+                             augmentation_prob=0.,
+                             device=device)
 
     return train_loader, valid_loader, test_loader
 
@@ -194,46 +197,13 @@ def breast_loader(batch_size, testbs, device, validate_flag):
     fold_id = 1
     distance_type = "dist_mask"
     normal_flag = False
-    image_size = 256
-    num_workers = 1
+    image_size = 224
+    num_workers = 0
 
     print('batch_size: ', batch_size)
     train_loader, valid_loader, test_loader = getdataset(device, csv_path, fold_k, fold_idx, image_size, batch_size,
                                                          testbs,
                                                          num_workers, validate_flag)
-
-    # train_path = train_path_m + str(fold_id) + '/train/images/'  # train_path是指训练集图片路径
-    # val_path = train_path_m + str(fold_id) + '/validation/images/'  # val_path是指验证集图片路径
-    # test_path = train_path_m + str(fold_id) + '/test/images/'  # test_path是指测试集图片路径
-    # train_file_names = glob.glob(train_path + "*.png")  # 获取训练集图片路径
-    #
-    # # 为了避免模型只记住了数据的顺序，而非真正的特征，代码使用了 random.shuffle() 函数对 train_file_names
-    # # 变量中存储的图片路径进行了随机打乱操作，从而增加了数据的随机性，更有助于训练出鲁棒性更强的模型。
-    # random.shuffle(train_file_names)  # 打乱训练集图片路径
-    # val_file_names = glob.glob(val_path + "*.png")  # 获取验证集图片路径
-    # test_file_names = glob.glob(test_path + "*.png")  # 获取测试集图片路径
-    #
-    # # todo: add TTA here
-    #
-    # trainLoader = DataLoader(
-    #     DatasetImageMaskContourDist(train_file_names, distance_type, normal_flag),
-    #     batch_size=batch_size,
-    #     shuffle=True,
-    #     num_workers=5,
-    # )
-    # validLoader = DataLoader(
-    #     DatasetImageMaskContourDist(val_file_names, distance_type, normal_flag),
-    #     batch_size=batch_size,
-    #     shuffle=True,
-    #     num_workers=5,
-    # )
-    # testLoader = DataLoader(
-    #     DatasetImageMaskContourDist(test_file_names, distance_type, normal_flag),
-    #     num_workers=1,
-    #     batch_size=10,
-    #     shuffle=True,
-    # )
-
     return train_loader, valid_loader, test_loader
 
 
@@ -335,8 +305,8 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             for i, data in tqdm(enumerate(datas, 0), total=len(datas)):
                 (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
                 if epoch == 0:
-                    pass
                     # DrawSavePic(img_file_name, inputs, targets1, targets2, targets3, train_pic_list)
+                    pass
                 optimizer.zero_grad()
                 Iter += 1
                 # (inputs, targets4) = data
@@ -466,6 +436,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                 writer.add_scalars('train/IOU', {'IOU': sum(IOUlist) / len(IOUlist)}, epoch)
                 writer.add_scalars('train/DC', {'DC': sum(DClist) / len(DClist)}, epoch)
                 writer.add_scalars('train/log_vars0', {'log_vars0': log_vars[0]}, epoch)
+                writer.add_scalars('train/log_vars1', {'log_vars1': log_vars[1]}, epoch)
 
             print('Iter = ', Iter)
             writer.add_scalars('Lr', {'lr': utils.GetCurrentLr(optimizer)}, epoch)
@@ -585,7 +556,7 @@ if __name__ == '__main__':
     # Train_breast('UNet_olseg_0', 10, 600, 'unet', 1e-2, False, True, True, False)
     # Train_breast('unetRseg_cls_seg_8', 5, 100, 'unetr', 9.63366620781354e-14, False, True, _only_segtask=False,
     #              is_continue_train=True)
-    Train_breast('Unet_cls_seg_12', 5, 800, 'unet', 1e-04, False, True, _only_segtask=False,
+    Train_breast('UnetR_cls_seg_1', 6, 1500, 'unetr', 3e-04, False, True, _only_segtask=False,
                  is_continue_train=False)  # 1e-04
     # Train_breast('efficientnetb7_cls2_0' , 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)

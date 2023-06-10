@@ -84,6 +84,8 @@ class BCEWithLogitsLossCustom(nn.Module):
         self.pos_weight = pos_weight
 
     def forward(self, input, target, log_vars):
+        # 对log_vars进行限制
+        log_vars = torch.clamp(log_vars, min=-0.5)
         # 计算二分类损失
         loss = F.binary_cross_entropy_with_logits(input, target, weight=self.weight, reduction='none',
                                                   pos_weight=self.pos_weight)
@@ -91,13 +93,13 @@ class BCEWithLogitsLossCustom(nn.Module):
             # 针对loss中的每一个元素，计算exp(-log_vars)
             precision2 = torch.exp(-log_vars)
             # 将loss中的每一个元素乘以precision2，并加上log_vars
-            loss = loss + (loss * (0.5 * precision2 ** 2) + 0.2 * log_vars)
+            loss = loss + (loss * (0.5 * precision2 ** 2) + log_vars)
             # 计算总和
             loss = torch.sum(loss)
         elif self.reduction == 'sum':
             precision2 = torch.exp(-log_vars)
             # 计算总和
-            loss = torch.sum(loss * (0.5 * precision2 ** 2) + 0.2 * log_vars)
+            loss = torch.sum(loss * (0.5 * precision2 ** 2) + log_vars)
         return loss
 
 class SoftDiceLossNewvar(nn.Module):
@@ -109,6 +111,8 @@ class SoftDiceLossNewvar(nn.Module):
         smooth = 1
         # 初始化损失为0
         loss = 0
+        # 对log_vars进行限制
+        log_vars = torch.clamp(log_vars, min=-0.5)
         precision1 = torch.exp(-log_vars)
         for i in range(num):
             m1 = probs[i]
