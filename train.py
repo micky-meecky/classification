@@ -307,7 +307,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             for i, data in tqdm(enumerate(datas, 0), total=len(datas)):
                 (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
                 if epoch == 0:
-                    DrawSavePic(img_file_name, inputs, targets1, targets2, targets3, train_pic_list)
+                    # DrawSavePic(img_file_name, inputs, targets1, targets2, targets3, train_pic_list)
                     pass
                 optimizer.zero_grad()
                 Iter += 1
