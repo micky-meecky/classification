@@ -502,6 +502,7 @@ def DrawSavePic(img_file_name, inputs, targets1, targets2, targets3, train_pic_l
         # 保存图片
         plt.savefig(train_pic_list + img_file_names)
         plt.close()
+        print('save pic:', img_file_names)
 
 
 if __name__ == '__main__':
