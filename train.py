@@ -198,7 +198,7 @@ def breast_loader(batch_size, testbs, device, validate_flag):
     fold_id = 1
     distance_type = "dist_mask"
     normal_flag = False
-    image_size = 256
+    image_size = 224
     num_workers = 0
 
     print('batch_size: ', batch_size)
@@ -216,7 +216,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     validate_flag = False  # 是否使用验证集 -----------------------------------------------------
     lr_low = 1e-12  # 学习率下限  ------------------------------------------------------
     lr_warm_epoch = 1  # warm up 的 epoch 数 -----------------------------------------------------
-    lr_cos_epoch = 800  # 学习率下降的epoch数 -----------------------------------------------------
+    lr_cos_epoch = 700  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 100  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_ratio = 0.9481  # 学习率下降的比例 -----------------------------------------------------
@@ -559,7 +559,7 @@ if __name__ == '__main__':
     # Train_breast('UNet_olseg_0', 10, 600, 'unet', 1e-2, False, True, True, False)
     # Train_breast('unetRseg_cls_seg_8', 5, 100, 'unetr', 9.63366620781354e-14, False, True, _only_segtask=False,
     #              is_continue_train=True)
-    Train_breast('Unet_cls_seg_14', 5, 1000, 'unet', 1e-4, False, True, _only_segtask=False,
+    Train_breast('Unet_cls_seg_14r', 5, 900, 'unet', 3e-4, False, True, _only_segtask=False,
                  is_continue_train=False)  # 0.00024681865315859415
     # Train_breast('efficientnetb7_cls2_0' , 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)

@@ -79,9 +79,9 @@ def Device(model):
 class MultiTaskLossWrapper(nn.Module):
     def __init__(self, model, device):
         super(MultiTaskLossWrapper, self).__init__()
-        # self.log_vars = nn.Parameter(torch.zeros(2))
+        self.log_vars = nn.Parameter(torch.zeros(2))
         # 初始化为0.2326621264219284, -1.3984906673431396
-        self.log_vars = nn.Parameter(torch.tensor([0., 0.])).to(device)
+        # self.log_vars = nn.Parameter(torch.tensor([0., 0.]))
         self.model = model
         self.device = device
 
