@@ -77,29 +77,34 @@ class JaccardLoss(nn.Module):
             loss += 1 - score
 
 class BCEWithLogitsLossCustom(nn.Module):
-    def __init__(self, weight=None, reduction='mean', pos_weight=None):
+    def __init__(self, gamma=2, weight=None, reduction='sum', pos_weight=None):
         super(BCEWithLogitsLossCustom, self).__init__()
         self.weight = weight
         self.reduction = reduction
         self.pos_weight = pos_weight
+        self.gamma = gamma
 
     def forward(self, input, target, log_vars):
         # 对log_vars进行限制
-        log_vars = torch.clamp(log_vars, min=-0.5)
-        # 计算二分类损失
-        loss = F.binary_cross_entropy_with_logits(input, target, weight=self.weight, reduction='none',
-                                                  pos_weight=self.pos_weight)
-        if self.reduction == 'mean':
+        log_vars = torch.clamp(log_vars, min=-0.3)
+
+        # 计算logits
+        logits = torch.sigmoid(input)
+
+        # 计算交叉熵损失
+        bce_loss = F.binary_cross_entropy_with_logits(input, target, weight=self.weight, reduction='none',
+                                                      pos_weight=self.pos_weight)
+
+        # 计算Focal Loss
+        focal_loss = (1 - logits) ** self.gamma * target * bce_loss + (logits ** self.gamma) * (1 - target) * bce_loss
+
+        if self.reduction == 'sum':
             # 针对loss中的每一个元素，计算exp(-log_vars)
             precision2 = torch.exp(-log_vars)
             # 将loss中的每一个元素乘以precision2，并加上log_vars
-            loss = loss + (loss * (0.5 * precision2 ** 2) + log_vars)
+            loss = focal_loss + (focal_loss * (0.5 * precision2) + 0.5 * log_vars)  # 乘以权重
             # 计算总和
             loss = torch.sum(loss)
-        elif self.reduction == 'sum':
-            precision2 = torch.exp(-log_vars)
-            # 计算总和
-            loss = torch.sum(loss * (0.5 * precision2 ** 2) + log_vars)
         return loss
 
 class SoftDiceLossNewvar(nn.Module):
@@ -137,7 +142,7 @@ class SoftDiceLossNewvar(nn.Module):
             else:
                 score = torch.tensor(1., requires_grad=True).to(device)  # 创建需要求导的tensor
             loss = loss + 1 - score
-            loss = loss + (loss * (0.5 * precision1 ** 2) + log_vars)  # 乘以权重
+            loss = loss + (loss * (0.5 * precision1) + 0.5 * log_vars)  # 乘以权重
         # loss = loss / num
         return loss
 
