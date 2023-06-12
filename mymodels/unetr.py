@@ -114,7 +114,7 @@ class SelfAttention(nn.Module):
     def transpose_for_scores(self, x):
         new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
         x = x.view(*new_x_shape)
-        return x.permute(0, 2, 1, 3)
+        return x.permute(0, 2, 1, 3)  # permute 是交换维度，这里是交换第1和第2维
 
     def forward(self, hidden_states):
         mixed_query_layer = self.query(hidden_states)
@@ -177,7 +177,8 @@ class PositionwiseFeedForward(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        return self.w_2(self.dropout(F.relu(self.w_1(x))))
+        return self.w_2(self.dropout(F.relu(self.w_1(x))))  # 这里是relu吗？我咋记得是gelu啊？下面我写了个换成gelu的版本
+        # return self.w_2(self.dropout(F.gelu(self.w_1(x))))
 
 
 class Embeddings(nn.Module):
@@ -224,7 +225,7 @@ class TransformerBlock(nn.Module):
         self.attention_norm = nn.LayerNorm(embed_dim, eps=1e-6)
         self.mlp_norm = nn.LayerNorm(embed_dim, eps=1e-6)
         self.mlp_dim = int((cube_size[0] * cube_size[1]) / (patch_size * patch_size))
-        self.mlp = PositionwiseFeedForward(embed_dim, embed_dim* 4)
+        self.mlp = PositionwiseFeedForward(embed_dim, embed_dim * 4)
         self.attn = SelfAttention(num_heads, embed_dim, dropout)
 
     def forward(self, x):
