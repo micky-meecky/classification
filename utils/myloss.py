@@ -86,7 +86,7 @@ class BCEWithLogitsLossCustom(nn.Module):
 
     def forward(self, input, target, log_vars):
         # 对log_vars进行限制
-        log_vars = torch.clamp(log_vars, min=-0.3)
+        log_vars = torch.clamp(log_vars, min=-0.)
 
         # 计算logits
         logits = torch.sigmoid(input)
@@ -117,7 +117,7 @@ class SoftDiceLossNewvar(nn.Module):
         # 初始化损失为0
         loss = 0
         # 对log_vars进行限制
-        log_vars = torch.clamp(log_vars, min=-0.5)
+        log_vars = torch.clamp(log_vars, min=-0.)
         precision1 = torch.exp(-log_vars)
         for i in range(num):
             m1 = probs[i]

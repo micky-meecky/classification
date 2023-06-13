@@ -177,8 +177,8 @@ class PositionwiseFeedForward(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        return self.w_2(self.dropout(F.relu(self.w_1(x))))  # 这里是relu吗？我咋记得是gelu啊？下面我写了个换成gelu的版本
-        # return self.w_2(self.dropout(F.gelu(self.w_1(x))))
+        # return self.w_2(self.dropout(F.relu(self.w_1(x))))  # 这里是relu吗？我咋记得是gelu啊？下面我写了个换成gelu的版本
+        return self.w_2(self.dropout(F.gelu(self.w_1(x))))
 
 
 class Embeddings(nn.Module):
@@ -290,7 +290,7 @@ class UNETR(nn.Module):
         dropout (float): dropout rate
         batch_size (int): batch size
     """
-    def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=256, patch_size=16, num_heads=16,
+    def __init__(self, img_shape=(224, 224), input_dim=3, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
                  dropout=0.1, batch_size=10):
         super().__init__()
         self.input_dim = input_dim
@@ -773,7 +773,7 @@ class UNETRSwin(nn.Module):
 
 if __name__ == '__main__':
     model = UNETR()
-    x = torch.randn(2, 1, 224, 224)
+    x = torch.randn(2, 3, 224, 224)
     y, ys = model(x)
     print(y.shape)
     print(ys.shape)

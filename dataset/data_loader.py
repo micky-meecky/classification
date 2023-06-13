@@ -66,6 +66,7 @@ class ImageFolder_new(data.Dataset):
         GT_o = GT = Image.open(GT_path)
         contour_o = contour = Image.open(self.contour_paths[index])
         dist_o = dist = Image.open(self.dist_paths[index])
+        image = image.convert('RGB')
 
         if self.load_preseg:
             seg_path = self.seg_paths[index]
@@ -105,6 +106,8 @@ class ImageFolder_new(data.Dataset):
             Transform_GT.append(T.ColorJitter(brightness=0.25, contrast=0.25))
             Transform_contour.append(T.ColorJitter(brightness=0.25, contrast=0.25))
             Transform_dist.append(T.ColorJitter(brightness=0.25, contrast=0.25))
+
+            T.Grayscale(num_output_channels=3),
 
             # Transform.append(T.RandomApply([T.RandomErasing(p=0.5)], p=0.5))
             # Transform_GT.append(T.RandomApply([T.RandomErasing(p=0.5)], p=0.5))
