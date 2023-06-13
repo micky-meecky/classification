@@ -84,6 +84,38 @@ class Deconv2DBlock(nn.Module):
         return self.block(x)
 
 
+def drop_path(x, drop_prob: float = 0., training: bool = False):
+    """
+    Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
+    This is the same as the DropConnect impl I created for EfficientNet, etc networks, however,
+    the original name is misleading as 'Drop Connect' is a different form of dropout in a separate paper...
+    See discussion: https://github.com/tensorflow/tpu/issues/494#issuecomment-532968956 ... I've opted for
+    changing the layer and argument names to 'drop path' rather than mix DropConnect as a layer name and use
+    'survival rate' as the argument.
+    """
+    if drop_prob == 0. or not training:
+        return x
+    keep_prob = 1 - drop_prob
+    shape = (x.shape[0],) + (1,) * (x.ndim - 1)  # work with diff dim tensors, not just 2D ConvNets
+    random_tensor = keep_prob + torch.rand(shape, dtype=x.dtype, device=x.device)
+    random_tensor.floor_()  # binarize
+    output = x.div(keep_prob) * random_tensor
+    return output
+
+
+class DropPath(nn.Module):
+    """
+    Drop paths (Stochastic Depth) per sample  (when applied in main path of residual blocks).
+    """
+
+    def __init__(self, drop_prob=None):
+        super(DropPath, self).__init__()
+        self.drop_prob = drop_prob
+
+    def forward(self, x):
+        return drop_path(x, self.drop_prob, self.training)
+
+
 class SelfAttention(nn.Module):
     r""" Self attention Layer
     self attention layer as in "Self-Attention Generative Adversarial Networks" (https://arxiv.org/abs/1805.08318)
@@ -191,20 +223,25 @@ class Embeddings(nn.Module):
         patch_size (int): 每个patch的尺寸
         dropout (float): dropout的比例
     """
-    def __init__(self, input_dim, embed_dim, cube_size, patch_size, dropout):
+    def __init__(self, input_dim, embed_dim, cube_size, patch_size, dropout, cls_token, num_out_tokens=1):
         super().__init__()
         self.n_patches = int((cube_size[0] * cube_size[1]) / (patch_size * patch_size))
         self.patch_size = patch_size
         self.embed_dim = embed_dim
         self.patch_embeddings = nn.Conv2d(in_channels=input_dim, out_channels=embed_dim,
                                           kernel_size=patch_size, stride=patch_size)
-        self.position_embeddings = nn.Parameter(torch.zeros(1, self.n_patches, embed_dim))  # 这是一个可学习参数
+        self.position_embeddings = nn.Parameter(torch.zeros(1, self.n_patches + num_out_tokens, embed_dim))  # [1, n_patches + 1, embed_dim]
         self.dropout = nn.Dropout(dropout)
+        self.cls_token = cls_token
+        self.num_out_tokens = num_out_tokens
 
     def forward(self, x):
         x = self.patch_embeddings(x)
         x = x.flatten(2)    # 2表示从第二个维度开始
         x = x.transpose(-1, -2)  # 交换最后两个维度
+        # 这里应该加上一个cls tokend的
+        cls_tokens = self.cls_token.expand(x.shape[0], -1, -1)
+        x = torch.cat((cls_tokens, x), dim=1)  # [batch_size, n_patches+1, embed_dim]
         embeddings = x + self.position_embeddings   # resnet
         embeddings = self.dropout(embeddings)   # dropout
         return embeddings
@@ -220,24 +257,26 @@ class TransformerBlock(nn.Module):
         cube_size: 输入图像的尺寸，比如(256, 256)
         patch_size: 每个patch的尺寸，比如(16, 16)
     """
-    def __init__(self, embed_dim, num_heads, dropout, cube_size, patch_size):
+    def __init__(self, embed_dim, num_heads, dropout, cube_size, patch_size, drop_path_ratio=0.):
         super().__init__()
         self.attention_norm = nn.LayerNorm(embed_dim, eps=1e-6)
         self.mlp_norm = nn.LayerNorm(embed_dim, eps=1e-6)
         self.mlp_dim = int((cube_size[0] * cube_size[1]) / (patch_size * patch_size))
         self.mlp = PositionwiseFeedForward(embed_dim, embed_dim * 4)
         self.attn = SelfAttention(num_heads, embed_dim, dropout)
+        self.drop_path = DropPath(drop_path_ratio) if drop_path_ratio > 0. else nn.Identity()
 
     def forward(self, x):
         h = x
         x = self.attention_norm(x)
         x, weights = self.attn(x)
+        x = self.drop_path(x)
         x = x + h
         h = x
 
         x = self.mlp_norm(x)
         x = self.mlp(x)
-
+        x = self.drop_path(x)
         x = x + h
         return x, weights
 
@@ -257,13 +296,17 @@ class Transformer(nn.Module):
     """
     def __init__(self, input_dim, embed_dim, cube_size, patch_size, num_heads, num_layers, dropout, extract_layers):
         super().__init__()
-        self.embeddings = Embeddings(input_dim, embed_dim, cube_size, patch_size, dropout)
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))  # 这是一个可学习参数
+        self.num_out_tokens = 1  # 用于分类的输出的token数
+        self.embeddings = Embeddings(input_dim, embed_dim, cube_size, patch_size, dropout, self.cls_token, self.num_out_tokens)
         self.layer = nn.ModuleList()
         self.encoder_norm = nn.LayerNorm(embed_dim, eps=1e-6)   # eps是一个很小的数，防止分母为0
         self.extract_layers = extract_layers
         for _ in range(num_layers):
             layer = TransformerBlock(embed_dim, num_heads, dropout, cube_size, patch_size)
             self.layer.append(copy.deepcopy(layer))
+        # 还加一层norm，用于cls token的输出
+        self.cls_norm = nn.LayerNorm(embed_dim)
 
     def forward(self, x):
         extract_layers = []
@@ -274,7 +317,14 @@ class Transformer(nn.Module):
             if depth + 1 in self.extract_layers:
                 extract_layers.append(hidden_states)    # (batch_size, n_patches, embed_dim) 也就是 (bs, 196, 768)
 
-        return extract_layers
+        # 这里的extract_layers是一个list，里面有4个元素，每个元素是一个tensor，shape为(batch_size, n_patches + 1, embed_dim)
+        # 现在要将其中每个元素的第一个token去掉，得到(batch_size, n_patches, embed_dim)
+        extract_layers = [layer[:, 1:, :] for layer in extract_layers]
+
+        # 这里加上一个norm
+        cls_out = self.cls_norm(hidden_states)
+        cls_out = cls_out[:, 0]
+        return extract_layers, cls_out  # (bs, 768)
 
 
 class UNETR(nn.Module):
@@ -330,21 +380,26 @@ class UNETR(nn.Module):
                                              SingleConv2DBlock(64, output_dim, 1))
 
     def forward(self, x):
-        z = self.transformer(x)
+        z, cls_token = self.transformer(x)
         z0, z3, z6, z9, z12 = x, *z
         z3 = z3.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)  # 把z3的最后两维换一下位置，然后reshape
         z6 = z6.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)  # 相当于把196个patch的768维的向量变成了14 * 14的矩阵
         z9 = z9.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
         z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)   # shape: (batch_size, 768, 14, 14)
 
-        # 将z12用nn.AdaptiveAvgPool2d(1)降维
-        z12c = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
-        z12c = z12c.view(z12c.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
-        z12c = F.dropout(z12c, p=self.dropout, training=self.training)
+        # cls head, cls_token shape: (batch_size, 768)
+        cls_out = self.fc1(cls_token)
+        cls_out = self.dropout1(cls_out)
+        cls_out = self.fc2(cls_out)
 
-        z12c = self.fc1(z12c)
-        z12c = self.dropout1(z12c)
-        clsout = self.fc2(z12c)
+        # 将z12用nn.AdaptiveAvgPool2d(1)降维
+        # z12c = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
+        # z12c = z12c.view(z12c.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
+        # z12c = F.dropout(z12c, p=self.dropout, training=self.training)
+        #
+        # z12c = self.fc1(z12c)
+        # z12c = self.dropout1(z12c)
+        # clsout = self.fc2(z12c)
 
         # z3 = torch.mean(z3.view(z3.size(0), z3.size(1), -1), dim=2)  # shape: (batch_size, 768)
         # z6 = torch.mean(z6.view(z6.size(0), z6.size(1), -1), dim=2)  # shape: (batch_size, 768)
@@ -364,7 +419,7 @@ class UNETR(nn.Module):
         z0 = self.decoder0(z0)
         output = self.decoder0_header(torch.cat([z0, z3], dim=1))
 
-        return clsout, output
+        return cls_out, output
 
 
 class UNETRcls(nn.Module):
