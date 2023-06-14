@@ -450,11 +450,20 @@ class UNETRcls(nn.Module):
 
     def forward(self, x):
         z, cls_token = self.transformer(x)
+        z12 = z[-1]
+        # 将z12用nn.AdaptiveAvgPool2d(1)降维
+        z12c = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
+        z12c = z12c.view(z12c.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
+        z12c = F.dropout(z12c, p=self.dropout, training=self.training)
+
+        z12c = self.fc1(z12c)
+        z12c = self.dropout1(z12c)
+        cls_out = self.fc2(z12c)
 
         # cls head, cls_token shape: (batch_size, 768)
-        cls_out = self.fc1(cls_token)
-        cls_out = self.dropout1(cls_out)
-        cls_out = self.fc2(cls_out)
+        # cls_out = self.fc1(cls_token)
+        # cls_out = self.dropout1(cls_out)
+        # cls_out = self.fc2(cls_out)
 
         return cls_out
 
