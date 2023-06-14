@@ -76,6 +76,36 @@ class JaccardLoss(nn.Module):
                 score = (intersection.sum() + smooth) / (m1.sum() + m2.sum() - intersection.sum() + smooth)
             loss += 1 - score
 
+
+class BCEWithLogitsLossCustomcls(nn.Module):
+    def __init__(self, gamma=2, weight=None, reduction='mean', pos_weight=None):
+        super(BCEWithLogitsLossCustomcls, self).__init__()
+        self.weight = weight
+        self.reduction = reduction
+        self.pos_weight = pos_weight
+        self.gamma = gamma
+
+    def forward(self, input, target):
+
+        # 计算logits
+        logits = torch.sigmoid(input)
+
+        # 计算交叉熵损失
+        bce_loss = F.binary_cross_entropy_with_logits(input, target, weight=self.weight, reduction='none',
+                                                      pos_weight=self.pos_weight)
+
+        # 计算Focal Loss
+        focal_loss = (1 - logits) ** self.gamma * target * bce_loss + (logits ** self.gamma) * (1 - target) * bce_loss
+
+        if self.reduction == 'sum':
+            # 计算总和
+            loss = torch.sum(focal_loss)
+        else:
+            loss = torch.mean(focal_loss)
+
+        return loss
+
+
 class BCEWithLogitsLossCustom(nn.Module):
     def __init__(self, gamma=2, weight=None, reduction='sum', pos_weight=None):
         super(BCEWithLogitsLossCustom, self).__init__()

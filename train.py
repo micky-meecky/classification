@@ -25,7 +25,7 @@ from dataset.class_divide import get_fold_filelist
 from dataset.data_loader import get_loader_difficult, get_loader, DrawSavePic
 from utils.tictoc import TicToc
 import utils.evaluation as ue
-from utils.myloss import SoftDiceLossNew, JaccardLoss, BCEWithLogitsLossCustom, SoftDiceLossNewvar
+from utils.myloss import SoftDiceLossNew, JaccardLoss, BCEWithLogitsLossCustom, SoftDiceLossNewvar, BCEWithLogitsLossCustomcls
 import test
 from utils import utils
 import multiprocessing as mp
@@ -258,7 +258,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
 
     # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
     pos_weight = torch.tensor([515 / 108]).to(device)
-    criterion_cls = BCEWithLogitsLossCustom(pos_weight=pos_weight)
+    criterion_cls = BCEWithLogitsLossCustomcls(pos_weight=pos_weight)
     # criterion_cls = nn.BCEWithLogitsLoss()  # -----------------------------------------------------
     criterion_seg = SoftDiceLossNewvar()  # -----------------------------------------------------
     # criterion_seg = nn.BCELoss()  # -----------------------------------------------------
@@ -267,8 +267,8 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         model.load_state_dict(torch.load(model_dir, map_location=device))
         print('load model')
 
-    mtl = utils.MultiTaskLossWrapper(model, device)
-    optimizer = optim.Adam(list(mtl.parameters()), lr, (0.5, 0.99))  # ----------------------------------------
+    # mtl = utils.MultiTaskLossWrapper(model, device)
+    optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))  # ----------------------------------------
     lr_sch = utils.LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer)  # -------------------------------
 
     utils.Mkdir(SegImgSavePath)
@@ -380,8 +380,8 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                         # cls_loss = criterion_cls(outputs, targets4v)
 
                     if _have_segtask:
-                        seg_loss, cls_loss, loss, log_vars = mtl(outputs, SR_flat, targets4v, GT_flat, criterion_seg,
-                                                                 criterion_cls)
+                        # seg_loss, cls_loss, loss, log_vars = mtl(outputs, SR_flat, targets4v, GT_flat, criterion_seg,
+                        #                                          criterion_cls)
                         seg_running_loss += seg_loss.item()
                     else:
                         cls_loss = criterion_cls(outputs, targets4v)
@@ -405,10 +405,10 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                     optimizer.step()
 
                 running_loss += loss.item()
-            print('log_vars:', log_vars.data.tolist())
+            # print('log_vars:', log_vars.data.tolist())
             # log_vars: [0.02311073988676071, -0.027175873517990112], 将这个里的每个元素分别求个exp再输出
-            exp_log_vars = [torch.exp(-log_var) for log_var in log_vars]
-            print('exp_log_vars:', exp_log_vars)
+            # exp_log_vars = [torch.exp(-log_var) for log_var in log_vars]
+            # print('exp_log_vars:', exp_log_vars)
 
             utils.PrintTrainInfo(_only_segtask, epoch, epoch_num, epoch_tp, epoch_fp, epoch_tn, epoch_fn, num_zero,
                                  num_one, tmp_pre, tmp_tar, writer, Iter)
@@ -438,8 +438,8 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                           sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))
                 writer.add_scalars('train/IOU', {'IOU': sum(IOUlist) / len(IOUlist)}, epoch)
                 writer.add_scalars('train/DC', {'DC': sum(DClist) / len(DClist)}, epoch)
-                writer.add_scalars('train/log_vars0', {'log_vars0': log_vars[0]}, epoch)
-                writer.add_scalars('train/log_vars1', {'log_vars1': log_vars[1]}, epoch)
+                # writer.add_scalars('train/log_vars0', {'log_vars0': log_vars[0]}, epoch)
+                # writer.add_scalars('train/log_vars1', {'log_vars1': log_vars[1]}, epoch)
 
             print('Iter = ', Iter)
             writer.add_scalars('Lr', {'lr': utils.GetCurrentLr(optimizer)}, epoch)
@@ -559,7 +559,10 @@ if __name__ == '__main__':
     # Train_breast('UNet_olseg_0', 10, 600, 'unet', 1e-2, False, True, True, False)
     # Train_breast('unetRseg_cls_seg_8', 5, 100, 'unetr', 9.63366620781354e-14, False, True, _only_segtask=False,
     #              is_continue_train=True)
-    Train_breast('UnetR_cls_seg_3', 32, 2000, 'unetr', 4e-3, False, True, _only_segtask=False,
+    Train_breast('UnetR_cls_seg_3', 6, 1000, 'unetr', 4e-3,
+                 Use_pretrained=False,
+                 _have_segtask=False,
+                 _only_segtask=False,
                  is_continue_train=False)  # 0.00024681865315859415
     # Train_breast('efficientnetb7_cls2_0' , 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
