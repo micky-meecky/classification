@@ -66,7 +66,7 @@ class ImageFolder_new(data.Dataset):
         GT_o = GT = Image.open(GT_path)
         contour_o = contour = Image.open(self.contour_paths[index])
         dist_o = dist = Image.open(self.dist_paths[index])
-        image = image.convert('RGB')
+        # image = image.convert('RGB')
 
         if self.load_preseg:
             seg_path = self.seg_paths[index]

@@ -340,7 +340,7 @@ class UNETR(nn.Module):
         dropout (float): dropout rate
         batch_size (int): batch size
     """
-    def __init__(self, img_shape=(224, 224), input_dim=3, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
+    def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=256, patch_size=16, num_heads=16,
                  dropout=0.1, batch_size=10):
         super().__init__()
         self.input_dim = input_dim
@@ -424,7 +424,7 @@ class UNETR(nn.Module):
 
 class UNETRcls(nn.Module):
     def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
-                 dropout=0.3, batch_size=10):
+                 dropout=0.1, batch_size=10):
         super().__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
