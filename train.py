@@ -559,7 +559,7 @@ if __name__ == '__main__':
     # Train_breast('UNet_olseg_0', 10, 600, 'unet', 1e-2, False, True, True, False)
     # Train_breast('unetRseg_cls_seg_8', 5, 100, 'unetr', 9.63366620781354e-14, False, True, _only_segtask=False,
     #              is_continue_train=True)
-    Train_breast('UnetR_cls_seg_3', 20, 400, 'unetr', 1.1e-3, False, True, _only_segtask=False,
+    Train_breast('UnetR_cls_seg_3', 32, 400, 'unetr', 1.1e-3, False, True, _only_segtask=False,
                  is_continue_train=False)  # 0.00024681865315859415
     # Train_breast('efficientnetb7_cls2_0' , 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
