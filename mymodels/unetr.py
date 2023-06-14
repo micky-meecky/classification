@@ -301,7 +301,10 @@ class Transformer(nn.Module):
                  is_cls_token=True):
         super().__init__()
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))  # 这是一个可学习参数
-        self.num_out_tokens = 0  # 用于分类的输出的token数
+        if is_cls_token:
+            self.num_out_tokens = 1
+        else:
+            self.num_out_tokens = 0  # 用于分类的输出的token数
         self.embeddings = Embeddings(input_dim, embed_dim, cube_size, patch_size, dropout, self.cls_token,
                                      self.num_out_tokens, is_cls_token)
         self.layer = nn.ModuleList()
@@ -370,7 +373,7 @@ class UNETR(nn.Module):
 
         # Transformer Encoder
         self.transformer = Transformer(input_dim, embed_dim, img_shape, patch_size, num_heads, self.num_layers, dropout,
-                                       self.ext_layers, is_cls_token=False)
+                                       self.ext_layers, is_cls_token=True)
 
         # U-Net Decoder
         self.decoder0 = nn.Sequential(Conv2DBlock(input_dim, 32, 3),Conv2DBlock(32, 64, 3))
