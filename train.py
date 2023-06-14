@@ -564,7 +564,17 @@ if __name__ == '__main__':
     #              _have_segtask=False,
     #              _only_segtask=False,
     #              is_continue_train=False)  # 0.00024681865315859415
-    Train_breast('UnetR_ocls_2', 128, 1500, 'unetr', 1e-2,
+    # Train_breast('UnetR_ocls_2', 128, 1500, 'unetr', 2e-2,
+    #              Use_pretrained=False,
+    #              _have_segtask=False,
+    #              _only_segtask=False,
+    #              is_continue_train=False)
+    Train_breast('UnetR_ocls_3', 32, 1500, 'unetr', 4e-3,
+                 Use_pretrained=False,
+                 _have_segtask=False,
+                 _only_segtask=False,
+                 is_continue_train=False)
+    Train_breast('UnetR_ocls_4', 16, 1500, 'unetr', 2e-3,
                  Use_pretrained=False,
                  _have_segtask=False,
                  _only_segtask=False,
