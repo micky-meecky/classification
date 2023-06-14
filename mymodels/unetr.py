@@ -223,7 +223,8 @@ class Embeddings(nn.Module):
         patch_size (int): 每个patch的尺寸
         dropout (float): dropout的比例
     """
-    def __init__(self, input_dim, embed_dim, cube_size, patch_size, dropout, cls_token, num_out_tokens=1):
+    def __init__(self, input_dim, embed_dim, cube_size, patch_size, dropout, cls_token, num_out_tokens=1,
+                 is_cls_token=True):
         super().__init__()
         self.n_patches = int((cube_size[0] * cube_size[1]) / (patch_size * patch_size))
         self.patch_size = patch_size
@@ -234,14 +235,16 @@ class Embeddings(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.cls_token = cls_token
         self.num_out_tokens = num_out_tokens
+        self.is_cls_token = is_cls_token
 
     def forward(self, x):
         x = self.patch_embeddings(x)
         x = x.flatten(2)    # 2表示从第二个维度开始
         x = x.transpose(-1, -2)  # 交换最后两个维度
-        # 这里应该加上一个cls tokend的
-        cls_tokens = self.cls_token.expand(x.shape[0], -1, -1)
-        x = torch.cat((cls_tokens, x), dim=1)  # [batch_size, n_patches+1, embed_dim]
+        if self.is_cls_token:
+            # 这里应该加上一个cls tokend的
+            cls_tokens = self.cls_token.expand(x.shape[0], -1, -1)
+            x = torch.cat((cls_tokens, x), dim=1)  # [batch_size, n_patches+1, embed_dim]
         embeddings = x + self.position_embeddings   # resnet
         embeddings = self.dropout(embeddings)   # dropout
         return embeddings
@@ -270,13 +273,13 @@ class TransformerBlock(nn.Module):
         h = x
         x = self.attention_norm(x)
         x, weights = self.attn(x)
-        x = self.drop_path(x)
+        # x = self.drop_path(x)
         x = x + h
         h = x
 
         x = self.mlp_norm(x)
         x = self.mlp(x)
-        x = self.drop_path(x)
+        # x = self.drop_path(x)
         x = x + h
         return x, weights
 
@@ -294,11 +297,13 @@ class Transformer(nn.Module):
         dropout: dropout的概率
         extract_layers: 需要提取的层数
     """
-    def __init__(self, input_dim, embed_dim, cube_size, patch_size, num_heads, num_layers, dropout, extract_layers):
+    def __init__(self, input_dim, embed_dim, cube_size, patch_size, num_heads, num_layers, dropout, extract_layers,
+                 is_cls_token=True):
         super().__init__()
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))  # 这是一个可学习参数
-        self.num_out_tokens = 1  # 用于分类的输出的token数
-        self.embeddings = Embeddings(input_dim, embed_dim, cube_size, patch_size, dropout, self.cls_token, self.num_out_tokens)
+        self.num_out_tokens = 0  # 用于分类的输出的token数
+        self.embeddings = Embeddings(input_dim, embed_dim, cube_size, patch_size, dropout, self.cls_token,
+                                     self.num_out_tokens, is_cls_token)
         self.layer = nn.ModuleList()
         self.encoder_norm = nn.LayerNorm(embed_dim, eps=1e-6)   # eps是一个很小的数，防止分母为0
         self.extract_layers = extract_layers
@@ -307,6 +312,7 @@ class Transformer(nn.Module):
             self.layer.append(copy.deepcopy(layer))
         # 还加一层norm，用于cls token的输出
         self.cls_norm = nn.LayerNorm(embed_dim)
+        self.is_cls_token = is_cls_token
 
     def forward(self, x):
         extract_layers = []
@@ -317,14 +323,16 @@ class Transformer(nn.Module):
             if depth + 1 in self.extract_layers:
                 extract_layers.append(hidden_states)    # (batch_size, n_patches, embed_dim) 也就是 (bs, 196, 768)
 
-        # 这里的extract_layers是一个list，里面有4个元素，每个元素是一个tensor，shape为(batch_size, n_patches + 1, embed_dim)
-        # 现在要将其中每个元素的第一个token去掉，得到(batch_size, n_patches, embed_dim)
-        extract_layers = [layer[:, 1:, :] for layer in extract_layers]
-
-        # 这里加上一个norm
-        cls_out = self.cls_norm(hidden_states)
-        cls_out = cls_out[:, 0]
-        return extract_layers, cls_out  # (bs, 768)
+        if self.is_cls_token:
+            # 这里的extract_layers是一个list，里面有4个元素，每个元素是一个tensor，shape为(batch_size, n_patches + 1, embed_dim)
+            # 现在要将其中每个元素的第一个token去掉，得到(batch_size, n_patches, embed_dim)
+            extract_layers = [layer[:, 1:, :] for layer in extract_layers]
+            # 这里加上一个norm
+            cls_out = self.cls_norm(hidden_states)
+            cls_out = cls_out[:, 0]
+            return extract_layers, cls_out  # (bs, 768)
+        else:
+            return extract_layers
 
 
 class UNETR(nn.Module):
@@ -362,7 +370,7 @@ class UNETR(nn.Module):
 
         # Transformer Encoder
         self.transformer = Transformer(input_dim, embed_dim, img_shape, patch_size, num_heads, self.num_layers, dropout,
-                                       self.ext_layers)
+                                       self.ext_layers, is_cls_token=False)
 
         # U-Net Decoder
         self.decoder0 = nn.Sequential(Conv2DBlock(input_dim, 32, 3),Conv2DBlock(32, 64, 3))
@@ -423,7 +431,7 @@ class UNETR(nn.Module):
 
 
 class UNETRcls(nn.Module):
-    def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
+    def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=256, patch_size=16, num_heads=16,
                  dropout=0.1, batch_size=10):
         super().__init__()
         self.input_dim = input_dim
@@ -444,12 +452,17 @@ class UNETRcls(nn.Module):
         self.patch_dim = [int(x / patch_size) for x in img_shape]
 
         # Transformer Encoder
+        self.is_cls_token = False
         self.transformer = Transformer(input_dim, embed_dim, img_shape, patch_size, num_heads, self.num_layers,
                                        dropout,
-                                       self.ext_layers)
+                                       self.ext_layers,
+                                       is_cls_token=self.is_cls_token)
 
     def forward(self, x):
-        z, cls_token = self.transformer(x)
+        if self.is_cls_token:
+            z, cls_token = self.transformer(x)
+        else:
+            z = self.transformer(x)
         z12 = z[-1]
         z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)  # shape: (batch_size, 768, 14, 14)
         # 将z12用nn.AdaptiveAvgPool2d(1)降维
@@ -826,7 +839,7 @@ class UNETRSwin(nn.Module):
 
 if __name__ == '__main__':
     model = UNETRcls()
-    x = torch.randn(2, 3, 224, 224)
+    x = torch.randn(2, 1, 224, 224)
     y, ys = model(x)
     print(y.shape)
     print(ys.shape)
