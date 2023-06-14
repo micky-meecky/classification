@@ -569,16 +569,16 @@ if __name__ == '__main__':
     #              _have_segtask=False,
     #              _only_segtask=False,
     #              is_continue_train=False)
-    Train_breast('UnetR_ocls_3', 32, 1500, 'unetr', 4e-3,
-                 Use_pretrained=False,
-                 _have_segtask=False,
-                 _only_segtask=False,
-                 is_continue_train=False)
-    # Train_breast('UnetR_ocls_4', 16, 1500, 'unetr', 2e-3,
+    # Train_breast('UnetR_ocls_3', 32, 1500, 'unetr', 4e-3,
     #              Use_pretrained=False,
     #              _have_segtask=False,
     #              _only_segtask=False,
     #              is_continue_train=False)
+    Train_breast('UnetR_ocls_4', 16, 1500, 'unetr', 2e-3,
+                 Use_pretrained=False,
+                 _have_segtask=False,
+                 _only_segtask=False,
+                 is_continue_train=False)
     # Train_breast('efficientnetb7_cls2_0' , 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
     # Train_breast('xception_cls2bce_1', 20, 'xception', 1e-5, True, False)
