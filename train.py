@@ -258,8 +258,8 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
 
     # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
     pos_weight = torch.tensor([515 / 108]).to(device)
-    criterion_cls = BCEWithLogitsLossCustomcls(pos_weight=pos_weight)
-    # criterion_cls = nn.BCEWithLogitsLoss()  # -----------------------------------------------------
+    # criterion_cls = BCEWithLogitsLossCustomcls(pos_weight=pos_weight)
+    criterion_cls = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     criterion_seg = SoftDiceLossNewvar()  # -----------------------------------------------------
     # criterion_seg = nn.BCELoss()  # -----------------------------------------------------
     if is_continue_train:
