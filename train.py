@@ -567,26 +567,26 @@ if __name__ == '__main__':
     # Train_breast('UNet_olseg_0', 10, 600, 'unet', 1e-2, False, True, True, False)
     # Train_breast('unetRseg_cls_seg_8', 5, 100, 'unetr', 9.63366620781354e-14, False, True, _only_segtask=False,
     #              is_continue_train=True)
-    Train_breast('UnetR_ocls_1', 16, 1500, 'unetr', 2e-3,
+    Train_breast('UnetR_cls_seg_4', 8, 1500, 'unetr', 1e-3,
                  Use_pretrained=False,
-                 _have_segtask=False,
+                 _have_segtask=True,
                  _only_segtask=False,
                  is_continue_train=False)
-    Train_breast('UnetR_ocls_2', 32, 1500, 'unetr', 4e-3,
+    Train_breast('UnetR_cls_seg_5', 16, 1500, 'unetr', 2e-3,
                  Use_pretrained=False,
-                 _have_segtask=False,
+                 _have_segtask=True,
                  _only_segtask=False,
                  is_continue_train=False)
-    Train_breast('UnetR_ocls_3', 64, 1500, 'unetr', 1e-2,
-                 Use_pretrained=False,
-                 _have_segtask=False,
-                 _only_segtask=False,
-                 is_continue_train=False)  # 0.00024681865315859415
-    Train_breast('UnetR_ocls_4', 128, 1500, 'unetr', 2e-2,
-                 Use_pretrained=False,
-                 _have_segtask=False,
-                 _only_segtask=False,
-                 is_continue_train=False)
+    # Train_breast('UnetR_ocls_3', 64, 1500, 'unetr', 1e-2,
+    #              Use_pretrained=False,
+    #              _have_segtask=False,
+    #              _only_segtask=False,
+    #              is_continue_train=False)  # 0.00024681865315859415
+    # Train_breast('UnetR_ocls_4', 128, 1500, 'unetr', 2e-2,
+    #              Use_pretrained=False,
+    #              _have_segtask=False,
+    #              _only_segtask=False,
+    #              is_continue_train=False)
 
     # Train_breast('efficientnetb7_cls2_0' , 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
