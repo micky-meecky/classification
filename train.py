@@ -567,16 +567,16 @@ if __name__ == '__main__':
     # Train_breast('UNet_olseg_0', 10, 600, 'unet', 1e-2, False, True, True, False)
     # Train_breast('unetRseg_cls_seg_8', 5, 100, 'unetr', 9.63366620781354e-14, False, True, _only_segtask=False,
     #              is_continue_train=True)
-    # Train_breast('UnetR_ocls_53', 32, 800, 'unetr', 1e-4,
-    #              Use_pretrained=False,
-    #              _have_segtask=False,
-    #              _only_segtask=False,
-    #              is_continue_train=False)
-    # Train_breast('UnetR_ocls_54', 32, 800, 'unetr', 8e-5,
-    #              Use_pretrained=False,
-    #              _have_segtask=False,
-    #              _only_segtask=False,
-    #              is_continue_train=False)
+    Train_breast('UnetR_ocls_53', 32, 800, 'unetr', 1e-4,
+                 Use_pretrained=False,
+                 _have_segtask=False,
+                 _only_segtask=False,
+                 is_continue_train=False)
+    Train_breast('UnetR_ocls_54', 32, 800, 'unetr', 8e-5,
+                 Use_pretrained=False,
+                 _have_segtask=False,
+                 _only_segtask=False,
+                 is_continue_train=False)
     Train_breast('UnetR_ocls_55', 64, 800, 'unetr', 8e-5,
                  Use_pretrained=False,
                  _have_segtask=False,
