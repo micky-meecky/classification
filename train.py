@@ -216,7 +216,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     validate_flag = False  # 是否使用验证集 -----------------------------------------------------
     lr_low = 1e-12  # 学习率下限  ------------------------------------------------------
     lr_warm_epoch = 10  # warm up 的 epoch 数 -----------------------------------------------------
-    lr_cos_epoch = 1300  # 学习率下降的epoch数 -----------------------------------------------------
+    lr_cos_epoch = 600  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 100  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_ratio = 0.9681  # 学习率下降的比例 -----------------------------------------------------
@@ -567,16 +567,26 @@ if __name__ == '__main__':
     # Train_breast('UNet_olseg_0', 10, 600, 'unet', 1e-2, False, True, True, False)
     # Train_breast('unetRseg_cls_seg_8', 5, 100, 'unetr', 9.63366620781354e-14, False, True, _only_segtask=False,
     #              is_continue_train=True)
-    Train_breast('UnetR_cls_seg_4', 8, 1500, 'unetr', 1e-3,
+    Train_breast('UnetR_ocls_53', 32, 800, 'unetr', 1e-4,
                  Use_pretrained=False,
-                 _have_segtask=True,
+                 _have_segtask=False,
                  _only_segtask=False,
                  is_continue_train=False)
-    Train_breast('UnetR_cls_seg_5', 16, 1500, 'unetr', 2e-3,
+    Train_breast('UnetR_ocls_54', 32, 800, 'unetr', 8e-5,
                  Use_pretrained=False,
-                 _have_segtask=True,
+                 _have_segtask=False,
                  _only_segtask=False,
                  is_continue_train=False)
+    # Train_breast('UnetR_ocls_6', 32, 800, 'unetr', 1e-2,
+    #              Use_pretrained=False,
+    #              _have_segtask=False,
+    #              _only_segtask=False,
+    #              is_continue_train=False)
+    # Train_breast('UnetR_cls_seg_5', 16, 1500, 'unetr', 2e-3,
+    #              Use_pretrained=False,
+    #              _have_segtask=True,
+    #              _only_segtask=False,
+    #              is_continue_train=False)
     # Train_breast('UnetR_ocls_3', 64, 1500, 'unetr', 1e-2,
     #              Use_pretrained=False,
     #              _have_segtask=False,

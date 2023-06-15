@@ -448,14 +448,14 @@ class UNETRcls(nn.Module):
         self.num_layers = 12
         self.ext_layers = [3, 6, 9, 12]
         # self.fc = nn.Linear(embed_dim, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
-        self.fc1 = nn.Linear(embed_dim * 1, self.head_hidden_dim)
+        self.fc1 = nn.Linear(embed_dim * 2, self.head_hidden_dim)
         self.dropout1 = nn.Dropout(self.dropout)
         self.fc2 = nn.Linear(self.head_hidden_dim, self.output_dim)
 
         self.patch_dim = [int(x / patch_size) for x in img_shape]
 
         # Transformer Encoder
-        self.is_cls_token = False
+        self.is_cls_token = True
         self.transformer = Transformer(input_dim, embed_dim, img_shape, patch_size, num_heads, self.num_layers,
                                        dropout,
                                        self.ext_layers,
@@ -472,6 +472,9 @@ class UNETRcls(nn.Module):
         z12c = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
         z12c = z12c.view(z12c.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
         z12c = F.dropout(z12c, p=self.dropout, training=self.training)
+
+        # 将z12c和cls_token拼接
+        z12c = torch.cat((z12c, cls_token), dim=1)  # shape: (batch_size, 768*2)
 
         z12c = self.fc1(z12c)
         z12c = self.dropout1(z12c)
