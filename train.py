@@ -577,7 +577,7 @@ if __name__ == '__main__':
                  _have_segtask=False,
                  _only_segtask=False,
                  is_continue_train=False)
-    # Train_breast('UnetR_ocls_58', 64, 800, 'unetr', 1e-5,
+    # Train_breast('UnetR_ocls_58', 64, 8000, 'unetr', 1e-5,
     #              Use_pretrained=False,
     #              _have_segtask=False,
     #              _only_segtask=False,
