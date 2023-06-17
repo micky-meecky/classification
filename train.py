@@ -574,27 +574,27 @@ if __name__ == '__main__':
     #              _only_segtask=False,
     #              is_continue_train=False)
 
-    Train_breast('UnetR_ocls_41', 128, 1000, 'unetr', 8e-2,
+    Train_breast('UnetR_ocls_46', 128, 2000, 'unetr', 8e-3,
                  Use_pretrained=False,
                  _have_segtask=False,
                  _only_segtask=False,
                  is_continue_train=False)
-    Train_breast('UnetR_ocls_42', 128, 1200, 'unetr', 6e-2,
+    Train_breast('UnetR_ocls_47', 128, 2200, 'unetr', 6e-3,
                  Use_pretrained=False,
                  _have_segtask=False,
                  _only_segtask=False,
                  is_continue_train=False)
-    Train_breast('UnetR_ocls_43', 128, 1400, 'unetr', 4e-2,
+    Train_breast('UnetR_ocls_48', 128, 2400, 'unetr', 4e-3,
                  Use_pretrained=False,
                  _have_segtask=False,
                  _only_segtask=False,
                  is_continue_train=False)
-    Train_breast('UnetR_ocls_44', 128, 1600, 'unetr', 2e-2,
+    Train_breast('UnetR_ocls_49', 128, 2600, 'unetr', 2e-3,
                  Use_pretrained=False,
                  _have_segtask=False,
                  _only_segtask=False,
                  is_continue_train=False)
-    Train_breast('UnetR_ocls_45', 128, 1800, 'unetr', 1e-2,
+    Train_breast('UnetR_ocls_4A', 128, 2800, 'unetr', 1e-3,
                  Use_pretrained=False,
                  _have_segtask=False,
                  _only_segtask=False,
