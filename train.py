@@ -597,7 +597,7 @@ if __name__ == '__main__':
     testr = []
     testf1 = []
     testacc = []
-    # 尝试不同的学习率，分两个批次，一次是奇数，一次是偶数，奇数的使用仅含有z12的，偶数的使用仅含有cls_token的.
+    # 尝试不同的学习率，分两个批次，一次是奇数，一次是偶数，奇数的使用仅含有z12的，偶数的使用仅含有cls_token的。
     for i in range(len(lr_list)):
         if i % 2 == 0:
             test_precision, test_recall, test_f1_score, test_acc = \
