@@ -217,10 +217,10 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     validate_flag = False  # 是否使用验证集 -----------------------------------------------------
     lr_low = 1e-13  # 学习率下限  ------------------------------------------------------
     lr_warm_epoch = 10  # warm up 的 epoch 数 -----------------------------------------------------
-    lr_cos_epoch = 700  # 学习率下降的epoch数 -----------------------------------------------------
+    lr_cos_epoch = 250  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 100  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
-    decay_ratio = 0.9681  # 学习率下降的比例 -----------------------------------------------------
+    decay_ratio = 0.9481  # 学习率下降的比例 -----------------------------------------------------
     bs = Bs  # batch_size -----------------------------------------------------
     testbs = 1  # test_batch_size -----------------------------------------------------
     L = 0.80  # 代表的是seg_loss的权重[现已作废，已有自适应调整策略] -----------------------------------------------------
@@ -601,7 +601,7 @@ if __name__ == '__main__':
     for i in range(len(lr_list)):
         if i % 2 == 0:
             test_precision, test_recall, test_f1_score, test_acc = \
-                Train_breast(base_name + name_order[i], 16, 800, 'unetrclsz12', lr_list[i],
+                Train_breast(base_name + name_order[i], 16, 300, 'unetrclsz12', lr_list[i],
                              Use_pretrained=False,
                              _have_segtask=False,
                              _only_segtask=False,
@@ -612,7 +612,7 @@ if __name__ == '__main__':
             testacc.append(test_acc)
         else:
             test_precision, test_recall, test_f1_score, test_acc = \
-                Train_breast(base_name + name_order[i], 16, 800, 'unetrclstoken', lr_list[i],
+                Train_breast(base_name + name_order[i], 16, 300, 'unetrclstoken', lr_list[i],
                              Use_pretrained=False,
                              _have_segtask=False,
                              _only_segtask=False,
@@ -632,7 +632,7 @@ if __name__ == '__main__':
     for i in range(len(lr_list)):
         if i % 2 == 0:
             test_precision, test_recall, test_f1_score, test_acc = \
-                Train_breast(base_name + name_order[i], 8, 900, 'unetrclsz12', lr_list[i],
+                Train_breast(base_name + name_order[i], 8, 400, 'unetrclsz12', lr_list[i],
                              Use_pretrained=False,
                              _have_segtask=False,
                              _only_segtask=False,
@@ -643,7 +643,7 @@ if __name__ == '__main__':
             testacc.append(test_acc)
         else:
             test_precision, test_recall, test_f1_score, test_acc = \
-                Train_breast(base_name + name_order[i], 8, 900, 'unetrclstoken', lr_list[i],
+                Train_breast(base_name + name_order[i], 8, 400, 'unetrclstoken', lr_list[i],
                              Use_pretrained=False,
                              _have_segtask=False,
                              _only_segtask=False,
