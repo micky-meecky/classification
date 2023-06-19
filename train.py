@@ -25,7 +25,8 @@ from dataset.class_divide import get_fold_filelist
 from dataset.data_loader import get_loader_difficult, get_loader, DrawSavePic
 from utils.tictoc import TicToc
 import utils.evaluation as ue
-from utils.myloss import SoftDiceLossNew, JaccardLoss, BCEWithLogitsLossCustom, SoftDiceLossNewvar, BCEWithLogitsLossCustomcls
+from utils.myloss import SoftDiceLossNew, JaccardLoss, BCEWithLogitsLossCustom, SoftDiceLossNewvar, \
+    BCEWithLogitsLossCustomcls
 import test
 from utils import utils
 import multiprocessing as mp
@@ -239,6 +240,8 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     contenttotal = "----total cost: "
     is_train = True
     is_test = True  # False
+    valid_acc = 0
+    best_valid_acc = 0
     is_continue_train = is_continue_train
     _only_segtask = _only_segtask
     if _only_segtask:
@@ -275,7 +278,8 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             criterion_cls = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
             # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
             # criterion_seg = nn.BCELoss()  # -----------------------------------------------------
-            optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))  # ----------------------------------------
+            optimizer = optim.Adam(list(model.parameters()), lr,
+                                   (0.5, 0.99))  # ----------------------------------------
 
     lr_sch = utils.LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer)  # -------------------------------
 
@@ -452,8 +456,14 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             print('Iter = ', Iter)
             writer.add_scalars('Lr', {'lr': utils.GetCurrentLr(optimizer)}, epoch)
             if epoch % 3 == 0:
-                test.trainvalid('valid', valid_loader, model, device, writer, Iter, class_num, _have_segtask,
-                                _only_segtask)
+                valid_acc = test.trainvalid('valid', valid_loader, model, device, writer, Iter, class_num,
+                                            _have_segtask,
+                                            _only_segtask)
+                if valid_acc > best_valid_acc:
+                    best_valid_acc = valid_acc
+                    best_model = save_model_dir + '/best' + '.pth'
+                    torch.save(model.state_dict(), best_model)
+                    print('best model saved at epoch %d' % epoch)
 
             t.ticend()
             t.printtime(contentvalid)
@@ -466,10 +476,13 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
 
     print('Finished Training\n')
     if is_test:
-        mini_loss_model = save_model_dir + '/miniloss' + '.pth'
+        mini_loss_model = save_model_dir + '/best' + '.pth'
         model.load_state_dict(torch.load(mini_loss_model, map_location=device))
-        test.test('test', test_loader, model, SegImgSavePath, device, class_num, _have_segtask, _only_segtask)
+        test_precision, test_recall, test_f1_score, test_acc = \
+            test.test('test', test_loader, model, SegImgSavePath, device, class_num, _have_segtask, _only_segtask)
     print('\nFinished Testing\n')
+
+    return test_precision, test_recall, test_f1_score, test_acc
 
 
 def Train_Mnist():
@@ -568,64 +581,84 @@ if __name__ == '__main__':
     # Train_breast('unetRseg_cls_seg_8', 5, 100, 'unetr', 9.63366620781354e-14, False, True, _only_segtask=False,
     #              is_continue_train=True)
 
-    # Train_breast('UnetR_ocls_4D', 128, 2000, 'unetr', 4e-4,
-    #              Use_pretrained=False,
-    #              _have_segtask=False,
-    #              _only_segtask=False,
-    #              is_continue_train=False)
-    # Train_breast('UnetR_ocls_60', 16, 1000, 'unetr', 1e-1,
-    #              Use_pretrained=False,
-    #              _have_segtask=False,
-    #              _only_segtask=False,
-    #              is_continue_train=False)
+    base_name = 'UnetR_ocls_6'
+    # 从A到Z
+    name_order = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+                  'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+                  'U', 'V', 'W', 'X', 'Y', 'Z']
 
-    Train_breast('UnetR_ocls_4F', 128, 2000, 'unetr', 1e-4,
-                 Use_pretrained=False,
-                 _have_segtask=False,
-                 _only_segtask=False,
-                 is_continue_train=False)
+    lr_list = (1e-1, 4e-2, 1e-2, 8e-3, 6e-3, 4e-3, 2e-3, 1e-3, 8e-4, 6e-4,
+               4e-4, 2e-4, 1e-4, 8e-5, 6e-5, 4e-5, 2e-5, 1e-5, 8e-6, 6e-6,
+               4e-6, 2e-6, 1e-6)  # lr_list是学习率元组。目前设置了23个学习率
+    reults_z12 = []
+    reults_clstoken = []
+    testp = []
+    testr = []
+    testf1 = []
+    testacc = []
+    # 尝试不同的学习率，分两个批次，一次是奇数，一次是偶数，奇数的使用仅含有z12的，偶数的使用仅含有cls_token的
+    for i in range(len(lr_list)):
+        if i % 2 == 0:
+            test_precision, test_recall, test_f1_score, test_acc = \
+                Train_breast(base_name + name_order[i], 16, 1500, 'unetrclsz12', lr_list[i],
+                             Use_pretrained=False,
+                             _have_segtask=False,
+                             _only_segtask=False,
+                             is_continue_train=False)
+            testp.append(test_precision)
+            testr.append(test_recall)
+            testf1.append(test_f1_score)
+            testacc.append(test_acc)
+        else:
+            test_precision, test_recall, test_f1_score, test_acc = \
+                Train_breast(base_name + name_order[i], 16, 1500, 'unetrclstoken', lr_list[i],
+                             Use_pretrained=False,
+                             _have_segtask=False,
+                             _only_segtask=False,
+                             is_continue_train=False)
+            testp.append(test_precision)
+            testr.append(test_recall)
+            testf1.append(test_f1_score)
+            testacc.append(test_acc)
 
-    Train_breast('UnetR_ocls_4G', 128, 2000, 'unetr', 8e-5,
-                 Use_pretrained=False,
-                 _have_segtask=False,
-                 _only_segtask=False,
-                 is_continue_train=False)
+    print(testp)
+    print(testr)
+    print(testf1)
+    print(testacc)
 
-    Train_breast('UnetR_ocls_4H', 128, 2000, 'unetr', 6e-5,
-                 Use_pretrained=False,
-                 _have_segtask=False,
-                 _only_segtask=False,
-                 is_continue_train=False)
-    Train_breast('UnetR_ocls_4I', 128, 2000, 'unetr', 4e-5,
-                 Use_pretrained=False,
-                 _have_segtask=False,
-                 _only_segtask=False,
-                 is_continue_train=False)
-    Train_breast('UnetR_ocls_4J', 128, 2000, 'unetr', 2e-5,
-                 Use_pretrained=False,
-                 _have_segtask=False,
-                 _only_segtask=False,
-                 is_continue_train=False)
-    Train_breast('UnetR_ocls_4K', 128, 2000, 'unetr', 1e-5,
-                 Use_pretrained=False,
-                 _have_segtask=False,
-                 _only_segtask=False,
-                 is_continue_train=False)
-    Train_breast('UnetR_ocls_4L', 128, 2000, 'unetr', 8e-6,
-                 Use_pretrained=False,
-                 _have_segtask=False,
-                 _only_segtask=False,
-                 is_continue_train=False)
-    Train_breast('UnetR_ocls_4M', 128, 2000, 'unetr', 4e-6,
-                 Use_pretrained=False,
-                 _have_segtask=False,
-                 _only_segtask=False,
-                 is_continue_train=False)
-    Train_breast('UnetR_ocls_4N', 128, 2000, 'unetr', 1e-6,
-                 Use_pretrained=False,
-                 _have_segtask=False,
-                 _only_segtask=False,
-                 is_continue_train=False)
+    base_name = 'UnetR_ocls_7'
+
+    for i in range(len(lr_list)):
+        if i % 2 == 0:
+            test_precision, test_recall, test_f1_score, test_acc = \
+                Train_breast(base_name + name_order[i], 8, 1500, 'unetrclsz12', lr_list[i],
+                             Use_pretrained=False,
+                             _have_segtask=False,
+                             _only_segtask=False,
+                             is_continue_train=False)
+            testp.append(test_precision)
+            testr.append(test_recall)
+            testf1.append(test_f1_score)
+            testacc.append(test_acc)
+        else:
+            test_precision, test_recall, test_f1_score, test_acc = \
+                Train_breast(base_name + name_order[i], 8, 1500, 'unetrclstoken', lr_list[i],
+                             Use_pretrained=False,
+                             _have_segtask=False,
+                             _only_segtask=False,
+                             is_continue_train=False)
+            testp.append(test_precision)
+            testr.append(test_recall)
+            testf1.append(test_f1_score)
+            testacc.append(test_acc)
+
+    print(testp)
+    print(testr)
+    print(testf1)
+    print(testacc)
+    print('end')
+
 
 
     # Train_breast('efficientnetb7_cls2_0' , 30, 'efficientnet', 1e-4, True, False)

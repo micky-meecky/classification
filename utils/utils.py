@@ -9,7 +9,7 @@ import pretrainedmodels
 import pretrainedmodels.utils as utils
 from mymodels.models import Net
 from mymodels.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
-from mymodels.unetr import UNETR, UNETRcls, UNETRseg, UNETswin
+from mymodels.unetr import UNETR, UNETRcls, UNETRseg, UNETRclsz12, UNETRclstoken
 from mymodels.Unet import UNet
 from mymodels.ViT import ViT_model
 import os
@@ -41,12 +41,12 @@ def LossExport(cls_running_loss, seg_running_loss, running_loss, datas, writer, 
 
 def SaveModel(model, epoch, epoch_loss, save_model_dir):
     temploss = 100.0
-    if epoch % 20 == 0:  # 每20个epoch保存一次模型
+    if epoch % 100 == 0:  # 每20个epoch保存一次模型
         torch.save(model.state_dict(), save_model_dir + '/model' + str(epoch) + '.pth')
         print('save model，and epoch_loss = ', epoch_loss, '\n')
     if temploss > epoch_loss:
         temploss = epoch_loss
-        torch.save(model.state_dict(), save_model_dir + '/miniloss' + '.pth')
+        torch.save(model.state_dict(), save_model_dir + '/miniloss' + str(epoch)+ '.pth')
         print('save miniloss model，and epoch_loss = ', temploss, '\n')
 
 
@@ -197,6 +197,10 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
                     model = UNETR()
                 else:
                     model = UNETRcls()
+        elif modelname == 'unetrclsz12':
+            model = UNETRclsz12()
+        elif modelname == 'unetrclstoken':
+            model = UNETRclstoken()
         elif modelname == 'unet':
             model = UNet(1, 1)
         elif modelname == 'Net':

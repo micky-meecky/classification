@@ -137,6 +137,8 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
             writer.add_scalars('valid/IOU', {'IOU': sum(IOUlist) / len(IOUlist)}, Iter)
             writer.add_scalars('valid/DC', {'DC': sum(DClist) / len(DClist)}, Iter)
 
+    return acc
+
 
 def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch.device,
          class_num, _have_segtask: bool, _only_segtask: bool):
@@ -266,3 +268,5 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
                 sum(SElist) / len(SElist), sum(PClist) / len(PClist), sum(F1list) / len(F1list),
                 sum(JSlist) / len(JSlist),
                 sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))
+
+    return precision, recall, f1_score, acc

@@ -488,6 +488,104 @@ class UNETRcls(nn.Module):
         return cls_out
 
 
+class UNETRclsz12(nn.Module):
+    def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=256, patch_size=16, num_heads=16,
+                 dropout=0.1, batch_size=10):
+        super().__init__()
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        self.embed_dim = embed_dim
+        self.img_shape = img_shape
+        self.head_hidden_dim = 128
+        self.patch_size = patch_size
+        self.num_heads = num_heads
+        self.dropout = dropout
+        self.num_layers = 12
+        self.ext_layers = [3, 6, 9, 12]
+        # self.fc = nn.Linear(embed_dim, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
+        self.fc1 = nn.Linear(embed_dim * 1, self.head_hidden_dim)
+        self.dropout1 = nn.Dropout(self.dropout)
+        self.fc2 = nn.Linear(self.head_hidden_dim, self.output_dim)
+
+        self.patch_dim = [int(x / patch_size) for x in img_shape]
+
+        # Transformer Encoder
+        self.is_cls_token = True
+        self.transformer = Transformer(input_dim, embed_dim, img_shape, patch_size, num_heads, self.num_layers,
+                                       dropout,
+                                       self.ext_layers,
+                                       is_cls_token=self.is_cls_token)
+
+    def forward(self, x):
+        if self.is_cls_token:
+            z, cls_token = self.transformer(x)
+        else:
+            z = self.transformer(x)
+        z12 = z[-1]
+        z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)  # shape: (batch_size, 768, 14, 14)
+        # 将z12用nn.AdaptiveAvgPool2d(1)降维
+        z12c = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
+        z12c = z12c.view(z12c.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
+        z12c = F.dropout(z12c, p=self.dropout, training=self.training)
+
+        z12c = self.fc1(z12c)
+        z12c = self.dropout1(z12c)
+        cls_out = self.fc2(z12c)
+
+        # cls head, cls_token shape: (batch_size, 768)
+        # cls_out = self.fc1(cls_token)
+        # cls_out = self.dropout1(cls_out)
+        # cls_out = self.fc2(cls_out)
+
+        return cls_out
+
+
+class UNETRclstoken(nn.Module):
+    def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=256, patch_size=16, num_heads=16,
+                 dropout=0.1, batch_size=10):
+        super().__init__()
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        self.embed_dim = embed_dim
+        self.img_shape = img_shape
+        self.head_hidden_dim = 128
+        self.patch_size = patch_size
+        self.num_heads = num_heads
+        self.dropout = dropout
+        self.num_layers = 12
+        self.ext_layers = [3, 6, 9, 12]
+        # self.fc = nn.Linear(embed_dim, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
+        self.fc1 = nn.Linear(embed_dim * 1, self.head_hidden_dim)
+        self.dropout1 = nn.Dropout(self.dropout)
+        self.fc2 = nn.Linear(self.head_hidden_dim, self.output_dim)
+
+        self.patch_dim = [int(x / patch_size) for x in img_shape]
+
+        # Transformer Encoder
+        self.is_cls_token = True
+        self.transformer = Transformer(input_dim, embed_dim, img_shape, patch_size, num_heads, self.num_layers,
+                                       dropout,
+                                       self.ext_layers,
+                                       is_cls_token=self.is_cls_token)
+
+    def forward(self, x):
+        if self.is_cls_token:
+            z, cls_token = self.transformer(x)
+        else:
+            z = self.transformer(x)
+
+        z12c = self.fc1(cls_token)
+        z12c = self.dropout1(z12c)
+        cls_out = self.fc2(z12c)
+
+        # cls head, cls_token shape: (batch_size, 768)
+        # cls_out = self.fc1(cls_token)
+        # cls_out = self.dropout1(cls_out)
+        # cls_out = self.fc2(cls_out)
+
+        return cls_out
+
+
 class UNETRseg(nn.Module):
     def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
                  dropout=0.1):
@@ -844,8 +942,8 @@ class UNETRSwin(nn.Module):
 
 
 if __name__ == '__main__':
-    model = UNETRcls()
+    model = UNETRclstoken()
     x = torch.randn(2, 1, 224, 224)
-    y, ys = model(x)
+    y= model(x)
     print(y.shape)
-    print(ys.shape)
+    # print(ys.shape)
