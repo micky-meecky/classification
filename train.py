@@ -597,35 +597,35 @@ if __name__ == '__main__':
     testr = []
     testf1 = []
     testacc = []
-    # 尝试不同的学习率，分两个批次，一次是奇数，一次是偶数，奇数的使用仅含有z12的，偶数的使用仅含有cls_token的
-    for i in range(len(lr_list)):
-        if i % 2 == 0:
-            test_precision, test_recall, test_f1_score, test_acc = \
-                Train_breast(base_name + name_order[i], 16, 1500, 'unetrclsz12', lr_list[i],
-                             Use_pretrained=False,
-                             _have_segtask=False,
-                             _only_segtask=False,
-                             is_continue_train=False)
-            testp.append(test_precision)
-            testr.append(test_recall)
-            testf1.append(test_f1_score)
-            testacc.append(test_acc)
-        else:
-            test_precision, test_recall, test_f1_score, test_acc = \
-                Train_breast(base_name + name_order[i], 16, 1500, 'unetrclstoken', lr_list[i],
-                             Use_pretrained=False,
-                             _have_segtask=False,
-                             _only_segtask=False,
-                             is_continue_train=False)
-            testp.append(test_precision)
-            testr.append(test_recall)
-            testf1.append(test_f1_score)
-            testacc.append(test_acc)
-
-    print(testp)
-    print(testr)
-    print(testf1)
-    print(testacc)
+    # 尝试不同的学习率，分两个批次，一次是奇数，一次是偶数，奇数的使用仅含有z12的，偶数的使用仅含有cls_token的.
+    # for i in range(len(lr_list)):
+    #     if i % 2 == 0:
+    #         test_precision, test_recall, test_f1_score, test_acc = \
+    #             Train_breast(base_name + name_order[i], 16, 1200, 'unetrclsz12', lr_list[i],
+    #                          Use_pretrained=False,
+    #                          _have_segtask=False,
+    #                          _only_segtask=False,
+    #                          is_continue_train=False)
+    #         testp.append(test_precision)
+    #         testr.append(test_recall)
+    #         testf1.append(test_f1_score)
+    #         testacc.append(test_acc)
+    #     else:
+    #         test_precision, test_recall, test_f1_score, test_acc = \
+    #             Train_breast(base_name + name_order[i], 16, 1200, 'unetrclstoken', lr_list[i],
+    #                          Use_pretrained=False,
+    #                          _have_segtask=False,
+    #                          _only_segtask=False,
+    #                          is_continue_train=False)
+    #         testp.append(test_precision)
+    #         testr.append(test_recall)
+    #         testf1.append(test_f1_score)
+    #         testacc.append(test_acc)
+    #
+    # print(testp)
+    # print(testr)
+    # print(testf1)
+    # print(testacc)
 
     base_name = 'UnetR_ocls_7'
 
