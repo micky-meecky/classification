@@ -665,7 +665,7 @@ if __name__ == '__main__':
     testf1 = []
     testacc = []
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_ocls_87', 16, 400, 'unetrclstoken', 8e-4,
+        Train_breast('UnetR_ocls_97', 16, 400, 'unetrclstoken', 8e-4,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
@@ -674,8 +674,31 @@ if __name__ == '__main__':
     testr.append(test_recall)
     testf1.append(test_f1_score)
     testacc.append(test_acc)
+
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_ocls_88', 16, 400, 'unetrclstoken', 8e-4,
+        Train_breast('UnetR_ocls_98', 16, 400, 'unetrclstoken', 6e-4,
+                     Use_pretrained=False,
+                     _have_segtask=False,
+                     _only_segtask=False,
+                     is_continue_train=False)
+    testp.append(test_precision)
+    testr.append(test_recall)
+    testf1.append(test_f1_score)
+    testacc.append(test_acc)
+
+    test_precision, test_recall, test_f1_score, test_acc = \
+        Train_breast('UnetR_ocls_99', 16, 400, 'unetrclstoken', 4e-4,
+                     Use_pretrained=False,
+                     _have_segtask=False,
+                     _only_segtask=False,
+                     is_continue_train=False)
+    testp.append(test_precision)
+    testr.append(test_recall)
+    testf1.append(test_f1_score)
+    testacc.append(test_acc)
+
+    test_precision, test_recall, test_f1_score, test_acc = \
+        Train_breast('UnetR_ocls_9A', 16, 400, 'unetrclstoken', 2e-4,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
@@ -689,6 +712,7 @@ if __name__ == '__main__':
     print(testr)
     print(testf1)
     print(testacc)
+
 
     # main()
     # Train_breast('efficientnetb7_cls2_0' , 30, 'efficientnet', 1e-4, True, False)
