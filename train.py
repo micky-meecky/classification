@@ -660,41 +660,36 @@ def main():
 
 
 if __name__ == '__main__':
-    Train_breast('UnetR_ocls_87', 16, 400, 'unetrclsz12', 8e-4,
-                 Use_pretrained=False,
-                 _have_segtask=False,
-                 _only_segtask=False,
-                 is_continue_train=False)
-    Train_breast('UnetR_ocls_88', 16, 400, 'unetrclsz12', 6e-4,
-                 Use_pretrained=False,
-                 _have_segtask=False,
-                 _only_segtask=False,
-                 is_continue_train=False)
-    Train_breast('UnetR_ocls_89', 16, 400, 'unetrclsz12', 4e-4,
-                 Use_pretrained=False,
-                 _have_segtask=False,
-                 _only_segtask=False,
-                 is_continue_train=False)
-    Train_breast('UnetR_ocls_8A', 16, 400, 'unetrclsz12', 2e-4,
-                 Use_pretrained=False,
-                 _have_segtask=False,
-                 _only_segtask=False,
-                 is_continue_train=False)
-    Train_breast('UnetR_ocls_8B', 16, 400, 'unetrclsz12', 1e-4,
-                 Use_pretrained=False,
-                 _have_segtask=False,
-                 _only_segtask=False,
-                 is_continue_train=False)
-    Train_breast('UnetR_ocls_8C', 16, 400, 'unetrclsz12', 8e-5,
-                 Use_pretrained=False,
-                 _have_segtask=False,
-                 _only_segtask=False,
-                 is_continue_train=False)
-    Train_breast('UnetR_ocls_8D', 16, 400, 'unetrclsz12', 6e-5,
-                 Use_pretrained=False,
-                 _have_segtask=False,
-                 _only_segtask=False,
-                 is_continue_train=False)
+    testp = []
+    testr = []
+    testf1 = []
+    testacc = []
+    test_precision, test_recall, test_f1_score, test_acc = \
+        Train_breast('UnetR_ocls_87', 16, 400, 'unetrclstoken', 8e-4,
+                     Use_pretrained=False,
+                     _have_segtask=False,
+                     _only_segtask=False,
+                     is_continue_train=False)
+    testp.append(test_precision)
+    testr.append(test_recall)
+    testf1.append(test_f1_score)
+    testacc.append(test_acc)
+    test_precision, test_recall, test_f1_score, test_acc = \
+        Train_breast('UnetR_ocls_88', 16, 400, 'unetrclstoken', 8e-4,
+                     Use_pretrained=False,
+                     _have_segtask=False,
+                     _only_segtask=False,
+                     is_continue_train=False)
+    testp.append(test_precision)
+    testr.append(test_recall)
+    testf1.append(test_f1_score)
+    testacc.append(test_acc)
+
+    print(testp)
+    print(testr)
+    print(testf1)
+    print(testacc)
+
     # main()
     # Train_breast('efficientnetb7_cls2_0' , 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
