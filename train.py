@@ -573,8 +573,7 @@ def Train_Mnist():
         accuracy = correct / total
         print('Accuracy of the network on the test images: %.4f %%' % (100 * accuracy))
 
-
-if __name__ == '__main__':
+def main():
     # Train_Mnist()
     # Train_breast('unetRcls_ocls2_5', 30, 200, 'unetr', 1e-4, False, False, False, is_continue_train=False)
     # Train_breast('UNet_olseg_0', 10, 600, 'unet', 1e-2, False, True, True, False)
@@ -660,7 +659,43 @@ if __name__ == '__main__':
     print('end')
 
 
-
+if __name__ == '__main__':
+    Train_breast('UnetR_ocls_87', 16, 400, 'unetrclsz12', 8e-4,
+                 Use_pretrained=False,
+                 _have_segtask=False,
+                 _only_segtask=False,
+                 is_continue_train=False)
+    Train_breast('UnetR_ocls_88', 16, 400, 'unetrclsz12', 6e-4,
+                 Use_pretrained=False,
+                 _have_segtask=False,
+                 _only_segtask=False,
+                 is_continue_train=False)
+    Train_breast('UnetR_ocls_89', 16, 400, 'unetrclsz12', 4e-4,
+                 Use_pretrained=False,
+                 _have_segtask=False,
+                 _only_segtask=False,
+                 is_continue_train=False)
+    Train_breast('UnetR_ocls_8A', 16, 400, 'unetrclsz12', 2e-4,
+                 Use_pretrained=False,
+                 _have_segtask=False,
+                 _only_segtask=False,
+                 is_continue_train=False)
+    Train_breast('UnetR_ocls_8B', 16, 400, 'unetrclsz12', 1e-4,
+                 Use_pretrained=False,
+                 _have_segtask=False,
+                 _only_segtask=False,
+                 is_continue_train=False)
+    Train_breast('UnetR_ocls_8C', 16, 400, 'unetrclsz12', 8e-5,
+                 Use_pretrained=False,
+                 _have_segtask=False,
+                 _only_segtask=False,
+                 is_continue_train=False)
+    Train_breast('UnetR_ocls_8D', 16, 400, 'unetrclsz12', 6e-5,
+                 Use_pretrained=False,
+                 _have_segtask=False,
+                 _only_segtask=False,
+                 is_continue_train=False)
+    # main()
     # Train_breast('efficientnetb7_cls2_0' , 30, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
     # Train_breast('xception_cls2bce_1', 20, 'xception', 1e-5, True, False)

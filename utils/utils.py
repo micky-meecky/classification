@@ -46,7 +46,7 @@ def SaveModel(model, epoch, epoch_loss, save_model_dir):
         print('save model，and epoch_loss = ', epoch_loss, '\n')
     if temploss > epoch_loss:
         temploss = epoch_loss
-        torch.save(model.state_dict(), save_model_dir + '/miniloss' + str(epoch)+ '.pth')
+        torch.save(model.state_dict(), save_model_dir + '/miniloss' + '.pth')
         print('save miniloss model，and epoch_loss = ', temploss, '\n')
 
 
