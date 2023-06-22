@@ -665,7 +665,7 @@ if __name__ == '__main__':
     testf1 = []
     testacc = []
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_ocls_9B', 16, 400, 'unetrclstoken', 1e-4,
+        Train_breast('UnetR_ocls_9G', 16, 400, 'unetrclstoken', 1e-5,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
@@ -676,7 +676,7 @@ if __name__ == '__main__':
     testacc.append(test_acc)
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_ocls_9C', 16, 400, 'unetrclstoken', 8e-5,
+        Train_breast('UnetR_ocls_9H', 16, 400, 'unetrclstoken', 8e-6,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
@@ -687,7 +687,7 @@ if __name__ == '__main__':
     testacc.append(test_acc)
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_ocls_9D', 16, 400, 'unetrclstoken', 6e-5,
+        Train_breast('UnetR_ocls_9I', 16, 400, 'unetrclstoken', 6e-6,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
@@ -698,7 +698,7 @@ if __name__ == '__main__':
     testacc.append(test_acc)
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_ocls_9E', 16, 400, 'unetrclstoken', 4e-5,
+        Train_breast('UnetR_ocls_9J', 16, 400, 'unetrclstoken', 4e-6,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
@@ -709,7 +709,7 @@ if __name__ == '__main__':
     testacc.append(test_acc)
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_ocls_9F', 16, 400, 'unetrclstoken', 2e-5,
+        Train_breast('UnetR_ocls_9K', 16, 400, 'unetrclstoken', 2e-6,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
