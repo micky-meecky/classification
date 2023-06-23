@@ -725,7 +725,7 @@ if __name__ == '__main__':
 
 
     # main()
-    # Train_breast('efficientnetb7_cls2_0' , 30, 'efficientnet', 1e-4, True, False)
+    # Train_breast('efficientnetb7_cls2_0' , 32, 'efficientnet', 1e-4, True, False)
     # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
     # Train_breast('xception_cls2bce_1', 20, 'xception', 1e-5, True, False)
     # Train_breast('mobilenetv3_cls2bce_0', 40, 'mobilenetv3', 1e-6, True, False)
