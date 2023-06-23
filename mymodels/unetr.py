@@ -445,8 +445,8 @@ class UNETRcls(nn.Module):
         self.patch_size = patch_size
         self.num_heads = num_heads
         self.dropout = dropout
-        self.num_layers = 12
-        self.ext_layers = [3, 6, 9, 12]
+        self.num_layers = 8
+        self.ext_layers = [2, 4, 6, 8]
         # self.fc = nn.Linear(embed_dim, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
         self.fc1 = nn.Linear(embed_dim * 2, self.head_hidden_dim)
         self.dropout1 = nn.Dropout(self.dropout)
@@ -942,7 +942,7 @@ class UNETRSwin(nn.Module):
 
 
 if __name__ == '__main__':
-    model = UNETRclsz12()
+    model = UNETRcls()
     x = torch.randn(2, 1, 224, 224)
     y= model(x)
     print(y.shape)

@@ -472,7 +472,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             te.printlefttime(epoch, epoch_num)
         t.printtime(contenttotal, True)
         writer.close()
-        torch.save(model.state_dict(), 'model.pth')
+        # torch.save(model.state_dict(), 'model.pth')
 
     print('Finished Training\n')
     if is_test:
@@ -590,8 +590,7 @@ def main():
     lr_list = (1e-1, 4e-2, 1e-2, 8e-3, 6e-3, 4e-3, 2e-3, 1e-3, 8e-4, 6e-4,
                4e-4, 2e-4, 1e-4, 8e-5, 6e-5, 4e-5, 2e-5, 1e-5, 8e-6, 6e-6,
                4e-6, 2e-6, 1e-6)  # lr_list是学习率元组。目前设置了23个学习率
-    reults_z12 = []
-    reults_clstoken = []
+
     testp = []
     testr = []
     testf1 = []
@@ -665,7 +664,7 @@ if __name__ == '__main__':
     testf1 = []
     testacc = []
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_ocls_9G', 16, 400, 'unetrclstoken', 1e-5,
+        Train_breast('UnetR_ocls_100', 16, 400, 'unetr', 1e-1,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
@@ -676,7 +675,7 @@ if __name__ == '__main__':
     testacc.append(test_acc)
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_ocls_9H', 16, 400, 'unetrclstoken', 8e-6,
+        Train_breast('UnetR_ocls_101', 16, 400, 'unetr', 4e-2,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
@@ -687,7 +686,7 @@ if __name__ == '__main__':
     testacc.append(test_acc)
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_ocls_9I', 16, 400, 'unetrclstoken', 6e-6,
+        Train_breast('UnetR_ocls_102', 16, 400, 'unetr', 1e-2,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
@@ -698,7 +697,7 @@ if __name__ == '__main__':
     testacc.append(test_acc)
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_ocls_9J', 16, 400, 'unetrclstoken', 4e-6,
+        Train_breast('UnetR_ocls_103', 16, 400, 'unetr', 8e-3,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
@@ -709,7 +708,7 @@ if __name__ == '__main__':
     testacc.append(test_acc)
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_ocls_9K', 16, 400, 'unetrclstoken', 2e-6,
+        Train_breast('UnetR_ocls_104', 16, 400, 'unetr', 6e-3,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
