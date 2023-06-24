@@ -664,7 +664,7 @@ if __name__ == '__main__':
     testf1 = []
     testacc = []
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_ocls_105', 16, 400, 'unetr', 4e-3,
+        Train_breast('UnetR_ocls_10A', 16, 400, 'unetr', 4e-4,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
@@ -675,7 +675,7 @@ if __name__ == '__main__':
     testacc.append(test_acc)
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_ocls_106', 16, 400, 'unetr', 2e-3,
+        Train_breast('UnetR_ocls_10B', 16, 400, 'unetr', 2e-4,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
@@ -686,7 +686,7 @@ if __name__ == '__main__':
     testacc.append(test_acc)
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_ocls_107', 16, 400, 'unetr', 1e-3,
+        Train_breast('UnetR_ocls_10C', 16, 400, 'unetr', 1e-4,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
@@ -697,7 +697,7 @@ if __name__ == '__main__':
     testacc.append(test_acc)
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_ocls_108', 16, 400, 'unetr', 8e-4,
+        Train_breast('UnetR_ocls_10D', 16, 400, 'unetr', 8e-5,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
@@ -708,7 +708,7 @@ if __name__ == '__main__':
     testacc.append(test_acc)
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_ocls_109', 16, 400, 'unetr', 6e-4,
+        Train_breast('UnetR_ocls_10E', 16, 400, 'unetr', 6e-5,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
