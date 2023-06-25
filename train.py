@@ -686,6 +686,11 @@ if __name__ == '__main__':
     testr.append(test_recall)
     testf1.append(test_f1_score)
     testacc.append(test_acc)
+    for i in range(len(testp)):
+        print(testp[i])
+        print(testr[i])
+        print(testf1[i])
+        print(testacc[i])
 
     test_precision, test_recall, test_f1_score, test_acc = \
         Train_breast('UnetR_cls_seg_60', 16, 400, 'unetr', 6e-4,
