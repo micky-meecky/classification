@@ -362,16 +362,17 @@ class UNETR(nn.Module):
         self.patch_size = patch_size
         self.num_heads = num_heads
         self.dropout = dropout
-        self.num_layers = 12
-        self.ext_layers = [3, 6, 9, 12]
+        self.num_layers = 8
+        self.ext_layers = [2, 4, 6, 8]
         # self.linear = nn.Linear(embed_dim * 1, self.output_dim, bias=True)
-        self.fc1 = nn.Linear(embed_dim * 1, self.head_hidden_dim)
+        self.fc1 = nn.Linear(embed_dim * 2, self.head_hidden_dim)
         self.dropout1 = nn.Dropout(dropout)
         self.fc2 = nn.Linear(self.head_hidden_dim, self.output_dim)
 
         self.patch_dim = [int(x / patch_size) for x in img_shape]
 
         # Transformer Encoder
+        self.is_cls_token = True
         self.transformer = Transformer(input_dim, embed_dim, img_shape, patch_size, num_heads, self.num_layers, dropout,
                                        self.ext_layers, is_cls_token=True)
 
@@ -391,26 +392,27 @@ class UNETR(nn.Module):
                                              SingleConv2DBlock(64, output_dim, 1))
 
     def forward(self, x):
-        z, cls_token = self.transformer(x)
+        if self.is_cls_token:
+            z, cls_token = self.transformer(x)
+        else:
+            z = self.transformer(x)
         z0, z3, z6, z9, z12 = x, *z
         z3 = z3.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)  # 把z3的最后两维换一下位置，然后reshape
         z6 = z6.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)  # 相当于把196个patch的768维的向量变成了14 * 14的矩阵
         z9 = z9.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
         z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)   # shape: (batch_size, 768, 14, 14)
 
-        # cls head, cls_token shape: (batch_size, 768)
-        cls_out = self.fc1(cls_token)
-        cls_out = self.dropout1(cls_out)
-        cls_out = self.fc2(cls_out)
-
         # 将z12用nn.AdaptiveAvgPool2d(1)降维
-        # z12c = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
-        # z12c = z12c.view(z12c.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
-        # z12c = F.dropout(z12c, p=self.dropout, training=self.training)
-        #
-        # z12c = self.fc1(z12c)
-        # z12c = self.dropout1(z12c)
-        # clsout = self.fc2(z12c)
+        z12c = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
+        z12c = z12c.view(z12c.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
+        z12c = F.dropout(z12c, p=self.dropout, training=self.training)
+
+        # 将z12c和cls_token拼接
+        z12c = torch.cat((z12c, cls_token), dim=1)  # shape: (batch_size, 768*2)
+
+        z12c = self.fc1(z12c)
+        z12c = self.dropout1(z12c)
+        cls_out = self.fc2(z12c)
 
         # z3 = torch.mean(z3.view(z3.size(0), z3.size(1), -1), dim=2)  # shape: (batch_size, 768)
         # z6 = torch.mean(z6.view(z6.size(0), z6.size(1), -1), dim=2)  # shape: (batch_size, 768)
@@ -942,8 +944,10 @@ class UNETRSwin(nn.Module):
 
 
 if __name__ == '__main__':
-    model = UNETRcls()
+    model = UNETR()
     x = torch.randn(2, 1, 224, 224)
-    y= model(x)
+    # y= model(x)
+    y, s= model(x)
     print(y.shape)
+    print(s.shape)
     # print(ys.shap；e)
