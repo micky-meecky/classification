@@ -500,8 +500,8 @@ class UNETRclsz12(nn.Module):
         self.patch_size = patch_size
         self.num_heads = num_heads
         self.dropout = dropout
-        self.num_layers = 16
-        self.ext_layers = [4, 8, 12, 16]
+        self.num_layers = 12
+        self.ext_layers = [3, 6, 9, 12]
         # self.fc = nn.Linear(embed_dim, self.output_dim, bias=True)  # bias=True 是指是否使用偏置
         self.fc1 = nn.Linear(embed_dim * 1, self.head_hidden_dim)
         self.dropout1 = nn.Dropout(self.dropout)
