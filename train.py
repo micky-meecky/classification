@@ -664,36 +664,35 @@ if __name__ == '__main__':
     testf1 = []
     testacc = []
 
+    # test_precision, test_recall, test_f1_score, test_acc = \
+    #     Train_breast('UnetR_cls_1090', 16, 400, 'unetrclsz12', 6e-4,
+    #                  Use_pretrained=False,
+    #                  _have_segtask=False,
+    #                  _only_segtask=False,
+    #                  is_continue_train=False)
+    # testp.append(test_precision)
+    # testr.append(test_recall)
+    # testf1.append(test_f1_score)
+    # testacc.append(test_acc)
+    #
+    # test_precision, test_recall, test_f1_score, test_acc = \
+    #     Train_breast('UnetR_cls_1091', 16, 400, 'unetrclstoken', 6e-4,
+    #                  Use_pretrained=False,
+    #                  _have_segtask=False,
+    #                  _only_segtask=False,
+    #                  is_continue_train=False)
+    # testp.append(test_precision)
+    # testr.append(test_recall)
+    # testf1.append(test_f1_score)
+    # testacc.append(test_acc)
+    # for i in range(len(testp)):
+    #     print(testp[i])
+    #     print(testr[i])
+    #     print(testf1[i])
+    #     print(testacc[i])
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_cls_1090', 16, 400, 'unetrclsz12', 6e-4,
-                     Use_pretrained=False,
-                     _have_segtask=False,
-                     _only_segtask=False,
-                     is_continue_train=False)
-    testp.append(test_precision)
-    testr.append(test_recall)
-    testf1.append(test_f1_score)
-    testacc.append(test_acc)
-
-    test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_cls_1091', 16, 400, 'unetrclstoken', 6e-4,
-                     Use_pretrained=False,
-                     _have_segtask=False,
-                     _only_segtask=False,
-                     is_continue_train=False)
-    testp.append(test_precision)
-    testr.append(test_recall)
-    testf1.append(test_f1_score)
-    testacc.append(test_acc)
-    for i in range(len(testp)):
-        print(testp[i])
-        print(testr[i])
-        print(testf1[i])
-        print(testacc[i])
-
-    test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_cls_seg_60', 16, 400, 'unetr', 6e-4,
+        Train_breast('UnetR_cls_seg_61', 16, 400, 'unetr', 4e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
@@ -704,7 +703,7 @@ if __name__ == '__main__':
     testacc.append(test_acc)
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_cls_seg_70', 8, 600, 'unetr', 6e-4,
+        Train_breast('UnetR_cls_seg_62', 16, 400, 'unetr', 8e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
@@ -721,7 +720,6 @@ if __name__ == '__main__':
         print(testr[i])
         print(testf1[i])
         print(testacc[i])
-
 
     # main()
     # Train_breast('efficientnetb7_cls2_0' , 32, 'efficientnet', 1e-4, True, False)
