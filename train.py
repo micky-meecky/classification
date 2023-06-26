@@ -703,7 +703,7 @@ if __name__ == '__main__':
     # testacc.append(test_acc)
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_cls_seg_62', 16, 400, 'unetr', 8e-4,
+        Train_breast('UnetR_cls_seg_62', 16, 800, 'unetr', 8e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
@@ -714,7 +714,7 @@ if __name__ == '__main__':
     testacc.append(test_acc)
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_cls_seg_63', 16, 400, 'unetr', 2e-4,
+        Train_breast('UnetR_cls_seg_63', 16, 800, 'unetr', 2e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
