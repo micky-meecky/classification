@@ -377,7 +377,7 @@ class UNETR(nn.Module):
                                        self.ext_layers, is_cls_token=True)
 
         # U-Net Decoder
-        self.decoder0 = nn.Sequential(Conv2DBlock(input_dim, 32, 3),Conv2DBlock(32, 64, 3))
+        self.decoder0 = nn.Sequential(Conv2DBlock(input_dim, 32, 3), Conv2DBlock(32, 64, 3))
         self.decoder3 = nn.Sequential(Deconv2DBlock(embed_dim, 512), Deconv2DBlock(512, 256), Deconv2DBlock(256, 128))
         self.decoder6 = nn.Sequential(Deconv2DBlock(embed_dim, 512), Deconv2DBlock(512, 256),)
         self.decoder9 = Deconv2DBlock(embed_dim, 512)
@@ -945,6 +945,7 @@ class UNETRSwin(nn.Module):
 
 if __name__ == '__main__':
     model = UNETR()
+    print(model)
     x = torch.randn(2, 1, 224, 224)
     # y= model(x)
     y, s= model(x)
