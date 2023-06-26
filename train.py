@@ -713,16 +713,16 @@ if __name__ == '__main__':
     testf1.append(test_f1_score)
     testacc.append(test_acc)
 
-    test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_cls_seg_63', 16, 800, 'unetr', 2e-4,
-                     Use_pretrained=False,
-                     _have_segtask=True,
-                     _only_segtask=False,
-                     is_continue_train=False)
-    testp.append(test_precision)
-    testr.append(test_recall)
-    testf1.append(test_f1_score)
-    testacc.append(test_acc)
+    # test_precision, test_recall, test_f1_score, test_acc = \
+    #     Train_breast('UnetR_cls_seg_63', 16, 800, 'unetr', 2e-4,
+    #                  Use_pretrained=False,
+    #                  _have_segtask=True,
+    #                  _only_segtask=False,
+    #                  is_continue_train=False)
+    # testp.append(test_precision)
+    # testr.append(test_recall)
+    # testf1.append(test_f1_score)
+    # testacc.append(test_acc)
 
     # test_precision, test_recall, test_f1_score, test_acc = \
     #     Train_breast('UnetR_cls_seg_64', 16, 400, 'unetr', 1e-4,
