@@ -702,8 +702,19 @@ if __name__ == '__main__':
     # testf1.append(test_f1_score)
     # testacc.append(test_acc)
 
+    # test_precision, test_recall, test_f1_score, test_acc = \
+    #     Train_breast('UnetR_cls_seg_62', 16, 800, 'unetr', 8e-4,
+    #                  Use_pretrained=False,
+    #                  _have_segtask=True,
+    #                  _only_segtask=False,
+    #                  is_continue_train=False)
+    # testp.append(test_precision)
+    # testr.append(test_recall)
+    # testf1.append(test_f1_score)
+    # testacc.append(test_acc)  # 0.945
+
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_cls_seg_62', 16, 800, 'unetr', 8e-4,
+        Train_breast('UnetR_cls_seg_63', 16, 800, 'unetr', 2e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
@@ -711,29 +722,18 @@ if __name__ == '__main__':
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)
-    testacc.append(test_acc)  # 0.945
+    testacc.append(test_acc)
 
-    # test_precision, test_recall, test_f1_score, test_acc = \
-    #     Train_breast('UnetR_cls_seg_63', 16, 800, 'unetr', 2e-4,
-    #                  Use_pretrained=False,
-    #                  _have_segtask=True,
-    #                  _only_segtask=False,
-    #                  is_continue_train=False)
-    # testp.append(test_precision)
-    # testr.append(test_recall)
-    # testf1.append(test_f1_score)
-    # testacc.append(test_acc)
-
-    # test_precision, test_recall, test_f1_score, test_acc = \
-    #     Train_breast('UnetR_cls_seg_64', 16, 400, 'unetr', 1e-4,
-    #                  Use_pretrained=False,
-    #                  _have_segtask=True,
-    #                  _only_segtask=False,
-    #                  is_continue_train=False)
-    # testp.append(test_precision)
-    # testr.append(test_recall)
-    # testf1.append(test_f1_score)
-    # testacc.append(test_acc)
+    test_precision, test_recall, test_f1_score, test_acc = \
+        Train_breast('UnetR_cls_seg_64', 16, 400, 'unetr', 1e-4,
+                     Use_pretrained=False,
+                     _have_segtask=True,
+                     _only_segtask=False,
+                     is_continue_train=False)
+    testp.append(test_precision)
+    testr.append(test_recall)
+    testf1.append(test_f1_score)
+    testacc.append(test_acc)
 
     # 按照上面四个列表的顺序，分别是precision，recall，f1，acc
     # 按照每个实验结果的顺序打印出来，一次挑上面四个列表的一个元素，用for循环即可
