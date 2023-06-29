@@ -41,13 +41,14 @@ def LossExport(cls_running_loss, seg_running_loss, running_loss, datas, writer, 
 
 def SaveModel(model, epoch, epoch_loss, save_model_dir):
     temploss = 100.0
-    if epoch % 107 == 0:  # 每20个epoch保存一次模型
-        torch.save(model.state_dict(), save_model_dir + '/model' + str(epoch) + '.pth')
-        print('save model，and epoch_loss = ', epoch_loss, '\n')
-    if temploss > epoch_loss:
-        temploss = epoch_loss
-        torch.save(model.state_dict(), save_model_dir + '/miniloss' + '.pth')
-        print('save miniloss model，and epoch_loss = ', temploss, '\n')
+    # if epoch % 1007 == 0:  # 每20个epoch保存一次模型
+    #     torch.save(model.state_dict(), save_model_dir + '/model' + str(epoch) + '.pth')
+    #     print('save model，and epoch_loss = ', epoch_loss, '\n')
+    # if temploss > epoch_loss:
+    #     temploss = epoch_loss
+    #     torch.save(model.state_dict(), save_model_dir + '/miniloss' + '.pth')
+    #     print('save miniloss model，and epoch_loss = ', temploss, '\n')
+    pass
 
 
 def WriteIntoTxt(txtcontent, txtdir):
