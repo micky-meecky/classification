@@ -304,7 +304,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         log_dir = os.path.join(log_dir, project)
         utils.Mkdir(log_dir)
         writer = SummaryWriter(log_dir=log_dir)
-        datas = valid_loader  # -----------------------------------------------------
+        datas = train_loader  # -----------------------------------------------------
         utils.check_grad(model)
         log_vars = None
         for epoch in range(epoch_num):
@@ -688,7 +688,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_cls_seg_80', 16, 1, 'unetr', 6e-4,
+        Train_breast('UnetR_cls_seg_80', 16, 800, 'unetr', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
@@ -698,7 +698,7 @@ if __name__ == '__main__':
     testf1.append(test_f1_score)
     testacc.append(test_acc)
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_cls_seg_81', 16, 1, 'unetr', 4e-4,
+        Train_breast('UnetR_cls_seg_81', 16, 800, 'unetr', 4e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
