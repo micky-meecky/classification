@@ -136,8 +136,10 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
                 sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))
             writer.add_scalars('valid/IOU', {'IOU': sum(IOUlist) / len(IOUlist)}, Iter)
             writer.add_scalars('valid/DC', {'DC': sum(DClist) / len(DClist)}, Iter)
-
-    return acc
+            iou = sum(IOUlist) / len(IOUlist)
+            return acc, iou
+        else:
+            return acc
 
 
 def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch.device,

@@ -11,6 +11,8 @@
 """
 
 # 导入torch的F
+import copy
+
 import torch.nn.functional as F
 import torch
 import torch.nn as nn
@@ -242,6 +244,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     is_test = True  # False
     valid_acc = 0
     best_valid_acc = 0
+    best_valid_score = 0
     is_continue_train = is_continue_train
     _only_segtask = _only_segtask
     if _only_segtask:
@@ -301,7 +304,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         log_dir = os.path.join(log_dir, project)
         utils.Mkdir(log_dir)
         writer = SummaryWriter(log_dir=log_dir)
-        datas = train_loader  # -----------------------------------------------------
+        datas = valid_loader  # -----------------------------------------------------
         utils.check_grad(model)
         log_vars = None
         for epoch in range(epoch_num):
@@ -456,14 +459,33 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             print('Iter = ', Iter)
             writer.add_scalars('Lr', {'lr': utils.GetCurrentLr(optimizer)}, epoch)
             if epoch % 3 == 0:
-                valid_acc = test.trainvalid('valid', valid_loader, model, device, writer, Iter, class_num,
-                                            _have_segtask,
-                                            _only_segtask)
-                if valid_acc > best_valid_acc:
-                    best_valid_acc = valid_acc
-                    best_model = save_model_dir + '/best' + '.pth'
-                    torch.save(model.state_dict(), best_model)
-                    print('best model saved at epoch %d' % epoch)
+                if _have_segtask:
+                    valid_acc, valid_iou = test.trainvalid('valid', valid_loader, model, device, writer, Iter,
+                                                           class_num,
+                                                           _have_segtask,
+                                                           _only_segtask)
+                    valid_score = valid_acc + valid_iou
+                    if valid_score > best_valid_score:
+                        best_valid_score = valid_score
+                        best_epoch = epoch
+                        best_model_wts = copy.deepcopy(model.state_dict())
+                        print('best_valid_score = ', best_valid_score)
+                        print('best_epoch = ', best_epoch)
+                        # 保存模型
+                        best_model = save_model_dir + '/best' + '.pth'
+                        torch.save(best_model_wts, best_model)
+                else:
+                    valid_acc = test.trainvalid('valid', valid_loader, model, device, writer, Iter, class_num,
+                                                _have_segtask,
+                                                _only_segtask)
+                    if valid_acc > best_valid_acc:
+                        best_valid_acc = valid_acc
+                        best_epoch = epoch
+                        print('best_valid_acc = ', best_valid_acc)
+                        print('best_epoch = ', best_epoch)
+                        best_model = save_model_dir + '/best' + '.pth'
+                        torch.save(model.state_dict(), best_model)
+                        print('best model saved at epoch %d' % epoch)
 
             t.ticend()
             t.printtime(contentvalid)
@@ -573,6 +595,7 @@ def Train_Mnist():
         accuracy = correct / total
         print('Accuracy of the network on the test images: %.4f %%' % (100 * accuracy))
 
+
 def main():
     # Train_Mnist()
     # Train_breast('unetRcls_ocls2_5', 30, 200, 'unetr', 1e-4, False, False, False, is_continue_train=False)
@@ -665,7 +688,17 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_cls_seg_80', 16, 800, 'unetr', 6e-4,
+        Train_breast('UnetR_cls_seg_80', 16, 1, 'unetr', 6e-4,
+                     Use_pretrained=False,
+                     _have_segtask=True,
+                     _only_segtask=False,
+                     is_continue_train=False)
+    testp.append(test_precision)
+    testr.append(test_recall)
+    testf1.append(test_f1_score)
+    testacc.append(test_acc)
+    test_precision, test_recall, test_f1_score, test_acc = \
+        Train_breast('UnetR_cls_seg_81', 16, 1, 'unetr', 4e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
