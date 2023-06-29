@@ -363,9 +363,9 @@ class UNETR(nn.Module):
         self.num_heads = num_heads
         self.dropout = dropout
         self.num_layers = 16
-        self.ext_layers = [4, 8, 12, 16]
+        self.ext_layers = [13, 14, 15, 16]
         # self.linear = nn.Linear(embed_dim * 1, self.output_dim, bias=True)
-        self.fc1 = nn.Linear(embed_dim * 2, self.head_hidden_dim)
+        self.fc1 = nn.Linear(embed_dim * 1, self.head_hidden_dim)
         self.dropout1 = nn.Dropout(dropout)
         self.fc2 = nn.Linear(self.head_hidden_dim, self.output_dim)
 
@@ -408,7 +408,7 @@ class UNETR(nn.Module):
         z12c = F.dropout(z12c, p=self.dropout, training=self.training)
 
         # 将z12c和cls_token拼接
-        z12c = torch.cat((z12c, cls_token), dim=1)  # shape: (batch_size, 768*2)
+        # z12c = torch.cat((z12c, cls_token), dim=1)  # shape: (batch_size, 768*2)
 
         z12c = self.fc1(z12c)
         z12c = self.dropout1(z12c)
