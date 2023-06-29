@@ -494,7 +494,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             te.printlefttime(epoch, epoch_num)
         t.printtime(contenttotal, True)
         writer.close()
-        # torch.save(model.state_dict(), 'model.pth')
+        # torch.save(model.state_dict(), 'model.pth ')
 
     print('Finished Training\n')
     if is_test:
