@@ -33,13 +33,11 @@ def get_fold_filelist(csv_file, K=3, fold=1, random_state=2020, validation=False
     label_count = [label.count(i) for i in range(3)]
     print('label_count', label_count)
 
-
-
     # 提取size的三分点
     sizeall = [int(i[2]) for i in nodules]
     sizeall.sort()  # 按升序排列
-    low_mid_thre = sizeall[int(len(sizeall)*1/3)]
-    mid_high_thre = sizeall[int(len(sizeall)*2/3)]
+    low_mid_thre = sizeall[int(len(sizeall)*4/7)]  # 低中分界点
+    mid_high_thre = sizeall[int(len(sizeall)*6/7)]  # 中高分界点
 
     # 根据size三分位数分为low，mid，high三组
 
@@ -214,7 +212,6 @@ def get_fold_filelist(csv_file, K=3, fold=1, random_state=2020, validation=False
         print('validation_n: %d, validation_m: %d, validation_b: %d' % (validation_n, validation_m, validation_b))
         print('validation_n_rate: %.4f, validation_m_rate: %.4f, validation_b_rate: %.4f' % (validation_n_rate, validation_m_rate, validation_b_rate))
         print('validation_n_weight: %.4f, validation_m_weight: %.4f, validation_b_weight: %.4f' % (validation_n_weight_, validation_m_weight_, validation_b_weight_))
-
 
         # 获取测试集中各类别样本数量，以及分布情况，并计算各类别样本权重
         test_n = len([i for i in test_set if int(i[1]) == 2])

@@ -543,14 +543,14 @@ class UNETRclsz12(nn.Module):
 
 
 class UNETRclstoken(nn.Module):
-    def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=256, patch_size=16, num_heads=16,
+    def __init__(self, img_shape=(224, 224), input_dim=3, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
                  dropout=0.1, batch_size=10):
         super().__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.embed_dim = embed_dim
         self.img_shape = img_shape
-        self.head_hidden_dim = 128
+        self.head_hidden_dim = embed_dim * 4
         self.patch_size = patch_size
         self.num_heads = num_heads
         self.dropout = dropout

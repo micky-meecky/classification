@@ -82,7 +82,8 @@ def mnist_loader():
     return train_loader, val_loader, test_loader
 
 
-def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testbs, num_workers, validate_flag=True):
+def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testbs, num_workers, use_clip,
+               validate_flag=True):
     augmentation_prob = 0.5
     if validate_flag:
         train, valid, test = get_fold_filelist(csv_file, K=fold_K, fold=fold_idx, validation=True)
@@ -113,10 +114,16 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
     # 输出test_class_list
     print('test_class_list: ', test_class_list)
 
-    filepath_img = './class_out/stage1/p_image'
-    filepath_mask = './class_out/stage1/p_mask'
-    filepath_contour = './class_out/stage1/p_contour'
-    filepath_dist = './class_out/stage1/p_distance_D1'
+    if use_clip:
+        filepath_img = './class_out/clip_dataset/clip_image'
+        filepath_mask = './class_out/clip_dataset/clip_mask'
+        filepath_contour = './class_out/clip_dataset/clip_contour'
+        filepath_dist = './class_out/clip_dataset/clip_distance_D1'
+    else:
+        filepath_img = './class_out/stage1/p_image'
+        filepath_mask = './class_out/stage1/p_mask'
+        filepath_contour = './class_out/stage1/p_contour'
+        filepath_dist = './class_out/stage1/p_distance_D1'
 
     train_list = [filepath_img + sep + i[0] for i in train]
     train_list_GT = [filepath_mask + sep + i[0] for i in train]
@@ -193,25 +200,33 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
     return train_loader, valid_loader, test_loader
 
 
-def breast_loader(batch_size, testbs, device, validate_flag):
-    train_path_m = './train_path/fold/fold'
-    csv_path = './class_out/train.csv'
+def breast_loader(batch_size, testbs, device, validate_flag, use_clip):
+    if use_clip:
+        csv_path = './class_out/clip_dataset/clip_train.csv'
+    else:
+        # train_path_m = './train_path/fold/fold'
+        csv_path = './class_out/train.csv'
     fold_k = 5
     fold_idx = 1
-    fold_id = 1
-    distance_type = "dist_mask"
-    normal_flag = False
+    # fold_id = 1
+    # distance_type = "dist_mask"
+    # normal_flag = False
     image_size = 224
     num_workers = 0
 
     print('batch_size: ', batch_size)
     train_loader, valid_loader, test_loader = getdataset(device, csv_path, fold_k, fold_idx, image_size, batch_size,
                                                          testbs,
-                                                         num_workers, validate_flag)
+                                                         num_workers,
+                                                         use_clip,
+                                                         validate_flag)
     return train_loader, valid_loader, test_loader
 
 
-def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segtask, _only_segtask, is_continue_train):
+def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segtask, _only_segtask,
+                 is_continue_train,
+                 use_clip,
+                 ):
     project = Project  # project name-----------------------------------------------------
     epoch_num = epoch  # epoch_num -----------------------------------------------------
     class_num = 1  # class_num -----------------------------------------------------
@@ -259,7 +274,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
 
     print(getModelSize(model))
     print('project: ', project)
-    train_loader, valid_loader, test_loader = breast_loader(bs, testbs, device, validate_flag)
+    train_loader, valid_loader, test_loader = breast_loader(bs, testbs, device, validate_flag, use_clip)
     # train_loader, test_loader = OpenDataSet.SelectDataSet('Cifar_10', bs)
     if is_continue_train:
         model_dir = './savemodel/' + project + '/miniloss.pth'
@@ -688,11 +703,12 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_cls_seg_80', 16, 800, 'unetr', 6e-4,
+        Train_breast('UnetR_ocls_120', 16, 400, 'unetrclstoken', 6e-4,
                      Use_pretrained=False,
-                     _have_segtask=True,
+                     _have_segtask=False,
                      _only_segtask=False,
-                     is_continue_train=False)
+                     is_continue_train=False,
+                     use_clip=True)
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)
