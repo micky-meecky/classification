@@ -45,8 +45,8 @@ class ImageFolder_new(data.Dataset):
         self.RotationDegree = [0, 90, 180, 270, 45, 135, 215, 305]
         # self.RotationDegree = [0,90,180,270,45]
         self.augmentation_prob = augmentation_prob
-        self.resize_range = [520, 560]
-        self.CropRange = [400, 519]  # 注意,上界貌似不能大于resize的下界,待验证
+        self.resize_range = [224, 224]
+        self.CropRange = [200, 224]  # 注意,上界貌似不能大于resize的下界,待验证
         self.device = device
 
     # print("image count in {} path :{}".format(self.mode,len(self.image_paths)))
