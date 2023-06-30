@@ -102,26 +102,27 @@ class ImageFolder_new(data.Dataset):
 
         if (self.mode == 'train') and p_transform <= self.augmentation_prob:
 
+            # 修改亮度、对比度。
             Transform.append(T.ColorJitter(brightness=0.25, contrast=0.25))
             Transform_GT.append(T.ColorJitter(brightness=0.25, contrast=0.25))
             Transform_contour.append(T.ColorJitter(brightness=0.25, contrast=0.25))
             Transform_dist.append(T.ColorJitter(brightness=0.25, contrast=0.25))
 
-            T.Grayscale(num_output_channels=3),
+            T.Grayscale(num_output_channels=3),  # 随机转为灰度图
 
             # Transform.append(T.RandomApply([T.RandomErasing(p=0.5)], p=0.5))
             # Transform_GT.append(T.RandomApply([T.RandomErasing(p=0.5)], p=0.5))
             # Transform_contour.append(T.RandomApply([T.RandomErasing(p=0.5)], p=0.5))
             # Transform_dist.append(T.RandomApply([T.RandomErasing(p=0.5)], p=0.5))
 
-            Transform.append(
-                T.Resize((int(ResizeRange * aspect_ratio), ResizeRange), interpolation=Image.BICUBIC))  # 双三次
-            Transform_GT.append(
-                T.Resize((int(ResizeRange * aspect_ratio), ResizeRange), interpolation=Image.NEAREST))  # 最近邻
-            Transform_contour.append(
-                T.Resize((int(ResizeRange * aspect_ratio), ResizeRange), interpolation=Image.NEAREST))  # 最近邻
-            Transform_dist.append(
-                T.Resize((int(ResizeRange * aspect_ratio), ResizeRange), interpolation=Image.NEAREST))  # 最近邻
+            # Transform.append(
+            #     T.Resize((int(ResizeRange * aspect_ratio), ResizeRange), interpolation=Image.BICUBIC))  # 双三次
+            # Transform_GT.append(
+            #     T.Resize((int(ResizeRange * aspect_ratio), ResizeRange), interpolation=Image.NEAREST))  # 最近邻
+            # Transform_contour.append(
+            #     T.Resize((int(ResizeRange * aspect_ratio), ResizeRange), interpolation=Image.NEAREST))  # 最近邻
+            # Transform_dist.append(
+            #     T.Resize((int(ResizeRange * aspect_ratio), ResizeRange), interpolation=Image.NEAREST))  # 最近邻
 
             RotationDegree = random.randint(0, 7)
             RotationDegree = self.RotationDegree[RotationDegree]
@@ -171,15 +172,15 @@ class ImageFolder_new(data.Dataset):
             #     seg = seg.crop(box=(ShiftRange_left, ShiftRange_upper, ShiftRange_right, ShiftRange_lower))
 
             # crop
-            ShiftRange_left = random.randint(0, 20)
-            ShiftRange_upper = random.randint(0, 20)
-            ShiftRange_right = image.size(2) - random.randint(0, 20)
-            ShiftRange_lower = image.size(1) - random.randint(0, 20)
-
-            image = image[:, ShiftRange_upper:ShiftRange_lower, ShiftRange_left:ShiftRange_right]
-            GT = GT[:, ShiftRange_upper:ShiftRange_lower, ShiftRange_left:ShiftRange_right]
-            contour = contour[:, ShiftRange_upper:ShiftRange_lower, ShiftRange_left:ShiftRange_right]
-            dist = dist[:, ShiftRange_upper:ShiftRange_lower, ShiftRange_left:ShiftRange_right]
+            # ShiftRange_left = random.randint(0, 20)
+            # ShiftRange_upper = random.randint(0, 20)
+            # ShiftRange_right = image.size(2) - random.randint(0, 20)
+            # ShiftRange_lower = image.size(1) - random.randint(0, 20)
+            #
+            # image = image[:, ShiftRange_upper:ShiftRange_lower, ShiftRange_left:ShiftRange_right]
+            # GT = GT[:, ShiftRange_upper:ShiftRange_lower, ShiftRange_left:ShiftRange_right]
+            # contour = contour[:, ShiftRange_upper:ShiftRange_lower, ShiftRange_left:ShiftRange_right]
+            # dist = dist[:, ShiftRange_upper:ShiftRange_lower, ShiftRange_left:ShiftRange_right]
 
             if self.load_preseg:
                 seg = seg[:, ShiftRange_upper:ShiftRange_lower, ShiftRange_left:ShiftRange_right]
@@ -237,10 +238,10 @@ class ImageFolder_new(data.Dataset):
         # plt.show()
 
         final_size = self.image_size
-        Transform.append(T.Resize((final_size, final_size), interpolation=Image.BICUBIC))
-        Transform_GT.append(T.Resize((final_size, final_size), interpolation=Image.NEAREST))
-        Transform_contour.append(T.Resize((final_size, final_size), interpolation=Image.NEAREST))
-        Transform_dist.append(T.Resize((final_size, final_size), interpolation=Image.NEAREST))
+        # Transform.append(T.Resize((final_size, final_size), interpolation=Image.BICUBIC))
+        # Transform_GT.append(T.Resize((final_size, final_size), interpolation=Image.NEAREST))
+        # Transform_contour.append(T.Resize((final_size, final_size), interpolation=Image.NEAREST))
+        # Transform_dist.append(T.Resize((final_size, final_size), interpolation=Image.NEAREST))
 
         # Transform.append(T.ToTensor())
         # Transform_GT.append(T.ToTensor())
