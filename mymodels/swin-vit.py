@@ -1,11 +1,5 @@
-""" Swin Transformer
-A PyTorch impl of : `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows`
-    - https://arxiv.org/pdf/2103.14030
-
-Code/weights from https://github.com/microsoft/Swin-Transformer
-
-"""
-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -13,6 +7,21 @@ import torch.utils.checkpoint as checkpoint
 import numpy as np
 from typing import Optional
 
+"""
+@author: 杨亚峰<yang_armageddon@163.com>
+@version: 1.0.0
+@license:  Apache Licence
+@editor: Pycharm yyf
+@file: swin-vit.py
+@datatime: 6/30/2023 4:25 PM
+"""
+""" Swin Transformer
+A PyTorch impl of : `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows`
+    - https://arxiv.org/pdf/2103.14030
+
+Code/weights from https://github.com/microsoft/Swin-Transformer
+
+"""
 
 def drop_path_f(x, drop_prob: float = 0., training: bool = False):
     """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
@@ -37,6 +46,7 @@ def drop_path_f(x, drop_prob: float = 0., training: bool = False):
 class DropPath(nn.Module):
     """Drop paths (Stochastic Depth) per sample  (when applied in main path of residual blocks).
     """
+
     def __init__(self, drop_prob=None):
         super(DropPath, self).__init__()
         self.drop_prob = drop_prob
@@ -88,6 +98,7 @@ class PatchEmbed(nn.Module):
     """
     2D Image to Patch Embedding
     """
+
     def __init__(self, patch_size=4, in_c=3, embed_dim=96, norm_layer=None):
         super().__init__()
         patch_size = (patch_size, patch_size)
@@ -168,6 +179,7 @@ class PatchMerging(nn.Module):
 class Mlp(nn.Module):
     """ MLP as used in Vision Transformer, MLP-Mixer and related networks
     """
+
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
         super().__init__()
         out_features = out_features or in_features
@@ -595,7 +607,7 @@ def swin_small_patch4_window7_224(num_classes: int = 1000, **kwargs):
 def swin_base_patch4_window7_224(num_classes: int = 1000, **kwargs):
     # trained ImageNet-1K
     # https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_base_patch4_window7_224.pth
-    model = SwinTransformer(in_chans=1,
+    model = SwinTransformer(in_chans=3,
                             patch_size=4,
                             window_size=7,
                             embed_dim=128,
@@ -674,5 +686,14 @@ def swin_large_patch4_window12_384_in22k(num_classes: int = 21841, **kwargs):
                             num_classes=num_classes,
                             **kwargs)
     return model
+
+
+if __name__ == '__main__':
+    model = swin_base_patch4_window7_224(num_classes=1)
+    # print(model)
+    print(model(torch.randn(10, 3, 224, 224)).shape)
+
+
+
 
 

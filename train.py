@@ -522,6 +522,8 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             test.test('test', test_loader, model, SegImgSavePath, device, class_num, _have_segtask, _only_segtask)
     print('\nFinished Testing\n')
 
+    # test(model)
+
     return test_precision, test_recall, test_f1_score, test_acc
 
 
@@ -706,12 +708,12 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_ocls_120', 16, 400, 'unetrclstoken', 6e-4,
+        Train_breast('UnetR_ocls_130', 16, 400, 'swin-vit', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
                      is_continue_train=False,
-                     use_clip=True)
+                     use_clip=False)
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)
