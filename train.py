@@ -285,7 +285,10 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         criterion_seg = SoftDiceLossNew()
         optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))  # ----------------------------------------
     else:
-        pos_weight = torch.tensor([515 / 108]).to(device)
+        if use_clip:
+            pos_weight = torch.tensor([3340 / 4344]).to(device)
+        else:
+            pos_weight = torch.tensor([515/108]).to(device)
         if _have_segtask:
             criterion_seg = SoftDiceLossNewvar()  # -----------------------------------------------------
             criterion_cls = BCEWithLogitsLossCustom(pos_weight=pos_weight)
