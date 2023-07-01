@@ -738,7 +738,7 @@ if __name__ == '__main__':
     #     print(testf1[i], end=', ')
     #     print(testacc[i])
     #
-    Train_Mnist()
+    # Train_Mnist()
     test_precision, test_recall, test_f1_score, test_acc = \
         Train_breast('UnetR_ocls_120', 16, 400, 'unetrclstoken', 6e-4,
                      Use_pretrained=False,
