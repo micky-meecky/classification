@@ -555,7 +555,7 @@ def Train_Mnist():
         print('load model')
 
     if is_train:
-        for epoch in range(100):
+        for epoch in range(3):
             running_loss = 0.0
             for i, data in tqdm(enumerate(train_loader, 0), total=len(train_loader)):
                 inputs, labels = data
