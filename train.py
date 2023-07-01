@@ -77,7 +77,7 @@ def mnist_loader():
     val_sampler = SubsetRandomSampler(val_idx)
 
     # 定义数据加载器
-    train_loader = DataLoader(train_dataset, batch_size=4096, sampler=train_sampler)
+    train_loader = DataLoader(train_dataset, batch_size=1024, sampler=train_sampler)
     val_loader = DataLoader(train_dataset, batch_size=1024, sampler=val_sampler)
     return train_loader, val_loader, test_loader
 
