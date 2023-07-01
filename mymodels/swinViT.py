@@ -596,7 +596,7 @@ def swin_small_patch4_window7_224(num_classes: int = 1000, **kwargs):
 def swin_base_patch4_window7_224(num_classes: int = 1000, **kwargs):
     # trained ImageNet-1K
     # https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_base_patch4_window7_224.pth
-    model = SwinTransformer(in_chans=1,
+    model = SwinTransformer(in_chans=3,
                             patch_size=4,
                             window_size=7,
                             embed_dim=128,

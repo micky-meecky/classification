@@ -204,7 +204,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
         elif modelname == 'unetrclstoken':
             model = UNETRclstoken()
         elif modelname == 'swin-vit':
-            model = swin_base_patch4_window7_224(num_classes=1)
+            model = swin_base_patch4_window7_224(num_classes=10)
         elif modelname == 'unet':
             model = UNet(1, 1)
         elif modelname == 'Net':
