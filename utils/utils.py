@@ -206,7 +206,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
         elif modelname == 'swin-vit':
             model = swin_base_patch4_window7_224(num_classes=10)
         elif modelname == 'unet':
-            model = UNet(1, 1)
+            model = UNet(3, 1)
         elif modelname == 'Net':
             model = Net()
         elif modelname == 'resnet34':
