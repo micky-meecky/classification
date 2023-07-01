@@ -544,7 +544,7 @@ def Train_Mnist():
     train_loader, val_loader, test_loader = mnist_loader()
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.0005, momentum=0.99)
+    optimizer = optim.AdamW(model.parameters(), lr=0.0002)
 
     is_train = True
     is_test = True
@@ -555,7 +555,9 @@ def Train_Mnist():
         print('load model')
 
     if is_train:
-        for epoch in range(3):
+        for epoch in range(100):
+            correct = 0
+            total = 0
             running_loss = 0.0
             for i, data in tqdm(enumerate(train_loader, 0), total=len(train_loader)):
                 inputs, labels = data
@@ -575,6 +577,12 @@ def Train_Mnist():
                 if i == 0 and epoch % 5 == 0:
                     torch.save(model.state_dict(), 'model.pth')
                     print('save model')
+
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
+            print('Accuracy of the network on the 50000 train images: %.4f %%' % (100 * correct / total))
 
         torch.save(model.state_dict(), 'model.pth')
 
@@ -730,27 +738,27 @@ if __name__ == '__main__':
     #     print(testf1[i], end=', ')
     #     print(testacc[i])
     #
-    # test_precision, test_recall, test_f1_score, test_acc = \
-    #     Train_breast('UnetR_ocls_121', 64, 400, 'unetrclstoken', 6e-4,
-    #                  Use_pretrained=False,
-    #                  _have_segtask=False,
-    #                  _only_segtask=False,
-    #                  is_continue_train=False,
-    #                  use_clip=True)
-    # testp.append(test_precision)
-    # testr.append(test_recall)
-    # testf1.append(test_f1_score)
-    # testacc.append(test_acc)
-    #
-    # # 按照上面四个列表的顺序，分别是precision，recall，f1，acc
-    # # 按照每个实验结果的顺序打印出来，一次挑上面四个列表的一个元素，用for循环即可
-    # for i in range(len(testp)):
-    #     print('第' + str(i + 1) + '个实验结果：', end=', ')
-    #     print(testp[i], end=', ')
-    #     print(testr[i], end=', ')
-    #     print(testf1[i], end=', ')
-    #     print(testacc[i])
     Train_Mnist()
+    test_precision, test_recall, test_f1_score, test_acc = \
+        Train_breast('UnetR_ocls_120', 16, 400, 'unetrclstoken', 6e-4,
+                     Use_pretrained=False,
+                     _have_segtask=False,
+                     _only_segtask=False,
+                     is_continue_train=False,
+                     use_clip=True)
+    testp.append(test_precision)
+    testr.append(test_recall)
+    testf1.append(test_f1_score)
+    testacc.append(test_acc)
+
+    # 按照上面四个列表的顺序，分别是precision，recall，f1，acc
+    # 按照每个实验结果的顺序打印出来，一次挑上面四个列表的一个元素，用for循环即可
+    for i in range(len(testp)):
+        print('第' + str(i + 1) + '个实验结果：', end=', ')
+        print(testp[i], end=', ')
+        print(testr[i], end=', ')
+        print(testf1[i], end=', ')
+        print(testacc[i])
 
     # main()
     # Train_breast('efficientnetb7_cls2_0' , 32, 'efficientnet', 1e-4, True, False)
