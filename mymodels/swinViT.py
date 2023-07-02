@@ -404,7 +404,7 @@ class BasicLayer(nn.Module):
         self.depth = depth
         self.window_size = window_size
         self.use_checkpoint = use_checkpoint
-        self.shift_size = window_size // 2
+        self.shift_size = window_size // 2  # 移动多少个patch
 
         # build blocks
         self.blocks = nn.ModuleList([
@@ -496,7 +496,7 @@ class SwinTransformer(nn.Module):
                  window_size=7, mlp_ratio=4., qkv_bias=True,
                  drop_rate=0., attn_drop_rate=0., drop_path_rate=0.1,
                  norm_layer=nn.LayerNorm, patch_norm=True,
-                 use_checkpoint=False, **kwargs):
+                 use_checkpoint=False, task='cls', **kwargs):
         super().__init__()
 
         self.num_classes = num_classes
@@ -504,17 +504,21 @@ class SwinTransformer(nn.Module):
         self.embed_dim = embed_dim
         self.patch_norm = patch_norm
         # stage4输出特征矩阵的channels
-        self.num_features = int(embed_dim * 2 ** (self.num_layers - 1))
-        self.mlp_ratio = mlp_ratio
+        self.num_features = int(embed_dim * 2 ** (self.num_layers - 1))  # 8倍emd_dim
+        self.mlp_ratio = mlp_ratio  #
 
         # split image into non-overlapping patches
         self.patch_embed = PatchEmbed(
             patch_size=patch_size, in_c=in_chans, embed_dim=embed_dim,
             norm_layer=norm_layer if self.patch_norm else None)
         self.pos_drop = nn.Dropout(p=drop_rate)
+        self.seg_feature = []
+        self.task = task
 
-        # stochastic depth
+        # stochastic depth，生成针对每个block所采用的的drop_path_rate。
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]  # stochastic depth decay rule
+        #  torch.linspace 生成在指定范围内均匀分布的一维张量, start：起始值（包含在范围内）,end：结束值（包含在范围内）,
+        #  steps：生成的张量中的元素数量
 
         # build layers
         self.layers = nn.ModuleList()
@@ -527,7 +531,7 @@ class SwinTransformer(nn.Module):
                                 window_size=window_size,
                                 mlp_ratio=self.mlp_ratio,
                                 qkv_bias=qkv_bias,
-                                drop=drop_rate,
+                                drop=drop_rate,  # 在pos_embed，swin中均有用到。
                                 attn_drop=attn_drop_rate,
                                 drop_path=dpr[sum(depths[:i_layer]):sum(depths[:i_layer + 1])],
                                 norm_layer=norm_layer,
@@ -557,12 +561,18 @@ class SwinTransformer(nn.Module):
 
         for layer in self.layers:
             x, H, W = layer(x, H, W)
+            self.seg_feature.append(x)  # 保存每个stage的输出特征矩阵
 
         x = self.norm(x)  # [B, L, C]
         x = self.avgpool(x.transpose(1, 2))  # [B, C, 1]
         x = torch.flatten(x, 1)
         x = self.head(x)
-        return x
+        if self.task == 'seg':
+            return x, self.seg_feature
+        elif self.task == 'cls':
+            return x
+        else:
+            raise x
 
 
 def swin_tiny_patch4_window7_224(num_classes: int = 1000, **kwargs):
@@ -575,6 +585,7 @@ def swin_tiny_patch4_window7_224(num_classes: int = 1000, **kwargs):
                             depths=(2, 2, 6, 2),
                             num_heads=(3, 6, 12, 24),
                             num_classes=num_classes,
+                            task='seg',
                             **kwargs)
     return model
 
@@ -603,6 +614,7 @@ def swin_base_patch4_window7_224(num_classes: int = 1000, **kwargs):
                             depths=(2, 2, 18, 2),
                             num_heads=(4, 8, 16, 32),
                             num_classes=num_classes,
+                            task='seg',
                             **kwargs)
     return model
 
@@ -676,4 +688,12 @@ def swin_large_patch4_window12_384_in22k(num_classes: int = 21841, **kwargs):
                             **kwargs)
     return model
 
+
+if __name__ == '__main__':
+    model = swin_base_patch4_window7_224()
+    print(model)
+    x = torch.randn(5, 3, 224, 224)
+    y, yseg = model(x)
+    print(y.shape)
+    print(yseg)
 

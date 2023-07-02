@@ -717,35 +717,31 @@ if __name__ == '__main__':
     testf1 = []
     testacc = []
 
-    # test_precision, test_recall, test_f1_score, test_acc = \
-    #     Train_breast('UnetR_ocls_130', 32, 400, 'swin-vit', 6e-4,
-    #                  Use_pretrained=False,
-    #                  _have_segtask=False,
-    #                  _only_segtask=False,
-    #                  is_continue_train=False,
-    #                  use_clip=False)
-    # testp.append(test_precision)
-    # testr.append(test_recall)
-    # testf1.append(test_f1_score)
-    # testacc.append(test_acc)
-    #
-    # # 按照上面四个列表的顺序，分别是precision，recall，f1，acc
-    # # 按照每个实验结果的顺序打印出来，一次挑上面四个列表的一个元素，用for循环即可
-    # for i in range(len(testp)):
-    #     print('第' + str(i + 1) + '个实验结果：', end=', ')
-    #     print(testp[i], end=', ')
-    #     print(testr[i], end=', ')
-    #     print(testf1[i], end=', ')
-    #     print(testacc[i])
-    #
-    # Train_Mnist()
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('Unet_ocls_00', 16, 400, 'unetrclstoken', 6e-4,
+        Train_breast('Unet_ocls_01', 16, 400, 'unet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
                      is_continue_train=False,
                      use_clip=True)
+    testp.append(test_precision)
+    testr.append(test_recall)
+    testf1.append(test_f1_score)
+    testacc.append(test_acc)
+
+    for i in range(len(testp)):
+        print('第' + str(i + 1) + '个实验结果：', end=', ')
+        print(testp[i], end=', ')
+        print(testr[i], end=', ')
+        print(testf1[i], end=', ')
+        print(testacc[i])
+    test_precision, test_recall, test_f1_score, test_acc = \
+        Train_breast('UnetR_ocls_122', 128, 400, 'unetrclstoken', 6e-4,
+                     Use_pretrained=False,
+                     _have_segtask=False,
+                     _only_segtask=False,
+                     is_continue_train=False,
+                     use_clip=False)
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)
@@ -759,6 +755,28 @@ if __name__ == '__main__':
         print(testr[i], end=', ')
         print(testf1[i], end=', ')
         print(testacc[i])
+    #
+    # Train_Mnist()
+    # test_precision, test_recall, test_f1_score, test_acc = \
+    #     Train_breast('Unet_ocls_00', 16, 400, 'unetrclstoken', 6e-4,
+    #                  Use_pretrained=False,
+    #                  _have_segtask=False,
+    #                  _only_segtask=False,
+    #                  is_continue_train=False,
+    #                  use_clip=True)
+    # testp.append(test_precision)
+    # testr.append(test_recall)
+    # testf1.append(test_f1_score)
+    # testacc.append(test_acc)
+    #
+    # # 按照上面四个列表的顺序，分别是precision，recall，f1，acc
+    # # 按照每个实验结果的顺序打印出来，一次挑上面四个列表的一个元素，用for循环即可
+    # for i in range(len(testp)):
+    #     print('第' + str(i + 1) + '个实验结果：', end=', ')
+    #     print(testp[i], end=', ')
+    #     print(testr[i], end=', ')
+    #     print(testf1[i], end=', ')
+    #     print(testacc[i])
 
     # main()
     # Train_breast('efficientnetb7_cls2_0' , 32, 'efficientnet', 1e-4, True, False)
