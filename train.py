@@ -717,24 +717,24 @@ if __name__ == '__main__':
     testf1 = []
     testacc = []
 
-    test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('Unet_ocls_01', 16, 400, 'unet', 6e-4,
-                     Use_pretrained=False,
-                     _have_segtask=False,
-                     _only_segtask=False,
-                     is_continue_train=False,
-                     use_clip=True)
-    testp.append(test_precision)
-    testr.append(test_recall)
-    testf1.append(test_f1_score)
-    testacc.append(test_acc)
-
-    for i in range(len(testp)):
-        print('第' + str(i + 1) + '个实验结果：', end=', ')
-        print(testp[i], end=', ')
-        print(testr[i], end=', ')
-        print(testf1[i], end=', ')
-        print(testacc[i])
+    # test_precision, test_recall, test_f1_score, test_acc = \
+    #     Train_breast('Unet_ocls_01', 16, 400, 'unet', 6e-4,
+    #                  Use_pretrained=False,
+    #                  _have_segtask=False,
+    #                  _only_segtask=False,
+    #                  is_continue_train=False,
+    #                  use_clip=True)
+    # testp.append(test_precision)
+    # testr.append(test_recall)
+    # testf1.append(test_f1_score)
+    # testacc.append(test_acc)
+    #
+    # for i in range(len(testp)):
+    #     print('第' + str(i + 1) + '个实验结果：', end=', ')
+    #     print(testp[i], end=', ')
+    #     print(testr[i], end=', ')
+    #     print(testf1[i], end=', ')
+    #     print(testacc[i])
     test_precision, test_recall, test_f1_score, test_acc = \
         Train_breast('UnetR_ocls_122', 128, 400, 'unetrclstoken', 6e-4,
                      Use_pretrained=False,
