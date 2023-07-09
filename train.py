@@ -633,7 +633,8 @@ def main():
     # Train_breast('unetRseg_cls_seg_8', 5, 100, 'unetr', 9.63366620781354e-14, False, True, _only_segtask=False,
     #              is_continue_train=True)
 
-    base_name = 'UnetR_ocls_6'
+    base_name1 = 'Unet_ocls_1'
+    base_name2 = 'Unet_ocls_2'
     # 从A到Z
     name_order = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
                   'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
@@ -648,61 +649,49 @@ def main():
     testr = []
     testf1 = []
     testacc = []
+
     # 尝试不同的学习率，分两个批次，一次是奇数，一次是偶数，奇数的使用仅含有z12的，偶数的使用仅含有cls_token的。
-    for i in range(len(lr_list)):
-        if i % 2 == 0:
-            test_precision, test_recall, test_f1_score, test_acc = \
-                Train_breast(base_name + name_order[i], 16, 300, 'unetrclsz12', lr_list[i],
-                             Use_pretrained=False,
-                             _have_segtask=False,
-                             _only_segtask=False,
-                             is_continue_train=False)
-            testp.append(test_precision)
-            testr.append(test_recall)
-            testf1.append(test_f1_score)
-            testacc.append(test_acc)
-        else:
-            test_precision, test_recall, test_f1_score, test_acc = \
-                Train_breast(base_name + name_order[i], 16, 300, 'unetrclstoken', lr_list[i],
-                             Use_pretrained=False,
-                             _have_segtask=False,
-                             _only_segtask=False,
-                             is_continue_train=False)
-            testp.append(test_precision)
-            testr.append(test_recall)
-            testf1.append(test_f1_score)
-            testacc.append(test_acc)
+    for j in range(len(lr_list)):
+        test_precision, test_recall, test_f1_score, test_acc = \
+            Train_breast(base_name1 + name_order[j], 16, 400, 'unet', lr_list[j],
+                         Use_pretrained=False,
+                         _have_segtask=False,
+                         _only_segtask=False,
+                         is_continue_train=False,
+                         use_clip=False)
+        testp.append(test_precision)
+        testr.append(test_recall)
+        testf1.append(test_f1_score)
+        testacc.append(test_acc)
 
-    print(testp)
-    print(testr)
-    print(testf1)
-    print(testacc)
+        for i in range(len(testp)):
+            print('第' + str(i + 1) + '个实验结果：', end=', ')
+            print(testp[i], end=', ')
+            print(testr[i], end=', ')
+            print(testf1[i], end=', ')
+            print(testacc[i])
 
-    base_name = 'UnetR_ocls_7'
+    # 尝试不同的学习率，分两个批次，一次是奇数，一次是偶数，奇数的使用仅含有z12的，偶数的使用仅含有cls_token的。
+    for j in range(len(lr_list)):
+        test_precision, test_recall, test_f1_score, test_acc = \
+            Train_breast(base_name2 + name_order[j], 8, 400, 'unet', lr_list[j],
+                         Use_pretrained=False,
+                         _have_segtask=False,
+                         _only_segtask=False,
+                         is_continue_train=False,
+                         use_clip=False)
+        testp.append(test_precision)
+        testr.append(test_recall)
+        testf1.append(test_f1_score)
+        testacc.append(test_acc)
 
-    for i in range(len(lr_list)):
-        if i % 2 == 0:
-            test_precision, test_recall, test_f1_score, test_acc = \
-                Train_breast(base_name + name_order[i], 8, 400, 'unetrclsz12', lr_list[i],
-                             Use_pretrained=False,
-                             _have_segtask=False,
-                             _only_segtask=False,
-                             is_continue_train=False)
-            testp.append(test_precision)
-            testr.append(test_recall)
-            testf1.append(test_f1_score)
-            testacc.append(test_acc)
-        else:
-            test_precision, test_recall, test_f1_score, test_acc = \
-                Train_breast(base_name + name_order[i], 8, 400, 'unetrclstoken', lr_list[i],
-                             Use_pretrained=False,
-                             _have_segtask=False,
-                             _only_segtask=False,
-                             is_continue_train=False)
-            testp.append(test_precision)
-            testr.append(test_recall)
-            testf1.append(test_f1_score)
-            testacc.append(test_acc)
+        for i in range(len(testp)):
+            print('第' + str(i + 1) + '个实验结果：', end=', ')
+            print(testp[i], end=', ')
+            print(testr[i], end=', ')
+            print(testf1[i], end=', ')
+            print(testacc[i])
+
 
     print(testp)
     print(testr)
@@ -712,49 +701,31 @@ def main():
 
 
 if __name__ == '__main__':
-    testp = []
-    testr = []
-    testf1 = []
-    testacc = []
+    main()
+    # testp = []
+    # testr = []
+    # testf1 = []
+    # testacc = []
+    #
+    # test_precision, test_recall, test_f1_score, test_acc = \
+    #     Train_breast('Unet_ocls_10', 16, 400, 'unet', 6e-4,
+    #                  Use_pretrained=False,
+    #                  _have_segtask=False,
+    #                  _only_segtask=False,
+    #                  is_continue_train=False,
+    #                  use_clip=False)
+    # testp.append(test_precision)
+    # testr.append(test_recall)
+    # testf1.append(test_f1_score)
+    # testacc.append(test_acc)
+    #
+    # for i in range(len(testp)):
+    #     print('第' + str(i + 1) + '个实验结果：', end=', ')
+    #     print(testp[i], end=', ')
+    #     print(testr[i], end=', ')
+    #     print(testf1[i], end=', ')
+    #     print(testacc[i])
 
-    test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('Unet_ocls_01', 16, 400, 'unet', 6e-4,
-                     Use_pretrained=False,
-                     _have_segtask=False,
-                     _only_segtask=False,
-                     is_continue_train=False,
-                     use_clip=True)
-    testp.append(test_precision)
-    testr.append(test_recall)
-    testf1.append(test_f1_score)
-    testacc.append(test_acc)
-
-    for i in range(len(testp)):
-        print('第' + str(i + 1) + '个实验结果：', end=', ')
-        print(testp[i], end=', ')
-        print(testr[i], end=', ')
-        print(testf1[i], end=', ')
-        print(testacc[i])
-    test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UnetR_ocls_122', 128, 400, 'unetrclstoken', 6e-4,
-                     Use_pretrained=False,
-                     _have_segtask=False,
-                     _only_segtask=False,
-                     is_continue_train=False,
-                     use_clip=True)
-    testp.append(test_precision)
-    testr.append(test_recall)
-    testf1.append(test_f1_score)
-    testacc.append(test_acc)
-
-    # 按照上面四个列表的顺序，分别是precision，recall，f1，acc
-    # 按照每个实验结果的顺序打印出来，一次挑上面四个列表的一个元素，用for循环即可
-    for i in range(len(testp)):
-        print('第' + str(i + 1) + '个实验结果：', end=', ')
-        print(testp[i], end=', ')
-        print(testr[i], end=', ')
-        print(testf1[i], end=', ')
-        print(testacc[i])
     #
     # Train_Mnist()
     # test_precision, test_recall, test_f1_score, test_acc = \
