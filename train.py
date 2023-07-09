@@ -653,7 +653,7 @@ def main():
     # 尝试不同的学习率，分两个批次，一次是奇数，一次是偶数，奇数的使用仅含有z12的，偶数的使用仅含有cls_token的。
     for j in range(len(lr_list)):
         test_precision, test_recall, test_f1_score, test_acc = \
-            Train_breast(base_name1 + name_order[j], 7, 400, 'unet', lr_list[j],
+            Train_breast(base_name2 + name_order[j], 6, 400, 'unet', lr_list[j],
                          Use_pretrained=False,
                          _have_segtask=False,
                          _only_segtask=False,
