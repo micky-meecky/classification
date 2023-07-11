@@ -710,7 +710,7 @@ if __name__ == '__main__':
     test_precision, test_recall, test_f1_score, test_acc = \
         Train_breast('Unet_cls_seg_40', 16, 600, 'unet', 4e-4,
                      Use_pretrained=False,
-                     _have_segtask=False,
+                     _have_segtask=True,
                      _only_segtask=False,
                      is_continue_train=False,
                      use_clip=False)
@@ -729,7 +729,7 @@ if __name__ == '__main__':
     test_precision, test_recall, test_f1_score, test_acc = \
         Train_breast('Unet_cls_seg_50', 8, 600, 'unet', 4e-4,
                      Use_pretrained=False,
-                     _have_segtask=False,
+                     _have_segtask=True,
                      _only_segtask=False,
                      is_continue_train=False,
                      use_clip=False)
