@@ -158,7 +158,7 @@ class UNet(nn.Module):
         label = self.linear2(label)  # [512, 2]
         # label = self.logsoftmax(label)  # [batch_size, 3]
 
-        return label  #, logits
+        return label, logits
 
     def use_checkpointing(self):
         self.inc = torch.utils.checkpoint(self.inc)
