@@ -84,7 +84,7 @@ def mnist_loader():
 
 def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testbs, num_workers, use_clip,
                validate_flag=True):
-    augmentation_prob = 0.0
+    augmentation_prob = 0.5
     if validate_flag:
         train, valid, test = get_fold_filelist(csv_file, K=fold_K, fold=fold_idx, validation=True)
     else:
@@ -701,30 +701,49 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
-    # testp = []
-    # testr = []
-    # testf1 = []
-    # testacc = []
-    #
-    # test_precision, test_recall, test_f1_score, test_acc = \
-    #     Train_breast('Unet_ocls_10', 16, 400, 'unet', 6e-4,
-    #                  Use_pretrained=False,
-    #                  _have_segtask=False,
-    #                  _only_segtask=False,
-    #                  is_continue_train=False,
-    #                  use_clip=False)
-    # testp.append(test_precision)
-    # testr.append(test_recall)
-    # testf1.append(test_f1_score)
-    # testacc.append(test_acc)
-    #
-    # for i in range(len(testp)):
-    #     print('第' + str(i + 1) + '个实验结果：', end=', ')
-    #     print(testp[i], end=', ')
-    #     print(testr[i], end=', ')
-    #     print(testf1[i], end=', ')
-    #     print(testacc[i])
+    # main()
+    testp = []
+    testr = []
+    testf1 = []
+    testacc = []
+
+    test_precision, test_recall, test_f1_score, test_acc = \
+        Train_breast('Unet_cls_seg_40', 16, 600, 'unet', 4e-4,
+                     Use_pretrained=False,
+                     _have_segtask=False,
+                     _only_segtask=False,
+                     is_continue_train=False,
+                     use_clip=False)
+    testp.append(test_precision)
+    testr.append(test_recall)
+    testf1.append(test_f1_score)
+    testacc.append(test_acc)
+
+    for i in range(len(testp)):
+        print('第' + str(i + 1) + '个实验结果：', end=', ')
+        print(testp[i], end=', ')
+        print(testr[i], end=', ')
+        print(testf1[i], end=', ')
+        print(testacc[i])
+
+    test_precision, test_recall, test_f1_score, test_acc = \
+        Train_breast('Unet_cls_seg_50', 8, 600, 'unet', 4e-4,
+                     Use_pretrained=False,
+                     _have_segtask=False,
+                     _only_segtask=False,
+                     is_continue_train=False,
+                     use_clip=False)
+    testp.append(test_precision)
+    testr.append(test_recall)
+    testf1.append(test_f1_score)
+    testacc.append(test_acc)
+
+    for i in range(len(testp)):
+        print('第' + str(i + 1) + '个实验结果：', end=', ')
+        print(testp[i], end=', ')
+        print(testr[i], end=', ')
+        print(testf1[i], end=', ')
+        print(testacc[i])
 
     #
     # Train_Mnist()
