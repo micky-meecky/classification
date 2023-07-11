@@ -103,12 +103,12 @@ class ImageFolder_new(data.Dataset):
         if (self.mode == 'train') and p_transform <= self.augmentation_prob:
 
             # 修改亮度、对比度。
-            Transform.append(T.ColorJitter(brightness=0.25, contrast=0.25))
-            Transform_GT.append(T.ColorJitter(brightness=0.25, contrast=0.25))
-            Transform_contour.append(T.ColorJitter(brightness=0.25, contrast=0.25))
-            Transform_dist.append(T.ColorJitter(brightness=0.25, contrast=0.25))
-
-            T.Grayscale(num_output_channels=3),  # 随机转为灰度图
+            # Transform.append(T.ColorJitter(brightness=0.25, contrast=0.25))
+            # Transform_GT.append(T.ColorJitter(brightness=0.25, contrast=0.25))
+            # Transform_contour.append(T.ColorJitter(brightness=0.25, contrast=0.25))
+            # Transform_dist.append(T.ColorJitter(brightness=0.25, contrast=0.25))
+            #
+            # T.Grayscale(num_output_channels=3),  # 随机转为灰度图
 
             # Transform.append(T.RandomApply([T.RandomErasing(p=0.5)], p=0.5))
             # Transform_GT.append(T.RandomApply([T.RandomErasing(p=0.5)], p=0.5))
