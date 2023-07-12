@@ -257,7 +257,6 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     contenttotal = "----total cost: "
     is_train = True
     is_test = True  # False
-    valid_acc = 0
     best_valid_acc = 0
     best_valid_score = 0
     is_continue_train = is_continue_train
