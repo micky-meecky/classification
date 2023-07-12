@@ -39,7 +39,7 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
     with torch.no_grad():
         epoch_tp, epoch_fp, epoch_tn, epoch_fn = 0, 0, 0, 0
         for data in dataloader:
-            (img_file_name, images, targets1, targets2, targets3, targets4) = data
+            (img_file_name, images, targets1, targets4) = data
             # (images, targets4) = data
             if class_num <= 2:
                 # 将标签进行修改
@@ -162,7 +162,7 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
     with torch.no_grad():
         epoch_tp, epoch_fp, epoch_tn, epoch_fn = 0, 0, 0, 0
         for data in dataloader:
-            (img_file_name, images, targets1, targets2, targets3, targets4) = data
+            (img_file_name, images, targets1, targets4) = data
             # (images, targets4) = data
             if class_num <= 2:
                 # 将标签进行修改
