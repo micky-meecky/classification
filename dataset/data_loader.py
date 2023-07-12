@@ -226,8 +226,8 @@ class ImageFolder_new(data.Dataset):
         final_size = self.image_size
         # 如果image的高和宽不等于final_size，则进行resize
         if image.size()[0] != final_size or image.size()[1] != final_size:
-            Transform.append(T.Resize((final_size, final_size)), interpolation=Image.BICUBIC)
-            Transform_GT.append(T.Resize((final_size, final_size)), interpolation=Image.NEAREST)
+            Transform.append(T.Resize((final_size, final_size), interpolation=Image.BICUBIC))
+            Transform_GT.append(T.Resize((final_size, final_size), interpolation=Image.BICUBIC))
             # Transform_contour.append(T.Resize((final_size, final_size)))
             # Transform_dist.append(T.Resize((final_size, final_size)))
             if self.load_preseg:
