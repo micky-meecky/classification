@@ -223,22 +223,11 @@ class ImageFolder_new(data.Dataset):
             # Transform_contour = []
             # Transform_dist = []
 
-        # if want to check iamge%GT while debug
-        # plt.subplot(2,2,1)
-        # plt.imshow(np.array(image_o),cmap=plt.cm.gray)
-        # plt.subplot(2,2,2)
-        # plt.imshow(np.array(GT_o),cmap=plt.cm.gray)
-        # plt.subplot(2,2,3)
-        # plt.imshow(np.array(image),cmap=plt.cm.gray)
-        # plt.subplot(2,2,4)
-        # plt.imshow(np.array(GT),cmap=plt.cm.gray)
-        # plt.show()
-
         final_size = self.image_size
         # 如果image的高和宽不等于final_size，则进行resize
         if image.size()[0] != final_size or image.size()[1] != final_size:
-            Transform.append(T.Resize((final_size, final_size)))
-            Transform_GT.append(T.Resize((final_size, final_size)))
+            Transform.append(T.Resize((final_size, final_size)), interpolation=Image.BICUBIC)
+            Transform_GT.append(T.Resize((final_size, final_size)), interpolation=Image.NEAREST)
             # Transform_contour.append(T.Resize((final_size, final_size)))
             # Transform_dist.append(T.Resize((final_size, final_size)))
             if self.load_preseg:
