@@ -33,8 +33,8 @@ class ImageFolder_new(data.Dataset):
         self.GT_paths = GT_list
         self.image_paths = image_list
         self.class_list = class_list
-        self.contour_paths = contour_list
-        self.dist_paths = dist_list
+        # self.contour_paths = contour_list
+        # self.dist_paths = dist_list
 
         self.load_preseg = load_preseg
         if self.load_preseg:
@@ -62,41 +62,41 @@ class ImageFolder_new(data.Dataset):
         filename = image_path.split('/')[-1]
         # GT_path = os.path.join(self.GT_paths, filename)
 
-        image_o = image = Image.open(image_path)
-        GT_o = GT = Image.open(GT_path)
-        contour_o = contour = Image.open(self.contour_paths[index])
-        dist_o = dist = Image.open(self.dist_paths[index])
+        image = Image.open(image_path)
+        GT = Image.open(GT_path)
+        # contour_o = contour = Image.open(self.contour_paths[index])
+        # dist_o = dist = Image.open(self.dist_paths[index])
         # image = image.convert('RGB')
 
         if self.load_preseg:
             seg_path = self.seg_paths[index]
-            seg_o = seg = Image.open(seg_path)
+            seg = Image.open(seg_path)
 
         aspect_ratio = image.size[1] / image.size[0]
 
         # 先将PIL转为tensor
         transform = T.Compose([T.ToTensor()])
         transform_GT = T.Compose([T.ToTensor()])
-        transform_contour = T.Compose([T.ToTensor()])
-        transform_dist = T.Compose([T.ToTensor()])
+        # transform_contour = T.Compose([T.ToTensor()])
+        # transform_dist = T.Compose([T.ToTensor()])
 
         image = transform(image)
         GT = transform_GT(GT)
-        contour = transform_contour(contour)
-        dist = transform_dist(dist)
+        # contour = transform_contour(contour)
+        # dist = transform_dist(dist)
 
         # 将images这些放在device，即GPU上
         image = image.to(self.device)
         GT = GT.to(self.device)
-        contour = contour.to(self.device)
-        dist = dist.to(self.device)
+        # contour = contour.to(self.device)
+        # dist = dist.to(self.device)
 
         Transform = []
         Transform_GT = []  # 注意,GT的插值需要最近邻nearest,但是采取非线性插值可能有奇效
-        Transform_contour = []
-        Transform_dist = []
+        # Transform_contour = []
+        # Transform_dist = []
 
-        ResizeRange = random.randint(self.resize_range[0], self.resize_range[1])
+        # ResizeRange = random.randint(self.resize_range[0], self.resize_range[1])
 
         p_transform = random.random()
 
@@ -131,31 +131,31 @@ class ImageFolder_new(data.Dataset):
 
             Transform.append(T.RandomRotation((RotationDegree, RotationDegree)))  # RandomRotation的两个参数分别是旋转角度的下界和上界
             Transform_GT.append(T.RandomRotation((RotationDegree, RotationDegree)))
-            Transform_contour.append(T.RandomRotation((RotationDegree, RotationDegree)))
-            Transform_dist.append(T.RandomRotation((RotationDegree, RotationDegree)))
+            # Transform_contour.append(T.RandomRotation((RotationDegree, RotationDegree)))
+            # Transform_dist.append(T.RandomRotation((RotationDegree, RotationDegree)))
 
             # 在大旋转间隔基础上,微小调整旋转角度
             RotationRange = random.randint(-10, 10)
             Transform.append(T.RandomRotation((RotationRange, RotationRange)))
             Transform_GT.append(T.RandomRotation((RotationRange, RotationRange)))
-            Transform_contour.append(T.RandomRotation((RotationRange, RotationRange)))
-            Transform_dist.append(T.RandomRotation((RotationRange, RotationRange)))
+            # Transform_contour.append(T.RandomRotation((RotationRange, RotationRange)))
+            # Transform_dist.append(T.RandomRotation((RotationRange, RotationRange)))
 
             CropRange = random.randint(self.CropRange[0], self.CropRange[1])
             Transform.append(T.CenterCrop((int(CropRange * aspect_ratio), CropRange)))
             Transform_GT.append(T.CenterCrop((int(CropRange * aspect_ratio), CropRange)))
-            Transform_contour.append(T.CenterCrop((int(CropRange * aspect_ratio), CropRange)))
-            Transform_dist.append(T.CenterCrop((int(CropRange * aspect_ratio), CropRange)))
+            # Transform_contour.append(T.CenterCrop((int(CropRange * aspect_ratio), CropRange)))
+            # Transform_dist.append(T.CenterCrop((int(CropRange * aspect_ratio), CropRange)))
 
             Transform = T.Compose(Transform)
             Transform_GT = T.Compose(Transform_GT)
-            Transform_contour = T.Compose(Transform_contour)
-            Transform_dist = T.Compose(Transform_dist)
+            # Transform_contour = T.Compose(Transform_contour)
+            # Transform_dist = T.Compose(Transform_dist)
 
             image = Transform(image)  # 对image进行transform操作
             GT = Transform_GT(GT)
-            contour = Transform_contour(contour)
-            dist = Transform_dist(dist)
+            # contour = Transform_contour(contour)
+            # dist = Transform_dist(dist)
             if self.load_preseg:
                 seg = Transform_GT(seg)
 
@@ -182,9 +182,6 @@ class ImageFolder_new(data.Dataset):
             # contour = contour[:, ShiftRange_upper:ShiftRange_lower, ShiftRange_left:ShiftRange_right]
             # dist = dist[:, ShiftRange_upper:ShiftRange_lower, ShiftRange_left:ShiftRange_right]
 
-            if self.load_preseg:
-                seg = seg[:, ShiftRange_upper:ShiftRange_lower, ShiftRange_left:ShiftRange_right]
-
             # # flip
             # if random.random() < 0.5:
             #     image = F.hflip(image)
@@ -205,16 +202,16 @@ class ImageFolder_new(data.Dataset):
             if random.random() < 0.5:
                 image = torch.flip(image, dims=[2])
                 GT = torch.flip(GT, dims=[2])
-                contour = torch.flip(contour, dims=[2])
-                dist = torch.flip(dist, dims=[2])
+                # contour = torch.flip(contour, dims=[2])
+                # dist = torch.flip(dist, dims=[2])
                 if self.load_preseg:
                     seg = torch.flip(seg, dims=[2])
 
             if random.random() < 0.5:
                 image = torch.flip(image, dims=[1])
                 GT = torch.flip(GT, dims=[1])
-                contour = torch.flip(contour, dims=[1])
-                dist = torch.flip(dist, dims=[1])
+                # contour = torch.flip(contour, dims=[1])
+                # dist = torch.flip(dist, dims=[1])
                 if self.load_preseg:
                     seg = torch.flip(seg, dims=[1])
 
@@ -223,8 +220,8 @@ class ImageFolder_new(data.Dataset):
 
             Transform = []
             Transform_GT = []
-            Transform_contour = []
-            Transform_dist = []
+            # Transform_contour = []
+            # Transform_dist = []
 
         # if want to check iamge%GT while debug
         # plt.subplot(2,2,1)
@@ -242,8 +239,8 @@ class ImageFolder_new(data.Dataset):
         if image.size()[0] != final_size or image.size()[1] != final_size:
             Transform.append(T.Resize((final_size, final_size)))
             Transform_GT.append(T.Resize((final_size, final_size)))
-            Transform_contour.append(T.Resize((final_size, final_size)))
-            Transform_dist.append(T.Resize((final_size, final_size)))
+            # Transform_contour.append(T.Resize((final_size, final_size)))
+            # Transform_dist.append(T.Resize((final_size, final_size)))
             if self.load_preseg:
                 Transform.append(T.Resize((final_size, final_size)))
 
@@ -264,13 +261,13 @@ class ImageFolder_new(data.Dataset):
 
         Transform = T.Compose(Transform)
         Transform_GT = T.Compose(Transform_GT)
-        Transform_contour = T.Compose(Transform_contour)
-        Transform_dist = T.Compose(Transform_dist)
+        # Transform_contour = T.Compose(Transform_contour)
+        # Transform_dist = T.Compose(Transform_dist)
 
         image = Transform(image)
         GT = Transform_GT(GT)
-        contour = Transform_contour(contour)
-        dist = Transform_dist(dist)
+        # contour = Transform_contour(contour)
+        # dist = Transform_dist(dist)
         if self.load_preseg:
             seg = Transform_GT(seg)
         # print(GT.shape)
@@ -279,9 +276,9 @@ class ImageFolder_new(data.Dataset):
         # image = Norm_(image)
         if self.load_preseg:
             # print('load seg')
-            return image_path, image, GT, contour, dist, seg
+            return image_path, image, GT, seg
         else:
-            return image_path, image, GT, contour, dist, class_item
+            return image_path, image, GT, class_item
 
     def __len__(self):
         """Returns the total number of font files."""
@@ -408,10 +405,10 @@ def get_loader(seg_list,
                GT_list,
                class_list,
                image_list,
-               contour_list,
-               dist_list,
-               image_size,
-               batch_size,
+               contour_list=None,
+               dist_list=None,
+               image_size=224,
+               batch_size=16,
                load_preseg=False,
                num_workers=2,
                mode='train',

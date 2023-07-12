@@ -127,20 +127,20 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
 
     train_list = [filepath_img + sep + i[0] for i in train]
     train_list_GT = [filepath_mask + sep + i[0] for i in train]
-    trian_list_contour = [filepath_contour + sep + i[0] for i in train]
-    train_list_dist = [filepath_dist + sep + i[0] for i in train]
+    # trian_list_contour = [filepath_contour + sep + i[0] for i in train]
+    # train_list_dist = [filepath_dist + sep + i[0] for i in train]
     train_class_list_GT = [i[1] for i in train]
 
     valid_list = [filepath_img + sep + i[0] for i in valid]
     valid_list_GT = [filepath_mask + sep + i[0] for i in valid]
-    valid_list_contour = [filepath_contour + sep + i[0] for i in valid]
-    valid_list_dist = [filepath_dist + sep + i[0] for i in valid]
+    # valid_list_contour = [filepath_contour + sep + i[0] for i in valid]
+    # valid_list_dist = [filepath_dist + sep + i[0] for i in valid]
     valid_class_list_GT = [i[1] for i in valid]
 
     test_list = [filepath_img + sep + i[0] for i in test]
     test_list_GT = [filepath_mask + sep + i[0] for i in test]
-    test_list_contour = [filepath_contour + sep + i[0] for i in test]
-    test_list_dist = [filepath_dist + sep + i[0] for i in test]
+    # test_list_contour = [filepath_contour + sep + i[0] for i in test]
+    # test_list_dist = [filepath_dist + sep + i[0] for i in test]
     test_class_list_GT = [i[1] for i in test]
 
     print("images count in train:{}".format(len(train_list)))
@@ -160,8 +160,8 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
                               GT_list=train_list_GT,
                               class_list=train_class_list_GT,
                               image_list=train_list,
-                              contour_list=trian_list_contour,
-                              dist_list=train_list_dist,
+                              # contour_list=trian_list_contour,
+                              # dist_list=train_list_dist,
                               image_size=image_size,
                               batch_size=batch_size,
                               num_workers=num_workers,
@@ -174,8 +174,8 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
                               GT_list=valid_list_GT,
                               class_list=valid_class_list_GT,
                               image_list=valid_list,
-                              contour_list=valid_list_contour,
-                              dist_list=valid_list_dist,
+                              # contour_list=valid_list_contour,
+                              # dist_list=valid_list_dist,
                               image_size=image_size,
                               batch_size=batch_size,
                               num_workers=num_workers,
@@ -188,8 +188,8 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
                              GT_list=test_list_GT,
                              class_list=test_class_list_GT,
                              image_list=test_list,
-                             contour_list=test_list_contour,
-                             dist_list=test_list_dist,
+                             # contour_list=test_list_contour,
+                             # dist_list=test_list_dist,
                              image_size=image_size,
                              batch_size=testbs,
                              num_workers=num_workers,
@@ -338,7 +338,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             epoch_tp, epoch_fp, epoch_tn, epoch_fn = 0, 0, 0, 0
             model.train()
             for i, data in tqdm(enumerate(datas, 0), total=len(datas)):
-                (img_file_name, inputs, targets1, targets2, targets3, targets4) = data
+                (img_file_name, inputs, targets1, targets4) = data
                 if epoch == 0:
                     # 没必要每次试验，因为只需要案例图像就够了，不需要在每次实验的时候都保存。况且每一epoch的图都不一样
                     # DrawSavePic(img_file_name, inputs, targets1, targets2, targets3, train_pic_list)
@@ -671,28 +671,6 @@ def main():
             print(testf1[i], end=', ')
             print(testacc[i])
 
-    # # 尝试不同的学习率，分两个批次，一次是奇数，一次是偶数，奇数的使用仅含有z12的，偶数的使用仅含有cls_token的。
-    # for j in range(len(lr_list)):
-    #     test_precision, test_recall, test_f1_score, test_acc = \
-    #         Train_breast(base_name2 + name_order[j], 6, 400, 'unet', lr_list[j],
-    #                      Use_pretrained=False,
-    #                      _have_segtask=False,
-    #                      _only_segtask=False,
-    #                      is_continue_train=False,
-    #                      use_clip=False)
-    #     testp.append(test_precision)
-    #     testr.append(test_recall)
-    #     testf1.append(test_f1_score)
-    #     testacc.append(test_acc)
-    #
-    #     for i in range(len(testp)):
-    #         print('第' + str(i + 1) + '个实验结果：', end=', ')
-    #         print(testp[i], end=', ')
-    #         print(testr[i], end=', ')
-    #         print(testf1[i], end=', ')
-    #         print(testacc[i])
-
-
     print(testp)
     print(testr)
     print(testf1)
@@ -708,7 +686,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('Unet_cls_seg_00', 16, 600, 'unet', 4e-4,
+        Train_breast('Unet_cls_seg_20', 8, 600, 'unet', 4e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
@@ -726,51 +704,3 @@ if __name__ == '__main__':
         print(testf1[i], end=', ')
         print(testacc[i])
 
-    test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('Unet_cls_seg_10', 8, 600, 'unet', 4e-4,
-                     Use_pretrained=False,
-                     _have_segtask=True,
-                     _only_segtask=False,
-                     is_continue_train=False,
-                     use_clip=False)
-    testp.append(test_precision)
-    testr.append(test_recall)
-    testf1.append(test_f1_score)
-    testacc.append(test_acc)
-
-    for i in range(len(testp)):
-        print('第' + str(i + 1) + '个实验结果：', end=', ')
-        print(testp[i], end=', ')
-        print(testr[i], end=', ')
-        print(testf1[i], end=', ')
-        print(testacc[i])
-
-    #
-    # Train_Mnist()
-    # test_precision, test_recall, test_f1_score, test_acc = \
-    #     Train_breast('Unet_ocls_00', 16, 400, 'unetrclstoken', 6e-4,
-    #                  Use_pretrained=False,
-    #                  _have_segtask=False,
-    #                  _only_segtask=False,
-    #                  is_continue_train=False,
-    #                  use_clip=True)
-    # testp.append(test_precision)
-    # testr.append(test_recall)
-    # testf1.append(test_f1_score)
-    # testacc.append(test_acc)
-    #
-    # # 按照上面四个列表的顺序，分别是precision，recall，f1，acc
-    # # 按照每个实验结果的顺序打印出来，一次挑上面四个列表的一个元素，用for循环即可
-    # for i in range(len(testp)):
-    #     print('第' + str(i + 1) + '个实验结果：', end=', ')
-    #     print(testp[i], end=', ')
-    #     print(testr[i], end=', ')
-    #     print(testf1[i], end=', ')
-    #     print(testacc[i])
-
-    # main()
-    # Train_breast('efficientnetb7_cls2_0' , 32, 'efficientnet', 1e-4, True, False)
-    # Train_breast('resnet101_cls2bce_1', 20, 'resnet101', 1e-5, True, False)
-    # Train_breast('xception_cls2bce_1', 20, 'xception', 1e-5, True, False)
-    # Train_breast('mobilenetv3_cls2bce_0', 40, 'mobilenetv3', 1e-6, True, False)
-    # Train_breast('vgg16_bn_cls2_bce_1', 10, 500, 'vgg16_bn', 1e-6, True, False, False)

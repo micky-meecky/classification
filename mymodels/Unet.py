@@ -47,6 +47,9 @@ class Up(nn.Module):
     def __init__(self, in_channels, out_channels, bilinear=True):
         super().__init__()
 
+        # Attention gate
+        self.att = AttentionGate(F_g=in_channels // 2, F_l=out_channels, F_int=in_channels // 4)
+
         # if bilinear, use the normal convolutions to reduce the number of channels
         if bilinear:
             self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
@@ -63,9 +66,10 @@ class Up(nn.Module):
 
         x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
                         diffY // 2, diffY - diffY // 2])
-        # if you have padding issues, see
-        # https://github.com/HaiyongJiang/U-Net-Pytorch-Unstructured-Buggy/commit/0e854509c2cea854e247a9c615f175f76fbb2e3a
-        # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
+
+        # Attention gate
+        x2 = self.att(g=x1, x=x2)
+
         x = torch.cat([x2, x1], dim=1)
         return self.conv(x)
 
@@ -77,6 +81,36 @@ class OutConv(nn.Module):
 
     def forward(self, x):
         return self.conv(x)
+
+
+class AttentionGate(nn.Module):
+    def __init__(self, F_g, F_l, F_int):
+        super(AttentionGate, self).__init__()
+        self.W_g = nn.Sequential(
+            nn.Conv2d(F_g, F_int, kernel_size=1, stride=1, padding=0, bias=True),
+            nn.BatchNorm2d(F_int)
+        )
+
+        self.W_x = nn.Sequential(
+            nn.Conv2d(F_l, F_int, kernel_size=1, stride=1, padding=0, bias=True),
+            nn.BatchNorm2d(F_int)
+        )
+
+        self.psi = nn.Sequential(
+            nn.Conv2d(F_int, 1, kernel_size=1, stride=1, padding=0, bias=True),
+            nn.BatchNorm2d(1),
+            nn.Sigmoid()
+        )
+
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, g, x):
+        g1 = self.W_g(g)
+        x1 = self.W_x(x)
+        psi = self.relu(g1 + x1)
+        psi = self.psi(psi)
+
+        return x * psi
 
 
 class UNet(nn.Module):
@@ -101,10 +135,10 @@ class UNet(nn.Module):
         self.activation = nn.Sigmoid()
 
         # classification head
-        # self.linear = nn.Linear(1984, 3)
-        self.linear1 = nn.Linear(1024, 512)
-        self.dropout = nn.Dropout(0.2)
-        self.linear2 = nn.Linear(512, 1)
+        self.linear = nn.Linear(1024, 1)
+        # self.linear1 = nn.Linear(1024, 512)
+        # self.dropout = nn.Dropout(0.2)
+        # self.linear2 = nn.Linear(512, 1)
         # self.logsoftmax = nn.LogSoftmax(dim=1)
 
     def forward(self, x):
@@ -137,6 +171,7 @@ class UNet(nn.Module):
         # print('features_concatenated.shape', features_concatenated.shape)
 
         # decoder
+        # decoder with attention gates
         x = self.up1(x5, x4)
 
         x = self.up2(x, x3)
@@ -145,7 +180,6 @@ class UNet(nn.Module):
 
         x = self.up4(x, x1)
 
-
         # segmentation head
         logits = self.outc(x)
         # logits = self.activation(logits)
@@ -153,11 +187,7 @@ class UNet(nn.Module):
         # classification head
         clsx = F.adaptive_avg_pool2d(x5, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
         clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
-        label = self.linear1(clsx)  # [1024, 512]
-        label = self.dropout(label)
-        label = self.linear2(label)  # [512, 2]
-        # label = self.logsoftmax(label)  # [batch_size, 3]
-
+        label = self.linear(clsx)
         return label, logits
 
     def use_checkpointing(self):
@@ -172,14 +202,15 @@ class UNet(nn.Module):
         self.up4 = torch.utils.checkpoint(self.up4)
         self.outc = torch.utils.checkpoint(self.outc)
 
+
 if __name__ == '__main__':
     model = UNet(1, 1)
     model.eval()
     input = torch.randn(10, 1, 256, 256)
     label = torch.randn(10, 1, 256, 256)
-    clsout = model(input)
-    # print(output.shape)
-    print(clsout.shape)
+    labels, logits = model(input)
+    print(labels.shape)
+    print(logits.shape)
 
 
 
