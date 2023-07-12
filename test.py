@@ -147,7 +147,6 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
     printcontent = mode + 'set testing...'
     print(printcontent)
     segoutputcontent = mode + ' segmentation output'
-    SegImgSavePath = SegImgSavePath
 
     # 训练集上测试
     i = 0
