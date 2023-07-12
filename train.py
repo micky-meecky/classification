@@ -690,7 +690,7 @@ if __name__ == '__main__':
                      _have_segtask=False,
                      _only_segtask=False,
                      is_continue_train=False,
-                     use_clip=True)
+                     use_clip=False)
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)
