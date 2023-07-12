@@ -685,12 +685,12 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('AGUnet_ocls_00', 8, 600, 'unet', 6e-4,
+        Train_breast('AGUnet_ocls_10', 6, 600, 'unet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
                      is_continue_train=False,
-                     use_clip=False)
+                     use_clip=True)
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)
