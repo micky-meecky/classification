@@ -117,13 +117,13 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
     if use_clip:
         filepath_img = './class_out/clip_dataset/clip_image'
         filepath_mask = './class_out/clip_dataset/clip_mask'
-        filepath_contour = './class_out/clip_dataset/clip_contour'
-        filepath_dist = './class_out/clip_dataset/clip_distance_D1'
+        # filepath_contour = './class_out/clip_dataset/clip_contour'
+        # filepath_dist = './class_out/clip_dataset/clip_distance_D1'
     else:
-        filepath_img = './class_out/stage1/p_image'
-        filepath_mask = './class_out/stage1/p_mask'
-        filepath_contour = './class_out/stage1/p_contour'
-        filepath_dist = './class_out/stage1/p_distance_D1'
+        filepath_img = './class_out/512/p_image_512'
+        filepath_mask = './class_out/512/p_mask_512'
+        # filepath_contour = './class_out/512/p_contour'
+        # filepath_dist = './class_out/512/p_distance_D1'
 
     train_list = [filepath_img + sep + i[0] for i in train]
     train_list_GT = [filepath_mask + sep + i[0] for i in train]
@@ -211,7 +211,7 @@ def breast_loader(batch_size, testbs, device, validate_flag, use_clip):
     # fold_id = 1
     # distance_type = "dist_mask"
     # normal_flag = False
-    image_size = 224
+    image_size = 512
     num_workers = 0
 
     print('batch_size: ', batch_size)
@@ -287,7 +287,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         if use_clip:
             pos_weight = torch.tensor([3340 / 4344]).to(device)
         else:
-            pos_weight = torch.tensor([515/108]).to(device)
+            pos_weight = torch.tensor([500/122]).to(device)
         if _have_segtask:
             criterion_seg = SoftDiceLossNewvar()  # -----------------------------------------------------
             criterion_cls = BCEWithLogitsLossCustom(pos_weight=pos_weight)
@@ -338,6 +338,8 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             model.train()
             for i, data in tqdm(enumerate(datas, 0), total=len(datas)):
                 (img_file_name, inputs, targets1, targets4) = data
+                # 由于上面进行stack的时候必须保证相同大小的张量，从而targets1变成了三通道的，这里只需要第一个通道即可，维度保持微bs x 1 x 512 x 512
+                targets1 = targets1[:, 0, :, :].unsqueeze(1)
                 if epoch == 0:
                     # 没必要每次试验，因为只需要案例图像就够了，不需要在每次实验的时候都保存。况且每一epoch的图都不一样
                     # DrawSavePic(img_file_name, inputs, targets1, targets2, targets3, train_pic_list)
@@ -687,7 +689,7 @@ if __name__ == '__main__':
     test_precision, test_recall, test_f1_score, test_acc = \
         Train_breast('AGUnet_ocls_10', 6, 600, 'unet', 6e-4,
                      Use_pretrained=False,
-                     _have_segtask=False,
+                     _have_segtask=True,
                      _only_segtask=False,
                      is_continue_train=False,
                      use_clip=False)

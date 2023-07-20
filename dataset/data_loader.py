@@ -100,6 +100,10 @@ class ImageFolder_new(data.Dataset):
 
         p_transform = random.random()
 
+        # 如果GT是单通道的话，需要将其转化为三通道
+        if GT.shape[0] == 1:
+            GT = GT.repeat(3, 1, 1)
+
         if (self.mode == 'train') and p_transform <= self.augmentation_prob:
 
             # 修改亮度、对比度。
