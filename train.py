@@ -686,10 +686,22 @@ if __name__ == '__main__':
     testf1 = []
     testacc = []
 
+    # test_precision, test_recall, test_f1_score, test_acc = \
+    #     Train_breast('AGUnet_cls_seg_512_00', 6, 600, 'unet', 6e-4,
+    #                  Use_pretrained=False,
+    #                  _have_segtask=True,
+    #                  _only_segtask=False,
+    #                  is_continue_train=False,
+    #                  use_clip=False)
+    # testp.append(test_precision)
+    # testr.append(test_recall)
+    # testf1.append(test_f1_score)
+    # testacc.append(test_acc)
+
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('AGUnet_cls_seg_512_00', 6, 600, 'unet', 6e-4,
+        Train_breast('AGUnet_ocls_512_00', 10, 600, 'unet', 6e-4,
                      Use_pretrained=False,
-                     _have_segtask=True,
+                     _have_segtask=False,
                      _only_segtask=False,
                      is_continue_train=False,
                      use_clip=False)
@@ -697,6 +709,7 @@ if __name__ == '__main__':
     testr.append(test_recall)
     testf1.append(test_f1_score)
     testacc.append(test_acc)
+
 
     for i in range(len(testp)):
         print('第' + str(i + 1) + '个实验结果：', end=', ')
