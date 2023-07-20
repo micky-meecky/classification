@@ -698,20 +698,20 @@ if __name__ == '__main__':
     # testf1.append(test_f1_score)
     # testacc.append(test_acc)
 
-    # test_precision, test_recall, test_f1_score, test_acc = \
-    #     Train_breast('AGUnet_ocls_512_00', 10, 600, 'unet', 6e-4,
-    #                  Use_pretrained=False,
-    #                  _have_segtask=False,
-    #                  _only_segtask=False,
-    #                  is_continue_train=False,
-    #                  use_clip=False)
-    # testp.append(test_precision)
-    # testr.append(test_recall)
-    # testf1.append(test_f1_score)
-    # testacc.append(test_acc)
-
     test_precision, test_recall, test_f1_score, test_acc = \
         Train_breast('unetr_ocls_512_00', 32, 600, 'unetrclstoken', 6e-2,
+                     Use_pretrained=False,
+                     _have_segtask=False,
+                     _only_segtask=False,
+                     is_continue_train=False,
+                     use_clip=False)
+    testp.append(test_precision)
+    testr.append(test_recall)
+    testf1.append(test_f1_score)
+    testacc.append(test_acc)
+
+    test_precision, test_recall, test_f1_score, test_acc = \
+        Train_breast('AGUnet_ocls_512_00', 10, 600, 'unet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
