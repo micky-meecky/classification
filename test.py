@@ -40,6 +40,7 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
         epoch_tp, epoch_fp, epoch_tn, epoch_fn = 0, 0, 0, 0
         for data in dataloader:
             (img_file_name, images, targets1, targets4) = data
+            targets1 = targets1[:, 0, :, :].unsqueeze(1)
             # (images, targets4) = data
             if class_num <= 2:
                 # 将标签进行修改
