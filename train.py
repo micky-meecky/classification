@@ -694,7 +694,7 @@ if __name__ == '__main__':
     #                  is_continue_train=False,
     #                  use_clip=False)
     # testp.append(test_precision)
-    # testr.append(test_recall)
+    # testr.append(test_reca ll)
     # testf1.append(test_f1_score)
     # testacc.append(test_acc)
 
