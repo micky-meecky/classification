@@ -614,7 +614,7 @@ def swin_base_patch4_window7_224(num_classes: int = 1000, **kwargs):
                             depths=(2, 2, 18, 2),
                             num_heads=(4, 8, 16, 32),
                             num_classes=num_classes,
-                            task='seg',
+                            task='cls',
                             **kwargs)
     return model
 
