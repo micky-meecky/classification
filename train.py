@@ -699,7 +699,7 @@ if __name__ == '__main__':
     # testacc.append(test_acc)
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('swinunet_ocls_512_00', 10, 600, 'swin-vit', 6e-4,
+        Train_breast('swinunet_ocls_512_00', 5, 600, 'swin-vit', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
