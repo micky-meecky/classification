@@ -59,11 +59,11 @@ class ImageFolder_new(data.Dataset):
         # 将class_item转化为tensor
         class_item = torch.tensor(int(class_item))
 
-        filename = image_path.split('/')[-1]
+        # filename = image_path.split('/')[-1]
         # GT_path = os.path.join(self.GT_paths, filename)
 
-        image = Image.open(image_path)
-        GT = Image.open(GT_path)
+        # image = Image.open(image_path)
+        # GT = Image.open(GT_path)
         # contour_o = contour = Image.open(self.contour_paths[index])
         # dist_o = dist = Image.open(self.dist_paths[index])
         # image = image.convert('RGB')
@@ -72,7 +72,7 @@ class ImageFolder_new(data.Dataset):
             seg_path = self.seg_paths[index]
             seg = Image.open(seg_path)
 
-        aspect_ratio = image.size[1] / image.size[0]
+        aspect_ratio = 1
 
         # 先将PIL转为tensor
         transform = T.Compose([T.ToTensor()])
@@ -80,8 +80,8 @@ class ImageFolder_new(data.Dataset):
         # transform_contour = T.Compose([T.ToTensor()])
         # transform_dist = T.Compose([T.ToTensor()])
 
-        image = transform(image)
-        GT = transform_GT(GT)
+        image = transform(Image.open(image_path))
+        GT = transform_GT(Image.open(GT_path))
         # contour = transform_contour(contour)
         # dist = transform_dist(dist)
 

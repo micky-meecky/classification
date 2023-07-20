@@ -84,7 +84,7 @@ def mnist_loader():
 
 def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testbs, num_workers, use_clip,
                validate_flag=True):
-    augmentation_prob = 0.
+    augmentation_prob = 0.8
     if validate_flag:
         train, valid, test = get_fold_filelist(csv_file, K=fold_K, fold=fold_idx, validation=True)
     else:
