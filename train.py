@@ -211,7 +211,7 @@ def breast_loader(batch_size, testbs, device, validate_flag, use_clip):
     # fold_id = 1
     # distance_type = "dist_mask"
     # normal_flag = False
-    image_size = 512
+    image_size = 224
     num_workers = 0
 
     print('batch_size: ', batch_size)
@@ -698,8 +698,20 @@ if __name__ == '__main__':
     # testf1.append(test_f1_score)
     # testacc.append(test_acc)
 
+    # test_precision, test_recall, test_f1_score, test_acc = \
+    #     Train_breast('AGUnet_ocls_512_00', 10, 600, 'unet', 6e-4,
+    #                  Use_pretrained=False,
+    #                  _have_segtask=False,
+    #                  _only_segtask=False,
+    #                  is_continue_train=False,
+    #                  use_clip=False)
+    # testp.append(test_precision)
+    # testr.append(test_recall)
+    # testf1.append(test_f1_score)
+    # testacc.append(test_acc)
+
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('AGUnet_ocls_512_00', 10, 600, 'unet', 6e-4,
+        Train_breast('unetr_ocls_512_00', 10, 600, 'unetrclstoken', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
@@ -709,7 +721,6 @@ if __name__ == '__main__':
     testr.append(test_recall)
     testf1.append(test_f1_score)
     testacc.append(test_acc)
-
 
     for i in range(len(testp)):
         print('第' + str(i + 1) + '个实验结果：', end=', ')
