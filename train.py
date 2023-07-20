@@ -237,7 +237,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     lr_cos_epoch = 250  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 100  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
-    decay_ratio = 0.925  # 学习率下降的比例 -----------------------------------------------------
+    decay_ratio = 0.952  # 学习率下降的比例 -----------------------------------------------------
     bs = Bs  # batch_size -----------------------------------------------------
     testbs = 1  # test_batch_size -----------------------------------------------------
     L = 0.80  # 代表的是seg_loss的权重[现已作废，已有自适应调整策略] -----------------------------------------------------
@@ -711,7 +711,7 @@ if __name__ == '__main__':
     # testacc.append(test_acc)
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('unetr_ocls_512_00', 10, 600, 'unetrclstoken', 6e-4,
+        Train_breast('unetr_ocls_512_00', 32, 600, 'unetrclstoken', 6e-2,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=False,
