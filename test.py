@@ -107,7 +107,7 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
                     print('targets4 = ', targets4)
                     i += 1
 
-        print('epoch_tp = ', epoch_tp, 'epoch_fp = ', epoch_fp, 'epoch_tn = ', epoch_tn, 'epoch_fn = ', epoch_fn)
+            print('epoch_tp = ', epoch_tp, 'epoch_fp = ', epoch_fp, 'epoch_tn = ', epoch_tn, 'epoch_fn = ', epoch_fn)
         if not _only_segtask:
             # 计算精确率（Precision）、召回率（Recall）和F1分数
             precision = epoch_tp / (epoch_tp + epoch_fp) if epoch_tp + epoch_fp > 0 else 0
@@ -137,7 +137,14 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
                 iou = sum(IOUlist) / len(IOUlist)
                 return acc, iou
             else:
-                return sum(IOUlist) / len(IOUlist)
+                print(segoutputcontent, 'SE = %.3f, PC = %.3f, F1 = %.3f, JS = %.3f, DC = %.3f, IOU = %.3f, Acc = %.3f' % (
+                    sum(SElist) / len(SElist), sum(PClist) / len(PClist), sum(F1list) / len(F1list),
+                    sum(JSlist) / len(JSlist),
+                    sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))
+                writer.add_scalars('valid/IOU', {'IOU': sum(IOUlist) / len(IOUlist)}, Iter)
+                writer.add_scalars('valid/DC', {'DC': sum(DClist) / len(DClist)}, Iter)
+                iou = sum(IOUlist) / len(IOUlist)
+                return iou
         else:
             return acc
 
@@ -248,7 +255,7 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
                     # img_file_name = img_file_name + '_' + predicted
                     # segout.save(SegImgSavePath + '/' + img_file_name + '.png')
 
-        print('epoch_tp = ', epoch_tp, 'epoch_fp = ', epoch_fp, 'epoch_tn = ', epoch_tn, 'epoch_fn = ', epoch_fn)
+            print('epoch_tp = ', epoch_tp, 'epoch_fp = ', epoch_fp, 'epoch_tn = ', epoch_tn, 'epoch_fn = ', epoch_fn)
         if not _only_segtask:
             # 计算精确率（Precision）、召回率（Recall）和F1分数
             precision = epoch_tp / (epoch_tp + epoch_fp) if epoch_tp + epoch_fp > 0 else 0
