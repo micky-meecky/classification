@@ -479,11 +479,18 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             writer.add_scalars('Lr', {'lr': utils.GetCurrentLr(optimizer)}, epoch)
             if epoch % 3 == 0:
                 if _have_segtask:
-                    valid_acc, valid_iou = test.trainvalid('valid', valid_loader, model, device, writer, Iter,
+                    if _only_segtask:
+                        valid_iou = test.trainvalid('valid', valid_loader, model, device, writer, Iter,
                                                            class_num,
                                                            _have_segtask,
                                                            _only_segtask)
-                    valid_score = valid_acc + valid_iou
+                        valid_score = valid_iou
+                    else:
+                        valid_acc, valid_iou = test.trainvalid('valid', valid_loader, model, device, writer, Iter,
+                                                           class_num,
+                                                           _have_segtask,
+                                                           _only_segtask)
+                        valid_score = valid_acc + valid_iou
                     if valid_score > best_valid_score:
                         best_valid_score = valid_score
                         best_epoch = epoch

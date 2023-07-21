@@ -127,14 +127,17 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
             writer.add_scalars('f1_score', {'valid f1_score': f1_score}, Iter)
         # 输出seg的指标
         if _have_segtask:
-            print(segoutputcontent, 'SE = %.3f, PC = %.3f, F1 = %.3f, JS = %.3f, DC = %.3f, IOU = %.3f, Acc = %.3f' % (
-                sum(SElist) / len(SElist), sum(PClist) / len(PClist), sum(F1list) / len(F1list),
-                sum(JSlist) / len(JSlist),
-                sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))
-            writer.add_scalars('valid/IOU', {'IOU': sum(IOUlist) / len(IOUlist)}, Iter)
-            writer.add_scalars('valid/DC', {'DC': sum(DClist) / len(DClist)}, Iter)
-            iou = sum(IOUlist) / len(IOUlist)
-            return acc, iou
+            if not _only_segtask:
+                print(segoutputcontent, 'SE = %.3f, PC = %.3f, F1 = %.3f, JS = %.3f, DC = %.3f, IOU = %.3f, Acc = %.3f' % (
+                    sum(SElist) / len(SElist), sum(PClist) / len(PClist), sum(F1list) / len(F1list),
+                    sum(JSlist) / len(JSlist),
+                    sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))
+                writer.add_scalars('valid/IOU', {'IOU': sum(IOUlist) / len(IOUlist)}, Iter)
+                writer.add_scalars('valid/DC', {'DC': sum(DClist) / len(DClist)}, Iter)
+                iou = sum(IOUlist) / len(IOUlist)
+                return acc, iou
+            else:
+                return sum(IOUlist) / len(IOUlist)
         else:
             return acc
 
