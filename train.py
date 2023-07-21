@@ -211,7 +211,7 @@ def breast_loader(batch_size, testbs, device, validate_flag, use_clip):
     # fold_id = 1
     # distance_type = "dist_mask"
     # normal_flag = False
-    image_size = 512
+    image_size = 224
     num_workers = 0
 
     print('batch_size: ', batch_size)
@@ -687,7 +687,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('AGUnet_oseg_ch3_00', 10, 600, 'unet', 6e-4,
+        Train_breast('AGUnet_oseg_ch3_00', 5, 600, 'unet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=True,
