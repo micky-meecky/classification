@@ -687,22 +687,10 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('AGUnet_cls_seg_ch3_00', 5, 600, 'unet', 6e-4,
-                     Use_pretrained=False,
-                     _have_segtask=True,
-                     _only_segtask=False,
-                     is_continue_train=False,
-                     use_clip=False)
-    testp.append(test_precision)
-    testr.append(test_recall)
-    testf1.append(test_f1_score)
-    testacc.append(test_acc)
-
-    test_precision, test_recall, test_f1_score, test_acc = \
         Train_breast('AGUnet_ocls_ch3_00', 10, 600, 'unet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=False,
-                     _only_segtask=False,
+                     _only_segtask=True,
                      is_continue_train=False,
                      use_clip=False)
     testp.append(test_precision)
