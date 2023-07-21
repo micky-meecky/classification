@@ -101,17 +101,13 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
 
                 # 输出第一批的预测结果, 以及最后一批的预测结果
                 if i == 0 or i == len(dataloader) - 1:
-                    predicted = predicted.detach()
-                    predicted = predicted.long()
-                    predicted = predicted.cpu()
-                    targets4 = targets4.cpu()
-                    predicted = predicted.squeeze()
-                    predicted = predicted.cpu()
+                    predicted = predicted.detach().cpu().long().squeeze()
                     targets4 = targets4.cpu()
                     print('predicted = ', predicted)
                     print('targets4 = ', targets4)
                     i += 1
 
+        print('epoch_tp = ', epoch_tp, 'epoch_fp = ', epoch_fp, 'epoch_tn = ', epoch_tn, 'epoch_fn = ', epoch_fn)
         if not _only_segtask:
             # 计算精确率（Precision）、召回率（Recall）和F1分数
             precision = epoch_tp / (epoch_tp + epoch_fp) if epoch_tp + epoch_fp > 0 else 0
@@ -224,12 +220,7 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
 
                 # 输出第一批的预测结果, 以及最后一批的预测结果
                 if i == 0 or i == len(dataloader) - 1:
-                    predicted = predicted.detach()
-                    predicted = predicted.long()
-                    predicted = predicted.cpu()
-                    targets4 = targets4.cpu()
-                    predicted = predicted.squeeze()
-                    predicted = predicted.cpu()
+                    predicted = predicted.detach().cpu().long().squeeze()
                     targets4 = targets4.cpu()
                     print('predicted = ', predicted)
                     print('targets4 = ', targets4)
@@ -254,6 +245,7 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
                     # img_file_name = img_file_name + '_' + predicted
                     # segout.save(SegImgSavePath + '/' + img_file_name + '.png')
 
+        print('epoch_tp = ', epoch_tp, 'epoch_fp = ', epoch_fp, 'epoch_tn = ', epoch_tn, 'epoch_fn = ', epoch_fn)
         if not _only_segtask:
             # 计算精确率（Precision）、召回率（Recall）和F1分数
             precision = epoch_tp / (epoch_tp + epoch_fp) if epoch_tp + epoch_fp > 0 else 0

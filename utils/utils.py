@@ -322,9 +322,9 @@ def AdjustLr(lr_sch, optimizer, epoch, lr_cos_epoch, lr_warm_epoch, num_epochs_d
     # 学习率策略部分 =========================
     # lr scha way 1:
     if lr_sch is not None:
-        if current_lr > lr_low and (epoch + 1) > lr_cos_epoch:
-            lr = current_lr * decay_ratio
-            update_lr(lr, optimizer)
+        # if current_lr > lr_low and (epoch + 1) > lr_cos_epoch:
+        #     lr = current_lr * decay_ratio
+        #     update_lr(lr, optimizer)
         if (epoch + 1) <= (lr_cos_epoch + lr_warm_epoch):
             lr_sch.step()
 
@@ -334,7 +334,6 @@ def AdjustLr(lr_sch, optimizer, epoch, lr_cos_epoch, lr_warm_epoch, num_epochs_d
                 (epoch + 1 - num_epochs_decay) % decay_step == 0):  # 根据设置衰减速率来更新lr
             if current_lr >= lr_low:
                 lr = current_lr * decay_ratio
-                # self.lr /= 100.0
                 update_lr(lr, optimizer)
                 print('Decay learning rate to lr: {}.'.format(lr))
 
@@ -432,18 +431,18 @@ class GradualWarmupScheduler(_LRScheduler):
 if __name__ == '__main__':
     print('main')
     # 测试一下学习率衰减的方式，以及warmup的方式
-    lr = 6e-2  # 初始学习率
+    lr = 6e-4  # 初始学习率
     lr_low = 1e-13  # 最低学习率
     decay_step = 10  # 每decay_step个epoch衰减一次
     decay_ratio = 0.951  # 每decay_step个epoch衰减一次，衰减比例为decay_ratio
-    num_epochs_decay = 100   # 从第几个epoch开始衰减
-    lr_warm_epoch = 10   # warmup的epoch数
-    lr_cos_epoch = 250  # cos衰减的epoch数
+    num_epochs_decay = 40   # 从第几个epoch开始衰减
+    lr_warm_epoch = 6   # warmup的epoch数
+    lr_cos_epoch = 990  # cos衰减的epoch数
     optimizer = torch.optim.Adam([torch.randn(3, 3)], lr=lr)
     lr_sch = LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer)
     # 初始化一个学习率列表
     lr_list = []
-    for epoch in range(600):
+    for epoch in range(1000):
         lr_sch, optimizer = AdjustLr(lr_sch, optimizer, epoch, lr_cos_epoch, lr_warm_epoch, num_epochs_decay,
                                      GetCurrentLr(optimizer), lr_low, decay_step, decay_ratio)
         # 将学习率记录在一个列表lr_list中
