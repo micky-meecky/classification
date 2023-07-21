@@ -211,7 +211,7 @@ def breast_loader(batch_size, testbs, device, validate_flag, use_clip):
     # fold_id = 1
     # distance_type = "dist_mask"
     # normal_flag = False
-    image_size = 224
+    image_size = 512
     num_workers = 0
 
     print('batch_size: ', batch_size)
