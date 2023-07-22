@@ -84,7 +84,7 @@ def mnist_loader():
 
 def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testbs, num_workers, use_clip,
                validate_flag=True):
-    augmentation_prob = 0.8
+    augmentation_prob = 0.5
     if validate_flag:
         train, valid, test = get_fold_filelist(csv_file, K=fold_K, fold=fold_idx, validation=True)
     else:
@@ -694,7 +694,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('AGUnet_oseg_ch3_00', 6, 600, 'unet', 6e-4,
+        Train_breast('AGUnet_oseg_ch3_01', 6, 600, 'unet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=True,

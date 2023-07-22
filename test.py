@@ -107,7 +107,7 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
                     print('targets4 = ', targets4)
                     i += 1
 
-            print('epoch_tp = ', epoch_tp, 'epoch_fp = ', epoch_fp, 'epoch_tn = ', epoch_tn, 'epoch_fn = ', epoch_fn)
+                print('epoch_tp = ', epoch_tp, 'epoch_fp = ', epoch_fp, 'epoch_tn = ', epoch_tn, 'epoch_fn = ', epoch_fn)
         if not _only_segtask:
             # 计算精确率（Precision）、召回率（Recall）和F1分数
             precision = epoch_tp / (epoch_tp + epoch_fp) if epoch_tp + epoch_fp > 0 else 0
