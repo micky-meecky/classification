@@ -180,6 +180,7 @@ class UNetseg(nn.Module):
         self.up4 = torch.utils.checkpoint(self.up4)
         self.outc = torch.utils.checkpoint(self.outc)
 
+
 class UNet(nn.Module):
     def __init__(self, n_channels, n_classes, bilinear=False):
         super(UNet, self).__init__()
@@ -203,10 +204,6 @@ class UNet(nn.Module):
 
         # classification head
         self.linear = nn.Linear(1024, 1)
-        # self.linear1 = nn.Linear(1024, 512)
-        # self.dropout = nn.Dropout(0.2)
-        # self.linear2 = nn.Linear(512, 1)
-        # self.logsoftmax = nn.LogSoftmax(dim=1)
 
     def forward(self, x):
         # encoder
@@ -215,27 +212,6 @@ class UNet(nn.Module):
         x3 = self.down2(x2)
         x4 = self.down3(x3)
         x5 = self.down4(x4)
-
-        # print('x5.shape', x5.shape)
-        # print('x4.shape', x4.shape)
-        # print('x3.shape', x3.shape)
-        # print('x2.shape', x2.shape)
-        # print('x1.shape', x1.shape)
-        #
-        # x5_upsampled = self.upsample(x5)
-        # x4_upsampled = self.upsample(x4)
-        # x3_upsampled = self.upsample(x3)
-        # x2_upsampled = self.upsample(x2)
-
-        # print('x5_upsampled.shape', x5_upsampled.shape)
-        # print('x4_upsampled.shape', x4_upsampled.shape)
-        # print('x3_upsampled.shape', x3_upsampled.shape)
-        # print('x2_upsampled.shape', x2_upsampled.shape)
-
-
-        # 将特征图cat起来,这样可以捕获多尺度的特征，以获取更好的语义信息
-        # features_concatenated = torch.cat([x1, x2_upsampled, x3_upsampled, x4_upsampled, x5_upsampled], dim=1)
-        # print('features_concatenated.shape', features_concatenated.shape)
 
         # decoder
         # decoder with attention gates
@@ -321,4 +297,55 @@ if __name__ == '__main__':
     print(logits.shape)
 
 
+class res101UNet(nn.Module):
+    def __init__(self, n_channels, n_classes, bilinear=False):
+        super(res101UNet, self).__init__()
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.bilinear = bilinear    # bilinear表示是否使用双线性插值
+
+        self.inc = (DoubleConv(n_channels, 64))
+        self.down1 = (Down(64, 128))
+        self.down2 = (Down(128, 256))
+        self.down3 = (Down(256, 512))
+        factor = 2 if bilinear else 1
+        self.down4 = (Down(512, 1024 // factor))
+        # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
+        self.up1 = (Up(1024, 512 // factor, bilinear))
+        self.up2 = (Up(512, 256 // factor, bilinear))
+        self.up3 = (Up(256, 128 // factor, bilinear))
+        self.up4 = (Up(128, 64, bilinear))
+        self.outc = (OutConv(64, n_classes))
+        self.activation = nn.Sigmoid()
+
+        # classification head
+        self.linear = nn.Linear(1024, 1)
+
+    def forward(self, x):
+        # encoder
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x4 = self.down3(x3)
+        x5 = self.down4(x4)
+
+        # decoder
+        # decoder with attention gates
+        x = self.up1(x5, x4)
+
+        x = self.up2(x, x3)
+
+        x = self.up3(x, x2)
+
+        x = self.up4(x, x1)
+
+        # segmentation head
+        logits = self.outc(x)
+        # logits = self.activation(logits)
+
+        # classification head
+        clsx = F.adaptive_avg_pool2d(x5, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
+        clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
+        label = self.linear(clsx)
+        return label, logits
 

@@ -315,7 +315,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         IOUlist = []
         Acclist = []
         torch.autograd.set_detect_anomaly(True)
-        Iter = seg_loss = 0
+        Iter = 0
         tmp_pre = tmp_tar = None
         utils.Mkdir(save_model_dir)
         log_dir = os.path.join(log_dir, project)
@@ -323,7 +323,6 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         writer = SummaryWriter(log_dir=log_dir)
         datas = train_loader  # -----------------------------------------------------
         utils.check_grad(model)
-        log_vars = None
         for epoch in range(epoch_num):
             t.ticbegin()
             te.ticbegin()
@@ -695,7 +694,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('AGUnet_cls_seg_ch3_02', 5, 1200, 'unet', 4e-4,
+        Train_breast('AGUnet_cls_seg_ch3_03', 5, 1200, 'unet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
@@ -727,9 +726,9 @@ if __name__ == '__main__':
     # testacc.append(test_acc)
 
 
-    for i in range(len(testp)):
-        print('第' + str(i + 1) + '个实验结果：', end=', ')
-        print(testp[i], end=', ')
-        print(testr[i], end=', ')
-        print(testf1[i], end=', ')
-        print(testacc[i])
+    # for i in range(len(testp)):
+    #     print('第' + str(i + 1) + '个实验结果：', end=', ')
+    #     print(testp[i], end=', ')
+    #     print(testr[i], end=', ')
+    #     print(testf1[i], end=', ')
+    #     print(testacc[i])
