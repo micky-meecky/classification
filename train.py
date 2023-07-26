@@ -694,7 +694,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('unetr_cls_seg_ch3_224_03', 5, 600, 'unetr', 6e-4,
+        Train_breast('unetr_cls_seg_ch3_224_00', 5, 800, 'unetr', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
@@ -704,7 +704,6 @@ if __name__ == '__main__':
     testr.append(test_recall)
     testf1.append(test_f1_score)
     testacc.append(test_acc)
-
 
     for i in range(len(testp)):
         print('第' + str(i + 1) + '个实验结果：', end=', ')
