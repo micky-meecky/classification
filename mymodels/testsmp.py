@@ -205,7 +205,7 @@ class AttentionGate(nn.Module):
 
 class UNet(nn.Module):
     def __init__(self,
-                 encoder_name: str = "resnet34",
+                 encoder_name: str = "xception",
                  encoder_depth: int = 5,
                  encoder_weights: str = "imagenet",
                  decoder_use_batchnorm: bool = True,
@@ -218,7 +218,7 @@ class UNet(nn.Module):
                  ):
         super(UNet, self).__init__()
         self.encoder = get_encoder(
-            'resnet50',
+            'resnet101',
             in_channels=3,
             depth=5,
             weights='imagenet',
