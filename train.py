@@ -337,6 +337,8 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             model.train()
             for i, data in tqdm(enumerate(datas, 0), total=len(datas)):
                 (img_file_name, inputs, targets1, targets4) = data
+                print('inputs', inputs)
+                print(model)
                 # 由于上面进行stack的时候必须保证相同大小的张量，从而targets1变成了三通道的，这里只需要第一个通道即可，维度保持微bs x 1 x 512 x 512
                 targets1 = targets1[:, 0, :, :].unsqueeze(1)
                 if epoch == 0:
