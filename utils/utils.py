@@ -10,7 +10,7 @@ import pretrainedmodels.utils as utils
 from mymodels.models import Net
 from mymodels.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 from mymodels.unetr import UNETR, UNETRcls, UNETRseg, UNETRclsz12, UNETRclstoken
-from mymodels.Unet import UNet, UNetcls, UNetseg
+from mymodels.Unet import UNet, UNetcls, UNetseg, res101UNet
 from mymodels.ViT import ViT_model
 from mymodels.swinViT import SwinTransformer, swin_base_patch4_window7_224
 import os
@@ -213,6 +213,8 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
                     model = UNet(3, 1)
                 else:
                     model = UNetcls(3, 1)
+        elif modelname == 'res101UNet':
+            model = res101UNet(3, 1)
         elif modelname == 'Net':
             model = Net()
         elif modelname == 'resnet34':

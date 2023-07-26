@@ -182,11 +182,12 @@ class TResUnet(nn.Module):
 
         y = self.output(d4)
 
-        if heatmap != None:
+        if heatmap is not None:
             hmap = save_feats_mean(d4)
             return hmap, y
         else:
             return y
+
 
 if __name__ == "__main__":
     x = torch.randn((8, 3, 256, 256))
