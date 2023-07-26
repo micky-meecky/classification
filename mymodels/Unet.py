@@ -327,19 +327,21 @@ class Res101UNet(nn.Module):
         self.n_classes = n_classes
         self.bilinear = bilinear  # bilinear表示是否使用双线性插值
 
-        # self.encoder = Encoder()
-        self.encoder = get_encoder(
-            'resnet101',
-            in_channels=3,
-            depth=5,
-            weights='imagenet',
-        )
+        self.encoder = Encoder()
+        # self.encoder = get_encoder(
+        #     'resnet101',
+        #     in_channels=3,
+        #     depth=5,
+        #     weights='imagenet',
+        # )
         factor = 2 if bilinear else 1
         self.up1 = (Up(2048, 1024 // factor, bilinear))
         self.up2 = (Up(1024, 512 // factor, bilinear))
         self.up3 = (Up(512, 256 // factor, bilinear))
         self.up4 = (Up(256, 64, bilinear))
         self.outc = (OutConv(64, n_classes))
+        self.up5 = nn.ConvTranspose2d(64, 64, 2, stride=2)  # ConvTranspose2d是为了将特征图的尺寸放大一倍，
+        # 参数分别为输入通道数，输出通道数，卷积核大小，步长，padding
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
         self.activation = nn.Sigmoid()
 
@@ -348,10 +350,10 @@ class Res101UNet(nn.Module):
 
     def forward(self, x):
         # encoder
-        # x1, x2, x3, x4, x5 = self.encoder(x)
-        features = self.encoder(x)
-        features = features[1:]  # remove first skip with same spatial resolution
-        x1, x2, x3, x4, x5 = features
+        x1, x2, x3, x4, x5 = self.encoder(x)
+        # features = self.encoder(x)
+        # features = features[1:]  # remove first skip with same spatial resolution
+        # x1, x2, x3, x4, x5 = features
 
         # decoder with attention gates
         x = self.up1(x5, x4)
@@ -361,7 +363,7 @@ class Res101UNet(nn.Module):
         x = self.up3(x, x2)
 
         x = self.up4(x, x1)
-
+        x = self.up5(x)
         # segmentation head
         x = self.outc(x)
         # logits = self.activation(logits)

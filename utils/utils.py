@@ -133,8 +133,10 @@ class CustomGoogLeNet(GoogLeNet):
 def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtask=False, _only_segtask=False):
     model = None
     if use_pretrained:
-        if modelname == 'res101UNet':
+        if modelname == 'res101UNetsmp':
             model = ResUnet(encoder_name='resnet50',)
+        if modelname == 'res101UNet':
+            model = Res101UNet(3, 1)
         if modelname.startswith('resnet101'):
             model = models.resnet101(pretrained=True)
             # 替换输出层
@@ -216,8 +218,6 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
                     model = UNet(3, 1)
                 else:
                     model = UNetcls(3, 1)
-        elif modelname == 'res101UNet':
-            model = res101UNet(3, 1)
         elif modelname == 'Net':
             model = Net()
         elif modelname == 'resnet34':
@@ -436,18 +436,18 @@ class GradualWarmupScheduler(_LRScheduler):
 if __name__ == '__main__':
     print('main')
     # 测试一下学习率衰减的方式，以及warmup的方式
-    lr = 6e-4  # 初始学习率
-    lr_low = 1e-13  # 最低学习率
+    lr = 1e-5  # 初始学习率
+    lr_low = 1e-15  # 最低学习率
     decay_step = 10  # 每decay_step个epoch衰减一次
     decay_ratio = 0.951  # 每decay_step个epoch衰减一次，衰减比例为decay_ratio
     num_epochs_decay = 40   # 从第几个epoch开始衰减
     lr_warm_epoch = 6   # warmup的epoch数
-    lr_cos_epoch = 990  # cos衰减的epoch数
+    lr_cos_epoch = 790  # cos衰减的epoch数
     optimizer = torch.optim.Adam([torch.randn(3, 3)], lr=lr)
     lr_sch = LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer)
     # 初始化一个学习率列表
     lr_list = []
-    for epoch in range(1000):
+    for epoch in range(800):
         lr_sch, optimizer = AdjustLr(lr_sch, optimizer, epoch, lr_cos_epoch, lr_warm_epoch, num_epochs_decay,
                                      GetCurrentLr(optimizer), lr_low, decay_step, decay_ratio)
         # 将学习率记录在一个列表lr_list中
