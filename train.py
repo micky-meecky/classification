@@ -211,7 +211,7 @@ def breast_loader(batch_size, testbs, device, validate_flag, use_clip):
     # fold_id = 1
     # distance_type = "dist_mask"
     # normal_flag = False
-    image_size = 512
+    image_size = 224
     num_workers = 0
 
     print('batch_size: ', batch_size)
@@ -234,7 +234,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     validate_flag = True  # 是否使用验证集 -----------------------------------------------------
     lr_low = 1e-13  # 学习率下限  ------------------------------------------------------
     lr_warm_epoch = 10  # warm up 的 epoch 数 -----------------------------------------------------
-    lr_cos_epoch = 1190  # 学习率下降的epoch数 -----------------------------------------------------
+    lr_cos_epoch = 790  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 100  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_ratio = 0.952  # 学习率下降的比例 -----------------------------------------------------
@@ -694,7 +694,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('AGUnet_cls_seg_ch3_03', 5, 1200, 'unet', 6e-4,
+        Train_breast('unetr_cls_seg_ch3_224_03', 5, 600, 'unetr', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
