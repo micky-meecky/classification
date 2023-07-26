@@ -211,7 +211,7 @@ def breast_loader(batch_size, testbs, device, validate_flag, use_clip):
     # fold_id = 1
     # distance_type = "dist_mask"
     # normal_flag = False
-    image_size = 512
+    image_size = 256
     num_workers = 0
 
     print('batch_size: ', batch_size)
@@ -693,27 +693,27 @@ if __name__ == '__main__':
     testf1 = []
     testacc = []
 
-    # test_precision, test_recall, test_f1_score, test_acc = \
-    #     Train_breast('preres101AGUnet_cls_seg_ch3_256_00', 5, 800, 'res101UNetsmp', 1e-5,
-    #                  Use_pretrained=True,
-    #                  _have_segtask=True,
-    #                  _only_segtask=False,
-    #                  is_continue_train=False,
-    #                  use_clip=False)
-    # testp.append(test_precision)
-    # testr.append(test_recall)
-    # testf1.append(test_f1_score)
-    # testacc.append(test_acc)
-    #
-    # for i in range(len(testp)):
-    #     print('第' + str(i + 1) + '个实验结果：', end=', ')
-    #     print(testp[i], end=', ')
-    #     print(testr[i], end=', ')
-    #     print(testf1[i], end=', ')
-    #     print(testacc[i])
+    test_precision, test_recall, test_f1_score, test_acc = \
+        Train_breast('preres101AGUnet_cls_seg_ch3_256_00', 5, 800, 'res101UNetsmp', 6e-5,
+                     Use_pretrained=True,
+                     _have_segtask=True,
+                     _only_segtask=False,
+                     is_continue_train=False,
+                     use_clip=False)
+    testp.append(test_precision)
+    testr.append(test_recall)
+    testf1.append(test_f1_score)
+    testacc.append(test_acc)
+
+    for i in range(len(testp)):
+        print('第' + str(i + 1) + '个实验结果：', end=', ')
+        print(testp[i], end=', ')
+        print(testr[i], end=', ')
+        print(testf1[i], end=', ')
+        print(testacc[i])
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('preres101AGUnet_cls_seg_ch3_256_01', 5, 800, 'res101UNet', 1e-5,
+        Train_breast('preres101AGUnet_cls_seg_ch3_256_01', 5, 800, 'res101UNet', 6e-5,
                      Use_pretrained=True,
                      _have_segtask=True,
                      _only_segtask=False,
