@@ -362,11 +362,6 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                     if _have_segtask:
                         targets1 = targets1.to(device)
 
-                # 输出inputs的device
-                print(inputs.device)
-                # 输出model的device
-                print('model device:', next(model.parameters()).device)
-
                 if _only_segtask:
                     segout = model(inputs)
                     segout = torch.sigmoid(segout)
