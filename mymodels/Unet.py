@@ -60,7 +60,7 @@ class Up(nn.Module):
             self.conv = DoubleConv(in_channels, out_channels, in_channels // 2)
         else:
             self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
-            self.conv = DoubleConv(in_channels, out_channels)
+            self.conv = DoubleConv(in_channels // 2 + self.out_channels, self.out_channels)
 
     def forward(self, x1, x2):
         x1 = self.up(x1)
@@ -77,7 +77,7 @@ class Up(nn.Module):
         x = torch.cat([x2, x1], dim=1)
         inch = x1.shape[1]
         outch = x2.shape[1]
-        self.conv = DoubleConv(inch + outch, self.out_channels)
+        # self.conv = DoubleConv(inch + outch, self.out_channels)
         x = self.conv(x)
         return x
 
