@@ -47,7 +47,7 @@ class UpBlock(nn.Module):
         x1 = F.pad(x1, [diff_x // 2, diff_x - diff_x // 2,
                         diff_y // 2, diff_y - diff_y // 2])
         x = torch.cat([x2, x1], dim=1)
-        C
+        self.conv = ConvBlock(self.in_channels + self.out_channels, self.out_channels)
         return self.conv(x)
 
 
