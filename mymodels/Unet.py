@@ -320,9 +320,9 @@ class UNetcls(nn.Module):
         self.outc = torch.utils.checkpoint(self.outc)
 
 
-class res101UNet(nn.Module):
+class Res101UNet(nn.Module):
     def __init__(self, n_channels, n_classes, bilinear=False):
-        super(res101UNet, self).__init__()
+        super(Res101UNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear  # bilinear表示是否使用双线性插值
@@ -377,7 +377,7 @@ class res101UNet(nn.Module):
 
 
 if __name__ == '__main__':
-    model = res101UNet(3, 1)
+    model = Res101UNet(3, 1)
     # model = UNet(3, 1)
     model.eval()
     input = torch.randn(10, 3, 256, 256)

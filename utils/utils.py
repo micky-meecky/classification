@@ -10,7 +10,8 @@ import pretrainedmodels.utils as utils
 from mymodels.models import Net
 from mymodels.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 from mymodels.unetr import UNETR, UNETRcls, UNETRseg, UNETRclsz12, UNETRclstoken
-from mymodels.Unet import UNet, UNetcls, UNetseg, res101UNet
+from mymodels.Unet import UNet, UNetcls, UNetseg, Res101UNet
+from mymodels.testsmp import UNet as ResUnet
 from mymodels.ViT import ViT_model
 from mymodels.swinViT import SwinTransformer, swin_base_patch4_window7_224
 import os
@@ -132,6 +133,8 @@ class CustomGoogLeNet(GoogLeNet):
 def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtask=False, _only_segtask=False):
     model = None
     if use_pretrained:
+        if modelname == 'res101UNet':
+            model = ResUnet(encoder_name='resnet50',)
         if modelname.startswith('resnet101'):
             model = models.resnet101(pretrained=True)
             # 替换输出层

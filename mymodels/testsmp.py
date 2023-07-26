@@ -7,8 +7,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import module as md
-from module import Flatten, Activation
+from mymodels import module as md
+from mymodels.module import Flatten, Activation
 
 
 class DecoderBlock(nn.Module):
@@ -19,10 +19,19 @@ class DecoderBlock(nn.Module):
             out_channels,
             use_batchnorm=True,
             attention_type=None,
+            bilinear=False,
     ):
         super().__init__()
+        if bilinear:
+            self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        else:
+            self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
+        if in_channels == 256:
+            conv1_in_channels = in_channels // 4 + skip_channels
+        else:
+            conv1_in_channels = in_channels // 2 + skip_channels
         self.conv1 = md.Conv2dReLU(
-            in_channels + skip_channels,
+            conv1_in_channels,
             out_channels,
             kernel_size=3,
             padding=1,
@@ -36,18 +45,35 @@ class DecoderBlock(nn.Module):
             padding=1,
             use_batchnorm=use_batchnorm,
         )
+        # 一维卷积，将通道数变为64
+        self.conv3 = nn.Conv2d(128, 64, kernel_size=1, stride=1, padding=0)
         self.attention2 = md.Attention(attention_type, in_channels=out_channels)
-        self.attentiongate = AttentionGate(F_g=in_channels // 2, F_l=out_channels, F_int=in_channels // 4)
+        if in_channels == 256:
+            f_g = in_channels // 4
+            f_l = in_channels // 4
+            f_int = in_channels // 8
+        else:
+            f_g = in_channels // 2
+            f_l = in_channels // 2
+            f_int = in_channels // 4
+        self.attentiongate = AttentionGate(F_g=f_g, F_l=f_l, F_int=f_int)
+        print(' ')
 
     def forward(self, x, skip=None):
-        x = F.interpolate(x, scale_factor=2, mode="nearest")  # Upsample
-        skip
+        # x = F.interpolate(x, scale_factor=2, mode="nearest")  # Upsample
+        x = self.up(x)
+        # 如果x的第一个维度==128，则进行在进行一次一维卷积，将通道数变为64
+        if x.shape[1] == 128:
+            x = self.conv3(x)
         if skip is not None:
+            skip = self.attentiongate(x, skip)
+            # print('skip: ', skip.shape)
             x = torch.cat([x, skip], dim=1)
             x = self.attention1(x)
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.attention2(x)
+        # print(x.shape)
         return x
 
 
@@ -79,7 +105,6 @@ class SegmentationHead(nn.Sequential):
 
 
 class ClassificationHead(nn.Sequential):
-
     def __init__(self, in_channels, classes, pooling="avg", dropout=0.2, activation=None):
         if pooling not in ("max", "avg"):
             raise ValueError("Pooling should be one of ('max', 'avg'), got {}.".format(pooling))
@@ -102,7 +127,6 @@ class UnetDecoder(nn.Module):
             center=False,
     ):
         super().__init__()
-
         if n_blocks != len(decoder_channels):
             raise ValueError(
                 "Model depth is {}, but you provide `decoder_channels` for {} blocks.".format(
@@ -185,7 +209,7 @@ class UNet(nn.Module):
                  encoder_depth: int = 5,
                  encoder_weights: str = "imagenet",
                  decoder_use_batchnorm: bool = True,
-                 decoder_channels: List[int] = (256, 128, 64, 32, 16),
+                 decoder_channels: List[int] = (1024, 512, 256, 128, 64),
                  decoder_attention_type: Optional[str] = None,
                  in_channels: int = 3,
                  classes: int = 1,
@@ -226,14 +250,14 @@ class UNet(nn.Module):
 
         if self.classification_head is not None:
             labels = self.classification_head(features[-1])
-            return masks, labels
+            return labels, masks
 
         return masks
 
 
-
 if __name__ == '__main__':
-    model = UNet()
+    model = UNet(encoder_name='resnet101',
+                 )
     print(model)
     x = torch.randn(1, 3, 256, 256)
     mask, cls = model(x)
