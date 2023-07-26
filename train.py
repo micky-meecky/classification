@@ -694,7 +694,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('preres101AGUnet_cls_seg_ch3_256_00', 6, 800, 'res101UNetsmp', 1e-5,
+        Train_breast('preres101AGUnet_cls_seg_ch3_256_00', 5, 800, 'res101UNetsmp', 1e-5,
                      Use_pretrained=True,
                      _have_segtask=True,
                      _only_segtask=False,
@@ -713,7 +713,7 @@ if __name__ == '__main__':
         print(testacc[i])
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('preres101AGUnet_cls_seg_ch3_256_01', 6, 800, 'res101UNet', 1e-5,
+        Train_breast('preres101AGUnet_cls_seg_ch3_256_01', 5, 800, 'res101UNet', 1e-5,
                      Use_pretrained=True,
                      _have_segtask=True,
                      _only_segtask=False,
