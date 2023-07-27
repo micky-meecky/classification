@@ -130,13 +130,13 @@ class CustomGoogLeNet(GoogLeNet):
         return x
 
 
-def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtask=False, _only_segtask=False):
+def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtask=False, _only_segtask=False, channel=3):
     model = None
     if use_pretrained:
         if modelname == 'res101UNetsmp':
             model = ResUnet(encoder_name='resnet50',)
         if modelname == 'res101UNet':
-            model = Res101UNet(3, 1)
+            model = Res101UNet(channel, 1)
         if modelname.startswith('resnet101'):
             model = models.resnet101(pretrained=True)
             # 替换输出层
@@ -212,12 +212,12 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
             model = swin_base_patch4_window7_224(num_classes=1)
         elif modelname == 'unet':
             if _only_segtask:
-                model = UNetseg(3, 1)
+                model = UNetseg(channel, 1)
             else:
                 if _have_segtask:
-                    model = UNet(3, 1)
+                    model = UNet(channel, 1)
                 else:
-                    model = UNetcls(3, 1)
+                    model = UNetcls(channel, 1)
         elif modelname == 'Net':
             model = Net()
         elif modelname == 'resnet34':

@@ -83,7 +83,7 @@ def mnist_loader():
 
 
 def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testbs, num_workers, use_clip,
-               validate_flag=True):
+               validate_flag=True, channel=3):
     augmentation_prob = 0.5
     if validate_flag:
         train, valid, test = get_fold_filelist(csv_file, K=fold_K, fold=fold_idx, validation=True)
@@ -120,10 +120,16 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
         # filepath_contour = './class_out/clip_dataset/clip_contour'
         # filepath_dist = './class_out/clip_dataset/clip_distance_D1'
     else:
-        filepath_img = './class_out/512/p_image_512'
-        filepath_mask = './class_out/512/p_mask_512'
-        # filepath_contour = './class_out/512/p_contour'
-        # filepath_dist = './class_out/512/p_distance_D1'
+        if channel == 3:
+            filepath_img = './class_out/512/p_image_512'
+            filepath_mask = './class_out/512/p_mask_512'
+            # filepath_contour = './class_out/512/p_contour'
+            # filepath_dist = './class_out/512/p_distance_D1'
+        else:
+            filepath_img = './class_out/stage1/p_image'
+            filepath_mask = './class_out/stage1/p_mask'
+            # filepath_contour = './class_out/512/p_contour'
+            # filepath_dist = './class_out/512/p_distance_D1'
 
     train_list = [filepath_img + sep + i[0] for i in train]
     train_list_GT = [filepath_mask + sep + i[0] for i in train]
@@ -200,7 +206,7 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
     return train_loader, valid_loader, test_loader
 
 
-def breast_loader(batch_size, testbs, device, validate_flag, use_clip):
+def breast_loader(batch_size, testbs, device, validate_flag, use_clip, channel):
     if use_clip:
         csv_path = './class_out/clip_dataset/clip_train.csv'
     else:
@@ -219,13 +225,14 @@ def breast_loader(batch_size, testbs, device, validate_flag, use_clip):
                                                          testbs,
                                                          num_workers,
                                                          use_clip,
-                                                         validate_flag)
+                                                         validate_flag,
+                                                         channel)
     return train_loader, valid_loader, test_loader
 
 
 def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segtask, _only_segtask,
                  is_continue_train,
-                 use_clip,
+                 use_clip, channel,
                  ):
     project = Project  # project name-----------------------------------------------------
     epoch_num = epoch  # epoch_num -----------------------------------------------------
@@ -267,13 +274,13 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         _have_segtask = _have_segtask
 
     model = utils.InitModel(model_name, use_pretrained, class_num, _have_segtask,
-                            _only_segtask)  # ---------------------------------------------
+                            _only_segtask, channel)  # ---------------------------------------------
     utils.init_weights(model)
     model, device = utils.Device(model)
 
     print(getModelSize(model))
     print('project: ', project)
-    train_loader, valid_loader, test_loader = breast_loader(bs, testbs, device, validate_flag, use_clip)
+    train_loader, valid_loader, test_loader = breast_loader(bs, testbs, device, validate_flag, use_clip, channel)
     # train_loader, test_loader = OpenDataSet.SelectDataSet('Cifar_10', bs)
     if is_continue_train:
         model_dir = './savemodel/' + project + '/miniloss.pth'
@@ -718,7 +725,8 @@ if __name__ == '__main__':
                      _have_segtask=False,
                      _only_segtask=True,
                      is_continue_train=False,
-                     use_clip=False)
+                     use_clip=False,
+                     channel=3)
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)
