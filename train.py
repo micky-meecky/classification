@@ -726,7 +726,7 @@ if __name__ == '__main__':
                      _only_segtask=True,
                      is_continue_train=False,
                      use_clip=False,
-                     channel=1)
+                     channel=3)
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)
