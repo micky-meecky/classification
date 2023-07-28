@@ -232,7 +232,7 @@ def breast_loader(batch_size, testbs, device, validate_flag, use_clip, channel, 
 
 def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segtask, _only_segtask,
                  is_continue_train,
-                 use_clip, channel, size,
+                 use_clip, channel, size, decayepoch,
                  ):
     project = Project  # project name-----------------------------------------------------
     epoch_num = epoch  # epoch_num -----------------------------------------------------
@@ -241,7 +241,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     validate_flag = True  # 是否使用验证集 -----------------------------------------------------
     lr_low = 1e-15  # 学习率下限  ------------------------------------------------------
     lr_warm_epoch = 10  # warm up 的 epoch 数 -----------------------------------------------------
-    lr_cos_epoch = 790  # 学习率下降的epoch数 -----------------------------------------------------
+    lr_cos_epoch = decayepoch  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 100  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
     decay_ratio = 0.952  # 学习率下降的比例 -----------------------------------------------------
@@ -700,34 +700,16 @@ if __name__ == '__main__':
     testf1 = []
     testacc = []
 
-    # test_precision, test_recall, test_f1_score, test_acc = \
-    #     Train_breast('preres101AGUnet_cls_seg_ch3_256_00', 6, 600, 'res101UNetsmp', 6e-4,
-    #                  Use_pretrained=True,
-    #                  _have_segtask=True,
-    #                  _only_segtask=False,
-    #                  is_continue_train=False,
-    #                  use_clip=False)
-    # testp.append(test_precision)
-    # testr.append(test_recall)
-    # testf1.append(test_f1_score)
-    # testacc.append(test_acc)
-    #
-    # for i in range(len(testp)):
-    #     print('第' + str(i + 1) + '个实验结果：', end=', ')
-    #     print(testp[i], end=', ')
-    #     print(testr[i], end=', ')
-    #     print(testf1[i], end=', ')
-    #     print(testacc[i])
-
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('Unet_oseg_ch3_256_00', 6, 800, 'unet', 6e-3,
+        Train_breast('Unet_oseg_ch3_256_00', 6, 300, 'unet', 6e-3,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=True,
                      is_continue_train=False,
                      use_clip=False,
                      channel=3,
-                     size=256)
+                     size=256,
+                     decayepoch=290)
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)
@@ -747,8 +729,9 @@ if __name__ == '__main__':
                      _only_segtask=True,
                      is_continue_train=False,
                      use_clip=False,
-                     channel=1,
-                     size=512)
+                     channel=3,
+                     size=512,
+                     decayepoch=790)
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)
