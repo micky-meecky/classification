@@ -9,10 +9,10 @@
 @file: resizeto512.py
 @datatime: 7/21/2023 1:04 AM
 """
-from torchvision import transforms as T
 import csv
-from PIL import Image
 import os
+
+from PIL import Image
 
 
 def readCsv(csvfname):
@@ -128,6 +128,7 @@ def main():
                    img_name)
 
         print(img_name + ' is resized!')
+
 
 if __name__ == '__main__':
     main()

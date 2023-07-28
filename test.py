@@ -268,6 +268,11 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
                 f' F1-score: {f1_score:.4f},'
                 f' Accuracy: {acc:.4f}'
             )
+        else:
+            precision = 0
+            recall = 0
+            f1_score = 0
+            acc = 0
         # 输出seg的指标
         if _have_segtask:
             print(segoutputcontent, 'SE = %.3f, PC = %.3f, F1 = %.3f, JS = %.3f, DC = %.3f, IOU = %.3f, Acc = %.3f' % (
