@@ -720,7 +720,7 @@ if __name__ == '__main__':
     #     print(testacc[i])
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('Unet_oseg_ch3_256_00', 20, 800, 'unet', 6e-3,
+        Train_breast('Unet_oseg_ch3_256_00', 6, 800, 'unet', 6e-3,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=True,
