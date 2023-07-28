@@ -206,7 +206,7 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
     return train_loader, valid_loader, test_loader
 
 
-def breast_loader(batch_size, testbs, device, validate_flag, use_clip, channel):
+def breast_loader(batch_size, testbs, device, validate_flag, use_clip, channel, size):
     if use_clip:
         csv_path = './class_out/clip_dataset/clip_train.csv'
     else:
@@ -217,7 +217,7 @@ def breast_loader(batch_size, testbs, device, validate_flag, use_clip, channel):
     # fold_id = 1
     # distance_type = "dist_mask"
     # normal_flag = False
-    image_size = 256
+    image_size = size
     num_workers = 0
 
     print('batch_size: ', batch_size)
@@ -232,7 +232,7 @@ def breast_loader(batch_size, testbs, device, validate_flag, use_clip, channel):
 
 def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segtask, _only_segtask,
                  is_continue_train,
-                 use_clip, channel,
+                 use_clip, channel, size,
                  ):
     project = Project  # project name-----------------------------------------------------
     epoch_num = epoch  # epoch_num -----------------------------------------------------
@@ -280,7 +280,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
 
     print(getModelSize(model))
     print('project: ', project)
-    train_loader, valid_loader, test_loader = breast_loader(bs, testbs, device, validate_flag, use_clip, channel)
+    train_loader, valid_loader, test_loader = breast_loader(bs, testbs, device, validate_flag, use_clip, channel, size)
     # train_loader, test_loader = OpenDataSet.SelectDataSet('Cifar_10', bs)
     if is_continue_train:
         model_dir = './savemodel/' + project + '/miniloss.pth'
@@ -726,7 +726,8 @@ if __name__ == '__main__':
                      _only_segtask=True,
                      is_continue_train=False,
                      use_clip=False,
-                     channel=3)
+                     channel=3,
+                     size=256)
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)
@@ -746,7 +747,8 @@ if __name__ == '__main__':
                      _only_segtask=True,
                      is_continue_train=False,
                      use_clip=False,
-                     channel=1)
+                     channel=1,
+                     size=512)
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)
