@@ -726,7 +726,7 @@ if __name__ == '__main__':
         Train_breast('preres101AGUnet_cls_seg_ch3_512_00', 6, 800, 'res101UNetsmp', 6e-4,
                      Use_pretrained=True,
                      _have_segtask=False,
-                     _only_segtask=True,
+                     _only_segtask=False,
                      is_continue_train=False,
                      use_clip=False,
                      channel=3,
