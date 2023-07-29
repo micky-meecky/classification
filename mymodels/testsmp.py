@@ -263,3 +263,8 @@ if __name__ == '__main__':
     mask, cls = model(x)
     print(mask.shape)
     print(cls.shape)
+
+
+
+
+
