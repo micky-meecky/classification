@@ -702,7 +702,7 @@ if __name__ == '__main__':
 
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('agUnet_oseg_ch1_512_00', 8, 800, 'agunetseg', 6e-4,
+        Train_breast('agUnet_oseg_ch1_512_00', 5, 800, 'agunetseg', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=False,
                      _only_segtask=True,
