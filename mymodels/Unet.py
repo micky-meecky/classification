@@ -104,8 +104,6 @@ class AGUp(nn.Module):
         x2 = self.att(g=x1, x=x2)
 
         x = torch.cat([x2, x1], dim=1)
-        inch = x1.shape[1]
-        outch = x2.shape[1]
         # self.conv = DoubleConv(inch + outch, self.out_channels)
         x = self.conv(x)
         return x
@@ -281,6 +279,104 @@ class UNet(nn.Module):
         return label, logits
 
 
+class AgUNet(nn.Module):
+    def __init__(self, n_channels, n_classes, bilinear=False):
+        super(AgUNet, self).__init__()
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.bilinear = bilinear    # bilinear表示是否使用双线性插值
+
+        self.inc = (DoubleConv(n_channels, 64))
+        self.down1 = (Down(64, 128))
+        self.down2 = (Down(128, 256))
+        self.down3 = (Down(256, 512))
+        factor = 2 if bilinear else 1
+        self.down4 = (Down(512, 1024 // factor))
+        # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
+        self.up1 = (AGUp(1024, 512 // factor, bilinear))
+        self.up2 = (AGUp(512, 256 // factor, bilinear))
+        self.up3 = (AGUp(256, 128 // factor, bilinear))
+        self.up4 = (AGUp(128, 64, bilinear))
+        self.outc = (OutConv(64, n_classes))
+        self.activation = nn.Sigmoid()
+
+        # classification head
+        self.linear = nn.Linear(1024, 1)
+
+    def forward(self, x):
+        # encoder
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x4 = self.down3(x3)
+        x5 = self.down4(x4)
+
+        # decoder
+        # decoder with attention gates
+        x = self.up1(x5, x4)
+
+        x = self.up2(x, x3)
+
+        x = self.up3(x, x2)
+
+        x = self.up4(x, x1)
+
+        # segmentation head
+        logits = self.outc(x)
+        # logits = self.activation(logits)
+
+        # classification head
+        clsx = F.adaptive_avg_pool2d(x5, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
+        clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
+        label = self.linear(clsx)
+        return label, logits
+
+
+class AgUNetseg(nn.Module):
+    def __init__(self, n_channels, n_classes, bilinear=False):
+        super(AgUNetseg, self).__init__()
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.bilinear = bilinear    # bilinear表示是否使用双线性插值
+
+        self.inc = (DoubleConv(n_channels, 64))
+        self.down1 = (Down(64, 128))
+        self.down2 = (Down(128, 256))
+        self.down3 = (Down(256, 512))
+        factor = 2 if bilinear else 1
+        self.down4 = (Down(512, 1024 // factor))
+        # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
+        self.up1 = (AGUp(1024, 512 // factor, bilinear))
+        self.up2 = (AGUp(512, 256 // factor, bilinear))
+        self.up3 = (AGUp(256, 128 // factor, bilinear))
+        self.up4 = (AGUp(128, 64, bilinear))
+        self.outc = (OutConv(64, n_classes))
+        self.activation = nn.Sigmoid()
+
+
+    def forward(self, x):
+        # encoder
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x4 = self.down3(x3)
+        x5 = self.down4(x4)
+
+        # decoder
+        # decoder with attention gates
+        x = self.up1(x5, x4)
+
+        x = self.up2(x, x3)
+
+        x = self.up3(x, x2)
+
+        x = self.up4(x, x1)
+
+        # segmentation head
+        logits = self.outc(x)
+        # logits = self.activation(logits)
+
+        return logits
 
 
 class UNetcls(nn.Module):
@@ -385,7 +481,7 @@ class Res101UNet(nn.Module):
 
 
 if __name__ == '__main__':
-    model = Res101UNet(3, 1)
+    model = AgUNet(3, 1)
     # model = UNet(3, 1)
     model.eval()
     input = torch.randn(10, 3, 256, 256)
