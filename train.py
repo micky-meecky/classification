@@ -709,7 +709,7 @@ if __name__ == '__main__':
                      is_continue_train=False,
                      use_clip=False,
                      channel=1,
-                     size=512,
+                     size=256,
                      decayepoch=790)
     testp.append(test_precision)
     testr.append(test_recall)
