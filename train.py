@@ -701,10 +701,10 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('agUnet_oseg_ch3_512_01', 4, 800, 'agunetseg', 6e-4,
-                     Use_pretrained=False,
-                     _have_segtask=False,
-                     _only_segtask=True,
+        Train_breast('preres101AGUnet_cls_seg_ch3_512_02', 8, 800, 'res101UNetsmp', 6e-4,
+                     Use_pretrained=True,
+                     _have_segtask=True,
+                     _only_segtask=False,
                      is_continue_train=False,
                      use_clip=False,
                      channel=3,
