@@ -37,7 +37,11 @@ class DecoderBlock(nn.Module):
             padding=1,
             use_batchnorm=use_batchnorm,
         )
-        self.attention1 = md.Attention(attention_type, in_channels=in_channels + skip_channels)
+        if in_channels == 256:
+            inch = in_channels // 4
+        else:
+            inch = in_channels // 2
+        self.attention1 = md.Attention(attention_type, in_channels=inch + skip_channels)
         self.conv2 = md.Conv2dReLU(
             out_channels,
             out_channels,
@@ -210,7 +214,7 @@ class UNet(nn.Module):
                  encoder_weights: str = "imagenet",
                  decoder_use_batchnorm: bool = True,
                  decoder_channels: List[int] = (1024, 512, 256, 128, 64),
-                 decoder_attention_type: Optional[str] = None,
+                 decoder_attention_type: Optional[str] = 'scse',
                  in_channels: int = 3,
                  classes: int = 1,
                  activation: Optional[Union[str, callable]] = None,
@@ -222,6 +226,12 @@ class UNet(nn.Module):
             in_channels=3,
             depth=5,
             weights='imagenet',
+        )
+        self.aux_params = dict(
+            pooling='max',  # one of 'avg', 'max'
+            dropout=0.1,  # dropout ratio, default is None
+            activation='softmax',  # activation function, default is None
+            classes=1,  # define number of output labels
         )
         self.decoder = UnetDecoder(
             encoder_channels=self.encoder.out_channels,
