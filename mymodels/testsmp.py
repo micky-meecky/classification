@@ -223,7 +223,7 @@ class UNet(nn.Module):
         super(UNet, self).__init__()
         self.encoder = get_encoder(
             'resnet101',
-            in_channels=3,
+            in_channels=1,
             depth=5,
             weights='imagenet',
         )
