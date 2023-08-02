@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
-from segmentation_models_pytorch.encoders import get_encoder
+# from segmentation_models_pytorch.encoders import get_encoder
 
 
 
