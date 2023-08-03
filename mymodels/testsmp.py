@@ -222,9 +222,9 @@ class UNet(nn.Module):
                  ):
         super(UNet, self).__init__()
         self.encoder = get_encoder(
-            'resnet101',
-            in_channels=1,
-            depth=5,
+            encoder_name,
+            in_channels=in_channels,
+            depth=encoder_depth,
             weights='imagenet',
         )
         self.aux_params = dict(
