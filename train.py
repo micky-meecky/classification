@@ -701,14 +701,14 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('prescseres101AGUnet_cls_seg_ch3_512_00', 6, 1000, 'res101UNetsmp', 6e-4,
+        Train_breast('prescseres101AGUnet_cls_seg_ch3_256_00', 6, 1000, 'res101UNetsmp', 6e-4,
                      Use_pretrained=True,
                      _have_segtask=True,
                      _only_segtask=False,
                      is_continue_train=False,
                      use_clip=False,
                      channel=3,
-                     size=512,
+                     size=256,
                      decayepoch=990)
     testp.append(test_precision)
     testr.append(test_recall)
