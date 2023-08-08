@@ -233,7 +233,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
         elif modelname == 'resnet152':
             model = resnet152(class_num)
         elif modelname == 'ViT':
-            model = ViT_model(256, 32, 3)  # 256是输入图片的大小，32是patch的大小，3是类别数
+            model = ViT_model(224, 16, 1)  # 256是输入图片的大小，32是patch的大小，3是类别数
     return model
 
 
