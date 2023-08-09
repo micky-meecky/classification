@@ -13,7 +13,7 @@ from mymodels.unetr import UNETR, UNETRcls, UNETRseg, UNETRclsz12, UNETRclstoken
 from mymodels.Unet import UNet, UNetcls, UNetseg, Res101UNet, AgUNet, AgUNetseg
 from mymodels.testsmp import UNet as ResUnet
 from mymodels.ViT import ViT_model
-from mymodels.swinViT import SwinTransformer, swin_base_patch4_window7_224
+from mymodels.swinViT import SwinTransformer, swin_base_patch4_window7_224, Swinseg
 import os
 from torch.optim import lr_scheduler
 from torch.optim.lr_scheduler import _LRScheduler
@@ -210,6 +210,8 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
             model = UNETRclstoken()
         elif modelname == 'swin-vit':
             model = swin_base_patch4_window7_224(num_classes=1)
+        elif modelname == 'swin_vit_segc':
+            model = Swinseg()
         elif modelname == 'unet':
             if _only_segtask:
                 model = UNetseg(channel, 1)

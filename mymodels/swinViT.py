@@ -5,6 +5,7 @@ A PyTorch impl of : `Swin Transformer: Hierarchical Vision Transformer using Shi
 Code/weights from https://github.com/microsoft/Swin-Transformer
 
 """
+import os
 
 import torch
 import torch.nn as nn
@@ -12,6 +13,7 @@ import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
 import numpy as np
 from typing import Optional
+from collections import OrderedDict
 
 
 def drop_path_f(x, drop_prob: float = 0., training: bool = False):
@@ -512,7 +514,6 @@ class SwinTransformer(nn.Module):
             patch_size=patch_size, in_c=in_chans, embed_dim=embed_dim,
             norm_layer=norm_layer if self.patch_norm else None)
         self.pos_drop = nn.Dropout(p=drop_rate)
-        self.seg_feature = []
         self.task = task
 
         # stochastic depth，生成针对每个block所采用的的drop_path_rate。
@@ -555,27 +556,92 @@ class SwinTransformer(nn.Module):
             nn.init.constant_(m.weight, 1.0)
 
     def forward(self, x):
+        seg_feature = []
         # x: [B, L, C]
         x, H, W = self.patch_embed(x)
         x = self.pos_drop(x)
 
         for layer in self.layers:
             x, H, W = layer(x, H, W)
-            self.seg_feature.append(x)  # 保存每个stage的输出特征矩阵
+            seg_feature.append(x)  # 保存每个stage的输出特征矩阵
 
         x = self.norm(x)  # [B, L, C]
         x = self.avgpool(x.transpose(1, 2))  # [B, C, 1]
         x = torch.flatten(x, 1)
         x = self.head(x)
         if self.task == 'seg':
-            return x, self.seg_feature
+            return x, seg_feature
         elif self.task == 'cls':
             # 释放seg_feature的内存，不然会导致随着训练的进行，内存越来越大。
             # 但是不能用del，我只需要清空这个列表，而不是删除这个列表。
-            self.seg_feature.clear()
+            seg_feature.clear()
             return x
         else:
             raise x
+
+
+class UpSampleBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, skip_channels=0):
+        super(UpSampleBlock, self).__init__()
+        self.up = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=4, stride=2, padding=1)
+        self.conv = nn.Conv2d(out_channels + skip_channels, out_channels, kernel_size=3, padding=1)
+        self.bn = nn.BatchNorm2d(out_channels)
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, x, skip=None):
+        x = self.up(x)
+        if skip is not None:
+            x = torch.cat([x, skip], dim=1)
+        x = self.conv(x)
+        x = self.bn(x)
+        return self.relu(x)
+
+
+class UNetDecoder(nn.Module):
+    def __init__(self):
+        super(UNetDecoder, self).__init__()
+
+        self.merge_conv = nn.Conv2d(1024 * 2, 1024, kernel_size=1)
+
+        # Corresponding to layer3 output
+        self.up1 = UpSampleBlock(1024, 512, skip_channels=512)
+
+        # Corresponding to layer2 output
+        self.up2 = UpSampleBlock(512, 256, skip_channels=256)
+
+        # Corresponding to layer1 output
+        self.up3 = UpSampleBlock(256, 128)
+
+        # upsample to match original input size
+        self.up4 = UpSampleBlock(128, 64)
+
+        # upsample to match original input size
+        self.up5 = UpSampleBlock(64, 32)
+
+        # Segmentation head
+        self.segmentation_head = nn.Sequential(
+            nn.Conv2d(32, 1, kernel_size=1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, features):
+        # 获取bs
+        bs = features[0].shape[0]
+
+        # Assuming features is a list [layer1, layer2, layer3, layer4]
+        features[3] = features[3].reshape(bs, 1024, 7, 7)
+        features[2] = features[2].reshape(bs, 1024, 7, 7)
+        features[1] = features[1].reshape(bs, 512, 14, 14)
+        features[0] = features[0].reshape(bs, 256, 28, 28)
+        features[2] = torch.cat([features[2], features[3]], dim=1)  # concatenate along channel dimension
+        features[2] = self.merge_conv(features[2])  # reduce the channel dimensions
+        x = self.up1(features[2], features[1])  # Use layer3 output and skip from layer2
+        x = self.up2(x, features[0])            # Use the result and skip from layer1
+        x = self.up3(x)            # Use the result
+        x = self.up4(x)
+        x = self.up5(x)
+        segout = self.segmentation_head(x)
+        return segout
 
 
 def swin_tiny_patch4_window7_224(num_classes: int = 1000, **kwargs):
@@ -591,6 +657,18 @@ def swin_tiny_patch4_window7_224(num_classes: int = 1000, **kwargs):
                             task='seg',
                             **kwargs)
     return model
+
+
+class Swinseg(nn.Module):
+    def __init__(self):
+        super(Swinseg, self).__init__()
+        self.encoder = swin_base_patch4_window7_224(1)
+        self.decoder = UNetDecoder()
+
+    def forward(self, x):
+        cls, encoder_output = self.encoder(x)
+        seg = self.decoder(encoder_output)
+        return cls, seg
 
 
 def swin_small_patch4_window7_224(num_classes: int = 1000, **kwargs):
@@ -617,7 +695,8 @@ def swin_base_patch4_window7_224(num_classes: int = 1000, **kwargs):
                             depths=(2, 2, 18, 2),
                             num_heads=(4, 8, 16, 32),
                             num_classes=num_classes,
-                            task='cls',
+                            task='seg',
+                            use_checkpoint=False,
                             **kwargs)
     return model
 
@@ -688,15 +767,41 @@ def swin_large_patch4_window12_384_in22k(num_classes: int = 21841, **kwargs):
                             depths=(2, 2, 18, 2),
                             num_heads=(6, 12, 24, 48),
                             num_classes=num_classes,
+                            use_checkpoint=True,
                             **kwargs)
     return model
 
 
 if __name__ == '__main__':
-    model = swin_base_patch4_window7_224()
+    model = Swinseg()
+    # model_path = os.path.join(os.path.expanduser("~"), ".cache/torch/hub/checkpoints/swin_tiny_patch4_window7_224.pth")
+    # pretrained_weights = torch.load(model_path, map_location=torch.device('cpu'))
+    # pretrained_weights = pretrained_weights['model']
+    # new_state_dict = OrderedDict()
+    # for k, v in pretrained_weights.items():
+    #     if k in model.encoder.state_dict() and model.encoder.state_dict()[k].shape == v.shape:
+    #         new_state_dict[k] = v
+    # model.encoder.load_state_dict(new_state_dict, strict=False)
     print(model)
-    x = torch.randn(5, 3, 224, 224)
-    y, yseg = model(x)
-    print(y.shape)
-    print(yseg)
+    loss = nn.CrossEntropyLoss()
+    # Adam
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    for i in range(10):
+        x = torch.randn(5, 3, 224, 224)
+        y, yseg = model(x)
+        print(yseg.shape)
+        print(y.shape)
+        # 创建一个mask，维度为[batch_size, 1, 224, 224]
+        mask = torch.ones(5, 1, 224, 224)
+        l = loss(yseg, mask)
+        print(l)
+        l.backward()
+        optimizer.step()
+
+        print("done")
+
+
+
+
+
 

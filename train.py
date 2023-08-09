@@ -701,9 +701,9 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('swinViT_ocls_ch3_224_00', 6, 1000, 'swin-vit', 1e-3,
+        Train_breast('swinViTseg_seg_cls_ch3_224_00', 6, 1000, 'swin_vit_segc', 1e-3,
                      Use_pretrained=False,
-                     _have_segtask=False,
+                     _have_segtask=True,
                      _only_segtask=False,
                      is_continue_train=False,
                      use_clip=False,
