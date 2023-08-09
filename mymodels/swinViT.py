@@ -570,6 +570,9 @@ class SwinTransformer(nn.Module):
         if self.task == 'seg':
             return x, self.seg_feature
         elif self.task == 'cls':
+            # 释放seg_feature的内存，不然会导致随着训练的进行，内存越来越大。
+            # 但是不能用del，我只需要清空这个列表，而不是删除这个列表。
+            self.seg_feature.clear()
             return x
         else:
             raise x
