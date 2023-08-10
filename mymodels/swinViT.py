@@ -584,17 +584,20 @@ class UpSampleBlock(nn.Module):
     def __init__(self, in_channels, out_channels, skip_channels=0):
         super(UpSampleBlock, self).__init__()
         self.up = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=4, stride=2, padding=1)
-        self.conv = nn.Conv2d(out_channels + skip_channels, out_channels, kernel_size=3, padding=1)
-        self.bn = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU(inplace=True)
+        self.conv1 = nn.Conv2d(out_channels + skip_channels, out_channels, kernel_size=3, padding=1)
+        # self.bn = nn.BatchNorm2d(out_channels)
+        self.relu1 = nn.ReLU(inplace=True)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
+        self.relu2 = nn.ReLU(inplace=True)
 
     def forward(self, x, skip=None):
         x = self.up(x)
         if skip is not None:
             x = torch.cat([x, skip], dim=1)
-        x = self.conv(x)
-        x = self.bn(x)
-        return self.relu(x)
+        x = self.conv1(x)
+        x = self.relu1(x)
+        x = self.conv2(x)
+        return self.relu2(x)
 
 
 class UNetDecoder(nn.Module):
@@ -774,14 +777,14 @@ def swin_large_patch4_window12_384_in22k(num_classes: int = 21841, **kwargs):
 
 if __name__ == '__main__':
     model = Swinseg()
-    # model_path = os.path.join(os.path.expanduser("~"), ".cache/torch/hub/checkpoints/swin_tiny_patch4_window7_224.pth")
-    # pretrained_weights = torch.load(model_path, map_location=torch.device('cpu'))
-    # pretrained_weights = pretrained_weights['model']
-    # new_state_dict = OrderedDict()
-    # for k, v in pretrained_weights.items():
-    #     if k in model.encoder.state_dict() and model.encoder.state_dict()[k].shape == v.shape:
-    #         new_state_dict[k] = v
-    # model.encoder.load_state_dict(new_state_dict, strict=False)
+    model_path = os.path.join(os.path.expanduser("~"), ".cache/torch/hub/checkpoints/swin_tiny_patch4_window7_224.pth")
+    pretrained_weights = torch.load(model_path, map_location=torch.device('cpu'))
+    pretrained_weights = pretrained_weights['model']
+    new_state_dict = OrderedDict()
+    for k, v in pretrained_weights.items():
+        if k in model.encoder.state_dict() and model.encoder.state_dict()[k].shape == v.shape:
+            new_state_dict[k] = v
+    model.encoder.load_state_dict(new_state_dict, strict=False)
     print(model)
     loss = nn.CrossEntropyLoss()
     # Adam
