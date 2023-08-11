@@ -141,7 +141,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
         if modelname == 'preswin_vit_segc':
             model = Swinseg()
             model_path = os.path.join(os.path.expanduser("~"),
-                                      ".cache/torch/hub/checkpoints/swin_tiny_patch4_window7_224.pth")
+                                      ".cache/torch/hub/checkpoints/swin_base_patch4_window7_224.pth")
             pretrained_weights = torch.load(model_path, map_location=torch.device('cpu'))
             pretrained_weights = pretrained_weights['model']
             new_state_dict = OrderedDict()
