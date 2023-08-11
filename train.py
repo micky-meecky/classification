@@ -723,7 +723,7 @@ if __name__ == '__main__':
         print(testacc[i])
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('ViTseg_ocls_ch3_224_00', 6, 1000, 'ViTseg', 1e-3,
+        Train_breast('ViTseg_cls_ch3_224_00', 6, 1000, 'ViTseg', 1e-3,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
