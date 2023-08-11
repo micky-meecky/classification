@@ -701,7 +701,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('swinViTseg_seg_cls_ch3_224_00', 6, 1000, 'preswin_vit_segc', 1e-3,
+        Train_breast('swinViTseg_seg_cls_ch3_224_00', 6, 1000, 'preswin_vit_segc', 6e-4,
                      Use_pretrained=True,
                      _have_segtask=True,
                      _only_segtask=False,
@@ -723,7 +723,7 @@ if __name__ == '__main__':
         print(testacc[i])
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('ViTseg_cls_ch3_224_00', 6, 1000, 'ViTseg', 1e-3,
+        Train_breast('ViTseg_cls_ch3_224_00', 6, 1000, 'ViTseg', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
