@@ -155,7 +155,6 @@ class ViTseg(nn.Module):
         features[2] = self.decoder9(features[2])
         features[1] = self.decoder6(features[1])
         features[0] = self.decoder3(features[0])
-
         seg = self.decoder(features)
         return cls, seg
 
