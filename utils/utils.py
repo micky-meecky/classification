@@ -139,16 +139,34 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
         if modelname == 'res101UNet':
             model = Res101UNet(channel, 1)
         if modelname == 'preswin_vit_segc':
+            # 创建新模型实例
             model = Swinseg()
+
+            # 加载预训练权重
             model_path = os.path.join(os.path.expanduser("~"),
                                       ".cache/torch/hub/checkpoints/swin_base_patch4_window7_224.pth")
             pretrained_weights = torch.load(model_path, map_location=torch.device('cpu'))
             pretrained_weights = pretrained_weights['model']
+
+            # 创建有序字典以保存成功加载的参数
             new_state_dict = OrderedDict()
+
+            # 记录成功加载的键
+            successfully_loaded_keys = []
+
+            # 迭代预训练权重，并检查是否与新模型的编码器匹配
             for k, v in pretrained_weights.items():
                 if k in model.encoder.state_dict() and model.encoder.state_dict()[k].shape == v.shape:
                     new_state_dict[k] = v
+                    successfully_loaded_keys.append(k)
+
+            # 加载成功匹配的参数
             model.encoder.load_state_dict(new_state_dict, strict=False)
+
+            # 冻结成功加载的参数
+            for name, param in model.encoder.named_parameters():
+                if name in successfully_loaded_keys:
+                    param.requires_grad = False
         if modelname.startswith('resnet101'):
             model = models.resnet101(pretrained=True)
             # 替换输出层
@@ -257,7 +275,7 @@ def check_grad(model):
     i = 0
     for name, param in model.named_parameters():
         if not param.requires_grad:
-            print(f'Parameter {name} does not require grad')
+            # print(f'Parameter {name} does not require grad')
             i += 1
 
     print(f'There are {i} / {len(list(model.parameters()))} layers that do not require grad')
