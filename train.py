@@ -701,7 +701,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('swinViTseg_seg_cls_ch3_224_01', 6, 1000, 'preswin_vit_segc', 6e-4,
+        Train_breast('swinViTseg_seg_cls_ch3_224_01', 6, 600, 'preswin_vit_segc', 6e-4,
                      Use_pretrained=True,
                      _have_segtask=True,
                      _only_segtask=False,
@@ -709,7 +709,7 @@ if __name__ == '__main__':
                      use_clip=False,
                      channel=3,
                      size=224,
-                     decayepoch=990)
+                     decayepoch=590)
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)
