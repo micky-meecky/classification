@@ -164,9 +164,9 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
             model.encoder.load_state_dict(new_state_dict, strict=False)
 
             # 冻结成功加载的参数
-            for name, param in model.encoder.named_parameters():
-                if name in successfully_loaded_keys:
-                    param.requires_grad = False
+            # for name, param in model.encoder.named_parameters():
+            #     if name in successfully_loaded_keys:
+            #         param.requires_grad = False
         if modelname.startswith('resnet101'):
             model = models.resnet101(pretrained=True)
             # 替换输出层
