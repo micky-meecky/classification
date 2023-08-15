@@ -712,7 +712,30 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('swinViT_oseg_DDTI_ch1_224_00', 6, 1200, 'preswin_vit_segc', 6e-4,
+        Train_breast('swin_unet_oseg_DDTI_ch1_224_00', 6, 1200, 'swin_unet', 6e-4,
+                     Use_pretrained=False,
+                     _have_segtask=True,
+                     _only_segtask=True,
+                     is_continue_train=False,
+                     use_clip=False,
+                     channel=1,
+                     size=224,
+                     decayepoch=1190,
+                     datasc='DDTI')
+    testp.append(test_precision)
+    testr.append(test_recall)
+    testf1.append(test_f1_score)
+    testacc.append(test_acc)
+
+    for i in range(len(testp)):
+        print('第' + str(i + 1) + '个实验结果：', end=', ')
+        print(testp[i], end=', ')
+        print(testr[i], end=', ')
+        print(testf1[i], end=', ')
+        print(testacc[i])
+
+    test_precision, test_recall, test_f1_score, test_acc = \
+        Train_breast('swinViT_oseg_DDTI_ch3_224_00', 6, 1200, 'preswin_vit_segc', 6e-4,
                      Use_pretrained=True,
                      _have_segtask=True,
                      _only_segtask=True,
@@ -726,6 +749,13 @@ if __name__ == '__main__':
     testr.append(test_recall)
     testf1.append(test_f1_score)
     testacc.append(test_acc)
+
+    for i in range(len(testp)):
+        print('第' + str(i + 1) + '个实验结果：', end=', ')
+        print(testp[i], end=', ')
+        print(testr[i], end=', ')
+        print(testf1[i], end=', ')
+        print(testacc[i])
 
     test_precision, test_recall, test_f1_score, test_acc = \
         Train_breast('swinViT_oseg_BUSI_ch3_224_00', 6, 1200, 'preswin_vit_segc', 6e-4,

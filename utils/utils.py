@@ -13,6 +13,7 @@ from mymodels.unetr import UNETR, UNETRcls, UNETRseg, UNETRclsz12, UNETRclstoken
 from mymodels.Unet import UNet, UNetcls, UNetseg, Res101UNet, AgUNet, AgUNetseg
 from mymodels.testsmp import UNet as ResUnet
 from mymodels.ViT import ViT_model, ViTseg
+from mymodels.swinunet import SwinUnet
 from mymodels.swinViT import SwinTransformer, swin_base_patch4_window7_224, Swinseg
 import os
 from torch.optim import lr_scheduler
@@ -268,6 +269,8 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
             model = ViT_model(512, 16, 1)  # 256是输入图片的大小，32是patch的大小，3是类别数
         elif modelname == 'ViTseg':
             model = ViTseg()
+        elif modelname == 'swin_unet':
+            model = SwinUnet()
     return model
 
 

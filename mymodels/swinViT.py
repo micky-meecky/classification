@@ -587,7 +587,7 @@ class UpSampleBlock(nn.Module):
         super(UpSampleBlock, self).__init__()
         self.up = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=4, stride=2, padding=1)
         self.conv1 = nn.Conv2d(out_channels + skip_channels, out_channels, kernel_size=3, padding=1)
-        # self.bn = nn.BatchNorm2d(out_channels)
+        self.bn = nn.BatchNorm2d(out_channels)
         self.relu1 = nn.ReLU(inplace=True)
         self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
         self.relu2 = nn.ReLU(inplace=True)
@@ -640,9 +640,11 @@ class UNetDecoder(nn.Module):
         features[0] = features[0].reshape(bs, 256, 28, 28)
         features[2] = torch.cat([features[2], features[3]], dim=1)  # concatenate along channel dimension
         features[2] = self.merge_conv(features[2])  # reduce the channel dimensions
+        # features[3] =
+
         x = self.up1(features[2], features[1])  # Use layer3 output and skip from layer2
         x = self.up2(x, features[0])            # Use the result and skip from layer1
-        x = self.up3(x)            # Use the result
+        x = self.up3(x)                         # Use the result
         x = self.up4(x)
         x = self.up5(x)
         segout = self.segmentation_head(x)
@@ -799,7 +801,7 @@ if __name__ == '__main__':
     # Adam
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     for i in range(10):
-        x = torch.randn(5, 1, 224, 224)
+        x = torch.randn(5, 3, 224, 224)
         if oseg:
             yseg = model(x)
             print(yseg.shape)
