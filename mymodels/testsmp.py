@@ -219,6 +219,7 @@ class UNet(nn.Module):
                  classes: int = 1,
                  activation: Optional[Union[str, callable]] = None,
                  aux_params: Optional[dict] = None,
+                 oseg: bool = False,
                  ):
         super(UNet, self).__init__()
         self.encoder = get_encoder(
@@ -247,9 +248,13 @@ class UNet(nn.Module):
             activation=activation,
             kernel_size=3,
         )
-        self.classification_head = ClassificationHead(
-            in_channels=self.encoder.out_channels[-1], classes=1,
-        )
+        self.oseg = oseg
+        if oseg:
+            self.classification_head = None
+        else:
+            self.classification_head = ClassificationHead(
+                in_channels=self.encoder.out_channels[-1], classes=1,
+            )
 
     def forward(self, x):
         """Sequentially pass `x` trough model`s encoder, decoder and heads"""
@@ -261,8 +266,8 @@ class UNet(nn.Module):
         if self.classification_head is not None:
             labels = self.classification_head(features[-1])
             return labels, masks
-
-        return masks
+        else:
+            return masks
 
 
 if __name__ == '__main__':

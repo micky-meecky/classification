@@ -135,7 +135,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
     model = None
     if use_pretrained:
         if modelname == 'res101UNetsmp':
-            model = ResUnet(encoder_name='resnet152', in_channels=channel,)
+            model = ResUnet(encoder_name='resnet101', in_channels=channel,oseg=True)
         if modelname == 'res101UNet':
             model = Res101UNet(channel, 1)
         if modelname == 'preswin_vit_segc':
