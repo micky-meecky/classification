@@ -666,10 +666,10 @@ def swin_tiny_patch4_window7_224(num_classes: int = 1000, **kwargs):
 
 
 class Swinseg(nn.Module):
-    def __init__(self, cls_flag=False, oseg=False):
+    def __init__(self, cls_flag=False, oseg=False, channel=3):
         super(Swinseg, self).__init__()
         self.oseg = oseg
-        self.encoder = swin_base_patch4_window7_224(1, oseg)
+        self.encoder = swin_base_patch4_window7_224(1, channel, oseg)
         self.decoder = UNetDecoder()
 
     def forward(self, x):
@@ -695,10 +695,10 @@ def swin_small_patch4_window7_224(num_classes: int = 1000, **kwargs):
     return model
 
 
-def swin_base_patch4_window7_224(num_classes: int = 1000, oseg=False, **kwargs):
+def swin_base_patch4_window7_224(num_classes: int = 1000, channel=3, oseg=False, **kwargs):
     # trained ImageNet-1K
     # https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_base_patch4_window7_224.pth
-    model = SwinTransformer(in_chans=1,
+    model = SwinTransformer(in_chans=channel,
                             patch_size=4,
                             window_size=7,
                             embed_dim=128,

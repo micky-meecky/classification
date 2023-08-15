@@ -83,7 +83,7 @@ def mnist_loader():
 
 
 def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testbs, num_workers, use_clip,
-               validate_flag=True, channel=3):
+               validate_flag=True, channel=3, datasc='DDTI'):
     augmentation_prob = 0.5
     if validate_flag:
         train, valid, test = get_fold_filelist(csv_file, K=fold_K, fold=fold_idx, validation=True)
@@ -128,8 +128,12 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
         else:
             # filepath_img = './class_out/stage1/p_image'
             # filepath_mask = './class_out/stage1/p_mask'
-            filepath_img = './class_out/2_preprocessed_data/stage1/p_image'
-            filepath_mask = './class_out/2_preprocessed_data/stage1/p_mask'
+            if datasc == 'DDTI':
+                filepath_img = './class_out/2_preprocessed_data/stage1/p_image'
+                filepath_mask = './class_out/2_preprocessed_data/stage1/p_mask'
+            if datasc == 'BUSI':
+                filepath_img = './class_out/stage1/p_image'
+                filepath_mask = './class_out/stage1/p_mask'
             # filepath_contour = './class_out/512/p_contour'
             # filepath_dist = './class_out/512/p_distance_D1'
 
@@ -208,13 +212,16 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
     return train_loader, valid_loader, test_loader
 
 
-def breast_loader(batch_size, testbs, device, validate_flag, use_clip, channel, size):
+def breast_loader(batch_size, testbs, device, validate_flag, use_clip, channel, size, datasc):
     if use_clip:
         csv_path = './class_out/clip_dataset/clip_train.csv'
     else:
         # train_path_m = './train_path/fold/fold'
-        # csv_path = './class_out/train.csv'
-        csv_path = './class_out/2_preprocessed_data/train.csv'
+        if datasc == 'DDTI':
+            csv_path = './class_out/2_preprocessed_data/train.csv'
+        if datasc == 'BUSI':
+            csv_path = './class_out/train.csv'
+
     fold_k = 5
     fold_idx = 1
     # fold_id = 1
@@ -229,13 +236,13 @@ def breast_loader(batch_size, testbs, device, validate_flag, use_clip, channel, 
                                                          num_workers,
                                                          use_clip,
                                                          validate_flag,
-                                                         channel)
+                                                         channel, datasc)
     return train_loader, valid_loader, test_loader
 
 
 def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segtask, _only_segtask,
                  is_continue_train,
-                 use_clip, channel, size, decayepoch,
+                 use_clip, channel, size, decayepoch, datasc
                  ):
     project = Project  # project name-----------------------------------------------------
     epoch_num = epoch  # epoch_num -----------------------------------------------------
@@ -283,7 +290,8 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
 
     print(getModelSize(model))
     print('project: ', project)
-    train_loader, valid_loader, test_loader = breast_loader(bs, testbs, device, validate_flag, use_clip, channel, size)
+    train_loader, valid_loader, test_loader = breast_loader(bs, testbs, device, validate_flag,
+                                                            use_clip, channel, size, datasc)
     # train_loader, test_loader = OpenDataSet.SelectDataSet('Cifar_10', bs)
     if is_continue_train:
         model_dir = './savemodel/' + project + '/miniloss.pth'
@@ -704,15 +712,16 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('swinViT_oseg_ch3_224_00', 6, 1200, 'preswin_vit_segc', 6e-4,
+        Train_breast('swinViT_oseg_BUSI_ch3_224_00', 6, 1200, 'preswin_vit_segc', 6e-4,
                      Use_pretrained=True,
                      _have_segtask=True,
                      _only_segtask=True,
                      is_continue_train=False,
                      use_clip=False,
-                     channel=1,
+                     channel=3,
                      size=224,
-                     decayepoch=1190)
+                     decayepoch=1190,
+                     datasc='BUSI')
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)
