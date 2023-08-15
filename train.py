@@ -126,8 +126,10 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
             # filepath_contour = './class_out/512/p_contour'
             # filepath_dist = './class_out/512/p_distance_D1'
         else:
-            filepath_img = './class_out/stage1/p_image'
-            filepath_mask = './class_out/stage1/p_mask'
+            # filepath_img = './class_out/stage1/p_image'
+            # filepath_mask = './class_out/stage1/p_mask'
+            filepath_img = './class_out/2_preprocessed_data/stage1/p_image'
+            filepath_mask = './class_out/2_preprocessed_data/stage1/p_mask'
             # filepath_contour = './class_out/512/p_contour'
             # filepath_dist = './class_out/512/p_distance_D1'
 
@@ -211,7 +213,8 @@ def breast_loader(batch_size, testbs, device, validate_flag, use_clip, channel, 
         csv_path = './class_out/clip_dataset/clip_train.csv'
     else:
         # train_path_m = './train_path/fold/fold'
-        csv_path = './class_out/train.csv'
+        # csv_path = './class_out/train.csv'
+        csv_path = './class_out/2_preprocessed_data/train.csv'
     fold_k = 5
     fold_idx = 1
     # fold_id = 1
@@ -701,15 +704,15 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('swinViTseg_seg_cls_ch3_224_02', 20, 1600, 'preswin_vit_segc', 6e-4,
+        Train_breast('swinViT_oseg_ch3_224_00', 5, 1200, 'preswin_vit_segc', 6e-4,
                      Use_pretrained=True,
                      _have_segtask=True,
-                     _only_segtask=False,
+                     _only_segtask=True,
                      is_continue_train=False,
                      use_clip=False,
-                     channel=3,
+                     channel=1,
                      size=224,
-                     decayepoch=1590)
+                     decayepoch=1190)
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)

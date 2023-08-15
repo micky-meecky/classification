@@ -498,7 +498,7 @@ class SwinTransformer(nn.Module):
                  window_size=7, mlp_ratio=4., qkv_bias=True,
                  drop_rate=0., attn_drop_rate=0., drop_path_rate=0.1,
                  norm_layer=nn.LayerNorm, patch_norm=True,
-                 use_checkpoint=False, task='cls', **kwargs):
+                 use_checkpoint=False, task='cls', oseg=False, **kwargs):
         super().__init__()
 
         self.num_classes = num_classes
@@ -542,8 +542,10 @@ class SwinTransformer(nn.Module):
 
         self.norm = norm_layer(self.num_features)
         self.avgpool = nn.AdaptiveAvgPool1d(1)
-        self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()
-
+        if oseg:
+            self.head = nn.Identity()
+        else:
+            self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()
         self.apply(self._init_weights)
 
     def _init_weights(self, m):
@@ -658,20 +660,25 @@ def swin_tiny_patch4_window7_224(num_classes: int = 1000, **kwargs):
                             num_heads=(3, 6, 12, 24),
                             num_classes=num_classes,
                             task='seg',
+                            oseg=True,
                             **kwargs)
     return model
 
 
 class Swinseg(nn.Module):
-    def __init__(self):
+    def __init__(self, cls_flag=False, oseg=False):
         super(Swinseg, self).__init__()
-        self.encoder = swin_base_patch4_window7_224(1)
+        self.oseg = oseg
+        self.encoder = swin_base_patch4_window7_224(1, oseg)
         self.decoder = UNetDecoder()
 
     def forward(self, x):
         cls, encoder_output = self.encoder(x)
         seg = self.decoder(encoder_output)
-        return cls, seg
+        if self.oseg:
+            return seg
+        else:
+            return cls, seg
 
 
 def swin_small_patch4_window7_224(num_classes: int = 1000, **kwargs):
@@ -688,10 +695,10 @@ def swin_small_patch4_window7_224(num_classes: int = 1000, **kwargs):
     return model
 
 
-def swin_base_patch4_window7_224(num_classes: int = 1000, **kwargs):
+def swin_base_patch4_window7_224(num_classes: int = 1000, oseg=False, **kwargs):
     # trained ImageNet-1K
     # https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_base_patch4_window7_224.pth
-    model = SwinTransformer(in_chans=3,
+    model = SwinTransformer(in_chans=1,
                             patch_size=4,
                             window_size=7,
                             embed_dim=128,
@@ -700,6 +707,7 @@ def swin_base_patch4_window7_224(num_classes: int = 1000, **kwargs):
                             num_classes=num_classes,
                             task='seg',
                             use_checkpoint=False,
+                            oseg=oseg,
                             **kwargs)
     return model
 
@@ -776,7 +784,8 @@ def swin_large_patch4_window12_384_in22k(num_classes: int = 21841, **kwargs):
 
 
 if __name__ == '__main__':
-    model = Swinseg()
+    oseg = True
+    model = Swinseg(oseg=oseg)
     model_path = os.path.join(os.path.expanduser("~"), ".cache/torch/hub/checkpoints/swin_tiny_patch4_window7_224.pth")
     pretrained_weights = torch.load(model_path, map_location=torch.device('cpu'))
     pretrained_weights = pretrained_weights['model']
@@ -790,10 +799,14 @@ if __name__ == '__main__':
     # Adam
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     for i in range(10):
-        x = torch.randn(5, 3, 224, 224)
-        y, yseg = model(x)
-        print(yseg.shape)
-        print(y.shape)
+        x = torch.randn(5, 1, 224, 224)
+        if oseg:
+            yseg = model(x)
+            print(yseg.shape)
+        else:
+            y, yseg = model(x)
+            print(yseg.shape)
+            print(y.shape)
         # 创建一个mask，维度为[batch_size, 1, 224, 224]
         mask = torch.ones(5, 1, 224, 224)
         l = loss(yseg, mask)

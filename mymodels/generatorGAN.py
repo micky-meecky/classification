@@ -281,6 +281,7 @@ class UNet(nn.Module):
 
 if __name__ == '__main__':
     model = UNet(3, 3)
-    x = torch.randn(10, 3, 256, 256)
+    x = torch.randn(5, 3, 256, 256)
     y = model(x)
     print(y.shape)
+

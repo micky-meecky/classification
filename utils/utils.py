@@ -140,7 +140,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
             model = Res101UNet(channel, 1)
         if modelname == 'preswin_vit_segc':
             # 创建新模型实例
-            model = Swinseg()
+            model = Swinseg(oseg=True)
 
             # 加载预训练权重
             model_path = os.path.join(os.path.expanduser("~"),

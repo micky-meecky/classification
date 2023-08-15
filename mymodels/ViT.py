@@ -110,7 +110,7 @@ class Deconv2DBlock(nn.Module):
             SingleDeconv2DBlock(in_planes, out_planes),
             # SingleConv2DBlock(out_planes, out_planes, kernel_size),
             nn.Conv2d(out_planes, out_planes, kernel_size=kernel_size, stride=1, padding=((kernel_size - 1) // 2)),
-            nn.BatchNorm2d(out_planes),
+            # nn.BatchNorm2d(out_planes),
             nn.ReLU(True)
         )
 
@@ -134,8 +134,7 @@ class ViTseg(nn.Module):
                                       nn.Conv2d(512, 1024, kernel_size=3, padding=1),
                                       nn.MaxPool2d(2),
                                       # pooling layer
-                                        nn.BatchNorm2d(1024),
-                                        nn.ReLU(inplace=True),
+
                                       )
         self.decoder9 = Deconv2DBlock(self.embed_dim, 512)
         self.decoder6 = nn.Sequential(Deconv2DBlock(self.embed_dim, 512), Deconv2DBlock(512, 256), )
