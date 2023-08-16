@@ -547,7 +547,6 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         test_precision, test_recall, test_f1_score, test_acc = \
             test.test('test', test_loader, model, SegImgSavePath, device, class_num, _have_segtask, _only_segtask)
     print('\nFinished Testing\n')
-
     # test(model)
 
     return test_precision, test_recall, test_f1_score, test_acc
@@ -735,7 +734,7 @@ if __name__ == '__main__':
     #     print(testacc[i])
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('MTunet_oseg_DDTI_ch3_224_00', 6, 1200, 'MTunet', 6e-4,
+        Train_breast('MTunet_oseg_DDTI_ch3_224_00', 5, 1200, 'MTunet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=True,
@@ -758,7 +757,7 @@ if __name__ == '__main__':
         print(testacc[i])
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('MTunet_oseg_BUSI_ch3_224_00', 6, 1200, 'MTunet', 6e-4,
+        Train_breast('MTunet_oseg_BUSI_ch3_224_00', 4, 1200, 'MTunet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=True,
