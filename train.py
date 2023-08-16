@@ -734,7 +734,6 @@ if __name__ == '__main__':
     #     print(testf1[i], end=', ')
     #     print(testacc[i])
 
-
     test_precision, test_recall, test_f1_score, test_acc = \
         Train_breast('swinViT_ocls_BUSI_ch3_224_00', 6, 1200, 'preswin_vit_cls', 6e-4,
                      Use_pretrained=True,
