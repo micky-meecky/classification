@@ -702,6 +702,7 @@ class Swincls(nn.Module):
             cls = self.encoder(x)
             return cls
 
+
 def swin_small_patch4_window7_224(num_classes: int = 1000, **kwargs):
     # trained ImageNet-1K
     # https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_small_patch4_window7_224.pth
@@ -747,7 +748,7 @@ def swin_base_patch4_window12_384(num_classes: int = 1000, **kwargs):
     return model
 
 
-def swin_base_patch4_window7_224_in22k(num_classes: int = 21841, **kwargs):
+def swin_base_patch4_window7_224_in22k(num_classes: int = 1, **kwargs):
     # trained ImageNet-22K
     # https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_base_patch4_window7_224_22k.pth
     model = SwinTransformer(in_chans=3,
@@ -804,7 +805,7 @@ def swin_large_patch4_window12_384_in22k(num_classes: int = 21841, **kwargs):
     return model
 
 
-if __name__ == '__main__':
+def test_1():
     oseg = False
     task = 'cls'
     model = Swincls(oseg=oseg, task=task)
@@ -846,6 +847,24 @@ if __name__ == '__main__':
                 optimizer.step()
 
         print("done")
+
+
+def test_2():
+    model = swin_base_patch4_window7_224_in22k()
+    x = torch.randn(5, 3, 224, 224)
+
+    y = model(x)
+
+    print(y.shape)
+
+    print("done")
+
+
+if __name__ == '__main__':
+
+    # test_1()
+    test_2()
+
 
 
 

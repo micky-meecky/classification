@@ -13,7 +13,7 @@ class ViT_model(nn.Module):
             patch_size=patch_size,
             num_classes=num_classes,
             dim=768,
-            depth=12,
+            depth=16,
             heads=12,
             mlp_dim=2048,
             dropout=0.1,
@@ -158,14 +158,37 @@ class ViTseg(nn.Module):
         return cls, seg
 
 
+class ViTcls(nn.Module):
+    def __init__(self):
+        super(ViTcls, self).__init__()
+        self.encoder = ViT_model(image_size=224,
+                                 patch_size=16,
+                                 num_classes=1)
+
+    def forward(self, x):
+        cls, encoder_output = self.encoder(x)
+
+        return cls
+
+
 if __name__ == "__main__":
-    img = torch.randn(3, 3, 224, 224)
+    img = torch.randn(6, 3, 224, 224)
 
-    model = ViTseg()
+    model = ViTcls()
 
-    preds, seg = model(img)  # (1, 1000)
+    preds = model(img)  # (1, 1000)
 
     print(preds.shape)
-    print(seg.shape)
-    # 输出类别
-    print(torch.argmax(preds))
+    # 输出经过激活函数后的结果，用sigmoid函数
+    preds = torch.sigmoid(preds)
+    print(preds)
+    # 输出二分类的预测标签
+    preds = torch.where(preds > 0.5, torch.ones_like(preds), torch.zeros_like(preds))
+    print(preds)
+
+
+
+
+
+
+
