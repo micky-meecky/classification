@@ -6,6 +6,7 @@ Code/weights from https://github.com/microsoft/Swin-Transformer
 
 """
 import os
+import random
 
 import torch
 import torch.nn as nn
@@ -683,6 +684,24 @@ class Swinseg(nn.Module):
             return cls, seg
 
 
+class Swincls(nn.Module):
+    def __init__(self, cls_flag=False, oseg=False, task='seg', channel=3):
+        super(Swincls, self).__init__()
+        self.encoder = swin_base_patch4_window7_224(1, channel, oseg, task)
+        self.task = task
+
+    def forward(self, x):
+        if self.task == 'seg':
+            cls, encoder_output = self.encoder(x)
+            seg = self.decoder(encoder_output)
+            if self.oseg:
+                return seg
+            else:
+                return cls, seg
+        else:
+            cls = self.encoder(x)
+            return cls
+
 def swin_small_patch4_window7_224(num_classes: int = 1000, **kwargs):
     # trained ImageNet-1K
     # https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_small_patch4_window7_224.pth
@@ -697,7 +716,7 @@ def swin_small_patch4_window7_224(num_classes: int = 1000, **kwargs):
     return model
 
 
-def swin_base_patch4_window7_224(num_classes: int = 1000, channel=3, oseg=False, **kwargs):
+def swin_base_patch4_window7_224(num_classes: int = 1000, channel=3, oseg=False, task='seg', **kwargs):
     # trained ImageNet-1K
     # https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_base_patch4_window7_224.pth
     model = SwinTransformer(in_chans=channel,
@@ -707,7 +726,7 @@ def swin_base_patch4_window7_224(num_classes: int = 1000, channel=3, oseg=False,
                             depths=(2, 2, 18, 2),
                             num_heads=(4, 8, 16, 32),
                             num_classes=num_classes,
-                            task='seg',
+                            task=task,
                             use_checkpoint=False,
                             oseg=oseg,
                             **kwargs)
@@ -786,8 +805,9 @@ def swin_large_patch4_window12_384_in22k(num_classes: int = 21841, **kwargs):
 
 
 if __name__ == '__main__':
-    oseg = True
-    model = Swinseg(oseg=oseg)
+    oseg = False
+    task = 'cls'
+    model = Swincls(oseg=oseg, task=task)
     model_path = os.path.join(os.path.expanduser("~"), ".cache/torch/hub/checkpoints/swin_tiny_patch4_window7_224.pth")
     pretrained_weights = torch.load(model_path, map_location=torch.device('cpu'))
     pretrained_weights = pretrained_weights['model']
@@ -798,6 +818,7 @@ if __name__ == '__main__':
     model.encoder.load_state_dict(new_state_dict, strict=False)
     print(model)
     loss = nn.CrossEntropyLoss()
+    clsloss = nn.BCEWithLogitsLoss()
     # Adam
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     for i in range(10):
@@ -806,15 +827,23 @@ if __name__ == '__main__':
             yseg = model(x)
             print(yseg.shape)
         else:
-            y, yseg = model(x)
-            print(yseg.shape)
-            print(y.shape)
-        # 创建一个mask，维度为[batch_size, 1, 224, 224]
-        mask = torch.ones(5, 1, 224, 224)
-        l = loss(yseg, mask)
-        print(l)
-        l.backward()
-        optimizer.step()
+            if task == 'cls':
+                ycls = model(x)
+                print(ycls.shape)
+                # 生成五个0-1的随机浮点数label
+                label = torch.tensor([[random.random()] for _ in range(5)], dtype=torch.float32)
+                l = clsloss(ycls, label)
+                optimizer.step()
+            else:
+                y, yseg = model(x)
+                print(yseg.shape)
+                print(y.shape)
+                # 创建一个mask，维度为[batch_size, 1, 224, 224]
+                mask = torch.ones(5, 1, 224, 224)
+                l = loss(yseg, mask)
+                print(l)
+                l.backward()
+                optimizer.step()
 
         print("done")
 

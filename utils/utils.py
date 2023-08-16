@@ -15,7 +15,7 @@ from mymodels.testsmp import UNet as ResUnet
 from mymodels.ViT import ViT_model, ViTseg
 from mymodels.swinunet import SwinUnet
 from mymodels.MTunet import MTUNet
-from mymodels.swinViT import SwinTransformer, swin_base_patch4_window7_224, Swinseg
+from mymodels.swinViT import SwinTransformer, swin_base_patch4_window7_224, Swinseg, Swincls
 import os
 from torch.optim import lr_scheduler
 from torch.optim.lr_scheduler import _LRScheduler
@@ -143,6 +143,35 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
         if modelname == 'preswin_vit_segc':
             # 创建新模型实例
             model = Swinseg(oseg=True, channel=channel)
+
+            # 加载预训练权重
+            model_path = os.path.join(os.path.expanduser("~"),
+                                      ".cache/torch/hub/checkpoints/swin_base_patch4_window7_224.pth")
+            pretrained_weights = torch.load(model_path, map_location=torch.device('cpu'))
+            pretrained_weights = pretrained_weights['model']
+
+            # 创建有序字典以保存成功加载的参数
+            new_state_dict = OrderedDict()
+
+            # 记录成功加载的键
+            successfully_loaded_keys = []
+
+            # 迭代预训练权重，并检查是否与新模型的编码器匹配
+            for k, v in pretrained_weights.items():
+                if k in model.encoder.state_dict() and model.encoder.state_dict()[k].shape == v.shape:
+                    new_state_dict[k] = v
+                    successfully_loaded_keys.append(k)
+
+            # 加载成功匹配的参数
+            model.encoder.load_state_dict(new_state_dict, strict=False)
+
+            # 冻结成功加载的参数
+            # for name, param in model.encoder.named_parameters():
+            #     if name in successfully_loaded_keys:
+            #         param.requires_grad = False
+        if modelname == 'preswin_vit_cls':
+            # 创建新模型实例
+            model = Swincls(oseg=False, task= 'cls', channel=channel)
 
             # 加载预训练权重
             model_path = os.path.join(os.path.expanduser("~"),
