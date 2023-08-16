@@ -758,7 +758,7 @@ if __name__ == '__main__':
         print(testacc[i])
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('Transunet_ocls_BUSI_ch3_224_00', 6, 300, 'Transunet', 6e-4,
+        Train_breast('Transunet_oseg_BUSI_ch3_224_00', 6, 300, 'Transunet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=True,
