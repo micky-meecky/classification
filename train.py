@@ -741,7 +741,7 @@ if __name__ == '__main__':
                      is_continue_train=False,
                      use_clip=False,
                      channel=3,
-                     size=512,
+                     size=256,
                      decayepoch=790,
                      datasc='BUSI')
     testp.append(test_precision)
