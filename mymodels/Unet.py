@@ -202,18 +202,18 @@ class Encoder(nn.Module):
 
 
 class UNetseg(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=False):
+    def __init__(self, n_channels, n_classes, method='maxpool', bilinear=False):
         super(UNetseg, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear    # bilinear表示是否使用双线性插值
 
         self.inc = (DoubleConv(n_channels, 64))
-        self.down1 = (Down(64, 128))
-        self.down2 = (Down(128, 256))
-        self.down3 = (Down(256, 512))
+        self.down1 = (Down(64, 128, method))
+        self.down2 = (Down(128, 256, method))
+        self.down3 = (Down(256, 512, method))
         factor = 2 if bilinear else 1
-        self.down4 = (Down(512, 1024 // factor))
+        self.down4 = (Down(512, 1024 // factor, method))
         # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
         self.up1 = (Up(1024, 512 // factor, bilinear))
         self.up2 = (Up(512, 256 // factor, bilinear))
@@ -245,18 +245,18 @@ class UNetseg(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=False):
+    def __init__(self, n_channels, n_classes, method='maxpool', bilinear=False):
         super(UNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear    # bilinear表示是否使用双线性插值
 
         self.inc = (DoubleConv(n_channels, 64))
-        self.down1 = (Down(64, 128))
-        self.down2 = (Down(128, 256))
-        self.down3 = (Down(256, 512))
+        self.down1 = (Down(64, 128, method))
+        self.down2 = (Down(128, 256, method))
+        self.down3 = (Down(256, 512, method))
         factor = 2 if bilinear else 1
-        self.down4 = (Down(512, 1024 // factor))
+        self.down4 = (Down(512, 1024 // factor, method))
         # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
         self.up1 = (Up(1024, 512 // factor, bilinear))
         self.up2 = (Up(512, 256 // factor, bilinear))
@@ -298,18 +298,18 @@ class UNet(nn.Module):
 
 
 class AgUNet(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=False):
+    def __init__(self, n_channels, n_classes, method='maxpool', bilinear=False):
         super(AgUNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear    # bilinear表示是否使用双线性插值
 
         self.inc = (DoubleConv(n_channels, 64))
-        self.down1 = (Down(64, 128))
-        self.down2 = (Down(128, 256))
-        self.down3 = (Down(256, 512))
+        self.down1 = (Down(64, 128, method))
+        self.down2 = (Down(128, 256, method))
+        self.down3 = (Down(256, 512, method))
         factor = 2 if bilinear else 1
-        self.down4 = (Down(512, 1024 // factor))
+        self.down4 = (Down(512, 1024 // factor, method))
         # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
         self.up1 = (AGUp(1024, 512 // factor, bilinear))
         self.up2 = (AGUp(512, 256 // factor, bilinear))
@@ -351,18 +351,18 @@ class AgUNet(nn.Module):
 
 
 class AgUNetseg(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=False):
+    def __init__(self, n_channels, n_classes, method='maxpool', bilinear=False):
         super(AgUNetseg, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear    # bilinear表示是否使用双线性插值
 
         self.inc = (DoubleConv(n_channels, 64))
-        self.down1 = (Down(64, 128))
-        self.down2 = (Down(128, 256))
-        self.down3 = (Down(256, 512))
+        self.down1 = (Down(64, 128, method))
+        self.down2 = (Down(128, 256, method))
+        self.down3 = (Down(256, 512, method))
         factor = 2 if bilinear else 1
-        self.down4 = (Down(512, 1024 // factor))
+        self.down4 = (Down(512, 1024 // factor, method))
         # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
         self.up1 = (AGUp(1024, 512 // factor, bilinear))
         self.up2 = (AGUp(512, 256 // factor, bilinear))
@@ -398,18 +398,18 @@ class AgUNetseg(nn.Module):
 
 
 class UNetcls(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=False):
+    def __init__(self, n_channels, n_classes, method='maxpool', bilinear=False):
         super(UNetcls, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear    # bilinear表示是否使用双线性插值
 
         self.inc = (DoubleConv(n_channels, 64))
-        self.down1 = (Down(64, 128))
-        self.down2 = (Down(128, 256))
-        self.down3 = (Down(256, 512))
+        self.down1 = (Down(64, 128, method))
+        self.down2 = (Down(128, 256, method))
+        self.down3 = (Down(256, 512, method))
         factor = 2 if bilinear else 1
-        self.down4 = (Down(512, 1024 // factor))
+        self.down4 = (Down(512, 1024 // factor, method))
         # classification head
         self.linear = nn.Linear(1024, 1)
 
@@ -495,7 +495,8 @@ class Res101UNet(nn.Module):
 
 
 if __name__ == '__main__':
-    model = Res101UNet(3, 1)
+    method = 'convpool'
+    model = AgUNet(3, 1, method)
     # model = UNet(3, 1)
     model.eval()
     input = torch.randn(10, 3, 256, 256)

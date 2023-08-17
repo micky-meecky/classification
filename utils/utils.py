@@ -284,6 +284,16 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
                     model = UNet(channel, 1)
                 else:
                     model = UNetcls(channel, 1)
+        elif modelname == 'convunet':
+            if _only_segtask:
+                model = UNetseg(channel, 1, 'convpool')
+            else:
+                if _have_segtask:
+                    model = UNet(channel, 1, 'convpool')
+                else:
+                    model = UNetcls(channel, 1, 'convpool')
+
+
         elif modelname == 'agunet':
             model = AgUNet(channel, 1)
         elif modelname == 'agunetseg':
