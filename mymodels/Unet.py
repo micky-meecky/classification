@@ -29,6 +29,75 @@ class DoubleConv(nn.Module):
         return self.double_conv(x)
 
 
+class ResidualBlock(nn.Module):
+    def __init__(self, input_channels, output_channels, stride=1):
+        super(ResidualBlock, self).__init__()
+        assert output_channels % 4 == 0, "Output channels must be divisible by 4"
+        self.input_channels = input_channels
+        self.output_channels = output_channels
+        self.stride = stride
+        self.bn1 = nn.BatchNorm2d(input_channels)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv1 = nn.Conv2d(input_channels, output_channels // 4, 1, 1, bias=False)
+        self.bn2 = nn.BatchNorm2d(output_channels // 4)
+        self.conv2 = nn.Conv2d(output_channels // 4, output_channels // 4, 3, stride, padding=1, bias=False)
+        self.bn3 = nn.BatchNorm2d(output_channels // 4)
+        self.conv3 = nn.Conv2d(output_channels // 4, output_channels, 1, 1, bias=False)
+        self.conv4 = nn.Conv2d(input_channels, output_channels, 1, stride, bias=False)
+
+    def forward(self, x):
+        residual = x
+        out = self.bn1(x)
+        out1 = self.relu(out)
+        out = self.conv1(out1)
+        out = self.bn2(out)
+        out = self.relu(out)
+        out = self.conv2(out)
+        out = self.bn3(out)
+        out = self.relu(out)
+        out = self.conv3(out)
+        if self.input_channels != self.output_channels or self.stride != 1:
+            residual = self.conv4(residual)
+        out += residual
+        return out
+
+
+class ResidualDown(nn.Module):
+    """Downscaling with maxpool then double conv"""
+    def __init__(self, in_channels, out_channels, poolmethod='maxpool', num_res_blocks=1):
+        super().__init__()
+        self.poolmethod = poolmethod
+        res_blocks = [ResidualBlock(out_channels if i == 0 else out_channels, out_channels)
+                      for i in range(num_res_blocks)]
+        if poolmethod == 'maxpool':
+            # 方法一：
+            self.maxpool_conv = nn.Sequential(
+                nn.MaxPool2d(2),
+                nn.Conv2d(in_channels, in_channels, kernel_size=1),
+                nn.BatchNorm2d(in_channels),
+                nn.SiLU(inplace=True),
+                *res_blocks,
+                nn.Dropout(0.1)
+            )
+        elif poolmethod == 'convpool':
+            # 方法二：
+            self.convpool_conv = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1),
+                nn.BatchNorm2d(out_channels),
+                nn.SiLU(inplace=True),
+                *res_blocks,
+                nn.Dropout(0.1)
+            )
+
+        self.dropout = nn.Dropout(0.1)
+
+    def forward(self, x):
+        if self.poolmethod == 'maxpool':
+            return self.maxpool_conv(x)
+        else:
+            return self.convpool_conv(x)
+
+
 class Down(nn.Module):
     """Downscaling with maxpool then double conv"""
 
@@ -297,6 +366,59 @@ class UNet(nn.Module):
         return label, logits
 
 
+class ResUNet(nn.Module):
+    def __init__(self, n_channels, n_classes, method='maxpool', bilinear=False):
+        super(ResUNet, self).__init__()
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.bilinear = bilinear    # bilinear表示是否使用双线性插值
+        self.num_res_blocks = [1, 3, 6, 12]
+        self.inc = (DoubleConv(n_channels, 64))
+        self.down1 = (ResidualDown(64, 128, method, self.num_res_blocks[0]))
+        self.down2 = (ResidualDown(128, 256, method, self.num_res_blocks[1]))
+        self.down3 = (ResidualDown(256, 512, method, self.num_res_blocks[2]))
+        factor = 2 if bilinear else 1
+        self.down4 = (ResidualDown(512, 1024 // factor, method, self.num_res_blocks[3]))
+        # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
+        self.up1 = (Up(1024, 512 // factor, bilinear))
+        self.up2 = (Up(512, 256 // factor, bilinear))
+        self.up3 = (Up(256, 128 // factor, bilinear))
+        self.up4 = (Up(128, 64, bilinear))
+        self.outc = (OutConv(64, n_classes))
+        self.activation = nn.Sigmoid()
+
+        # classification head
+        self.linear = nn.Linear(1024, 1)
+
+    def forward(self, x):
+        # encoder
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x4 = self.down3(x3)
+        x5 = self.down4(x4)
+
+        # decoder
+        # decoder with attention gates
+        x = self.up1(x5, x4)
+
+        x = self.up2(x, x3)
+
+        x = self.up3(x, x2)
+
+        x = self.up4(x, x1)
+
+        # segmentation head
+        logits = self.outc(x)
+        # logits = self.activation(logits)
+
+        # classification head
+        clsx = F.adaptive_avg_pool2d(x5, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
+        clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
+        label = self.linear(clsx)
+        return label, logits
+
+
 class AgUNet(nn.Module):
     def __init__(self, n_channels, n_classes, method='maxpool', bilinear=False):
         super(AgUNet, self).__init__()
@@ -496,12 +618,12 @@ class Res101UNet(nn.Module):
 
 if __name__ == '__main__':
     method = 'convpool'
-    model = AgUNet(3, 1, method)
+    model = ResUNet(3, 1, method)
     # model = UNet(3, 1)
     model.eval()
     input = torch.randn(10, 3, 256, 256)
     label = torch.randn(10, 3, 256, 256)
-    labels, logits = model(input)
+    labels, logits= model(input)
     print(labels.shape)
     print(logits.shape)
 
