@@ -1,13 +1,76 @@
-""" Full assembly of the parts to form the complete network """
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-""" Parts of the U-Net model """
+"""
+@author: 杨亚峰<yang_armageddon@163.com>
+@version: 1.0.0
+@license:  Apache Licence
+@editor: Pycharm yyf
+@file: CBAMUnet.py
+@datatime: 8/17/2023 3:25 PM
+"""
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
 from segmentation_models_pytorch.encoders import get_encoder
-from mymodels.CBAMUnet import ChannelAttention, SpatialAttention
+from mymodels.generatorGAN import PixelwiseViT as PixViT
+
+
+class ChannelAttention(nn.Module):
+    def __init__(self, in_planes, ratio=16):
+        super(ChannelAttention, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.max_pool = nn.AdaptiveMaxPool2d(1)
+
+        self.fc = nn.Sequential(nn.Conv2d(in_planes, in_planes // 16, 1, bias=False),
+                                nn.ReLU(),
+                                nn.Conv2d(in_planes // 16, in_planes, 1, bias=False))
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        avg_out = self.fc(self.avg_pool(x))
+        max_out = self.fc(self.max_pool(x))
+        out = avg_out + max_out
+        return self.sigmoid(out)
+
+
+class SpatialAttention(nn.Module):
+    def __init__(self, kernel_size=7):
+        super(SpatialAttention, self).__init__()
+
+        self.conv1 = nn.Conv2d(2, 1, kernel_size, padding=kernel_size // 2, bias=False)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        avg_out = torch.mean(x, dim=1, keepdim=True)
+        max_out, _ = torch.max(x, dim=1, keepdim=True)
+        x = torch.cat([avg_out, max_out], dim=1)
+        x = self.conv1(x)
+        return self.sigmoid(x)
+
+
+class DoubleConvWithCBAM(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1):
+        super(DoubleConvWithCBAM, self).__init__()
+        self.double_conv = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
+        self.ca = ChannelAttention(out_channels)
+        self.sa = SpatialAttention()
+
+    def forward(self, x):
+        x = self.double_conv(x)
+        x = self.ca(x) * x
+        x = self.sa(x) * x
+        return x
+
 
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
@@ -27,6 +90,51 @@ class DoubleConv(nn.Module):
 
     def forward(self, x):
         return self.double_conv(x)
+
+
+class DownwithCBAM(nn.Module):
+    """
+    Downscaling with CBAM and maxpool or Conv2d to downsampling then double conv
+    extract feature map for next layer, CBAM is used to another route for skip connection
+    """
+
+    def __init__(self, in_channels, out_channels, method='maxpool'):
+        super().__init__()
+        self.method = method
+        if method == 'maxpool':
+            # 方法一：
+            self.maxpool_conv = nn.Sequential(
+                nn.MaxPool2d(2),
+                nn.Conv2d(in_channels, in_channels, kernel_size=1),
+                nn.BatchNorm2d(in_channels),
+                nn.SiLU(inplace=True),
+                DoubleConv(in_channels, out_channels),
+                nn.Dropout(0.1)
+            )
+        elif method == 'convpool':
+            # 方法二：
+            self.convpool_conv = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1),
+                nn.BatchNorm2d(out_channels),
+                nn.SiLU(inplace=True),
+                DoubleConv(out_channels, out_channels),
+                nn.Dropout(0.1)
+            )
+        self.ca = ChannelAttention(out_channels)
+        self.sa = SpatialAttention()
+
+    def forward(self, x):
+        if self.method == 'maxpool':
+            out = self.maxpool_conv(x)
+            skip_out = self.ca(out) * out
+            skip_out = self.sa(skip_out) * skip_out
+            return out, skip_out
+
+        else:
+            out = self.convpool_conv(x)
+            skip_out = self.ca(out) * out
+            skip_out = self.sa(skip_out) * skip_out
+            return out, skip_out
 
 
 class Down(nn.Module):
@@ -179,137 +287,22 @@ class AttentionGate(nn.Module):
         return x * psi
 
 
-class Encoder(nn.Module):
-    def __init__(self):
-        super(Encoder, self).__init__()
-        resnet = models.resnet101(pretrained=True)
-        self.layer1 = nn.Sequential(resnet.conv1, resnet.bn1, resnet.relu, resnet.maxpool)
-        self.layer2 = resnet.layer1
-        self.layer3 = resnet.layer2
-        self.layer4 = resnet.layer3
-        self.layer5 = resnet.layer4
-        # Add the rest of the U-Net architecture here.
-
-    def forward(self, x):
-        x1 = self.layer1(x)
-        x2 = self.layer2(x1)
-        x3 = self.layer3(x2)
-        x4 = self.layer4(x3)
-        x5 = self.layer5(x4)
-        # Now, x1, x2, x3 and x4 are the output feature maps at different stages in the encoder.
-        # You can use these in your decoder part of the U-Net.
-        return x1, x2, x3, x4, x5
-
-
-class UNetseg(nn.Module):
+class AgCBAMUNet(nn.Module):
     def __init__(self, n_channels, n_classes, bilinear=False):
-        super(UNetseg, self).__init__()
+        super(AgCBAMUNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear    # bilinear表示是否使用双线性插值
 
         self.inc = (DoubleConv(n_channels, 64))
-        self.down1 = (Down(64, 128))
-        self.down2 = (Down(128, 256))
-        self.down3 = (Down(256, 512))
+        self.inca = ChannelAttention(64)
+        self.insa = SpatialAttention()
+        self.down1 = (DownwithCBAM(64, 128, method='maxpool'))
+        self.down2 = (DownwithCBAM(128, 256, method='maxpool'))
+        self.down3 = (DownwithCBAM(256, 512, method='maxpool'))
         factor = 2 if bilinear else 1
-        self.down4 = (Down(512, 1024 // factor))
-        # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
-        self.up1 = (Up(1024, 512 // factor, bilinear))
-        self.up2 = (Up(512, 256 // factor, bilinear))
-        self.up3 = (Up(256, 128 // factor, bilinear))
-        self.up4 = (Up(128, 64, bilinear))
-        self.outc = (OutConv(64, n_classes))
-        self.activation = nn.Sigmoid()
+        self.down4 = (DownwithCBAM(512, 1024 // factor, method='maxpool'))
 
-    def forward(self, x):
-        # encoder
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        x4 = self.down3(x3)
-        x5 = self.down4(x4)
-
-        x = self.up1(x5, x4)
-
-        x = self.up2(x, x3)
-
-        x = self.up3(x, x2)
-
-        x = self.up4(x, x1)
-
-        # segmentation head
-        logits = self.outc(x)
-        # logits = self.activation(logits)
-        return logits
-
-
-class UNet(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=False):
-        super(UNet, self).__init__()
-        self.n_channels = n_channels
-        self.n_classes = n_classes
-        self.bilinear = bilinear    # bilinear表示是否使用双线性插值
-
-        self.inc = (DoubleConv(n_channels, 64))
-        self.down1 = (Down(64, 128))
-        self.down2 = (Down(128, 256))
-        self.down3 = (Down(256, 512))
-        factor = 2 if bilinear else 1
-        self.down4 = (Down(512, 1024 // factor))
-        # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
-        self.up1 = (Up(1024, 512 // factor, bilinear))
-        self.up2 = (Up(512, 256 // factor, bilinear))
-        self.up3 = (Up(256, 128 // factor, bilinear))
-        self.up4 = (Up(128, 64, bilinear))
-        self.outc = (OutConv(64, n_classes))
-        self.activation = nn.Sigmoid()
-
-        # classification head
-        self.linear = nn.Linear(1024, 1)
-
-    def forward(self, x):
-        # encoder
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        x4 = self.down3(x3)
-        x5 = self.down4(x4)
-
-        # decoder
-        # decoder with attention gates
-        x = self.up1(x5, x4)
-
-        x = self.up2(x, x3)
-
-        x = self.up3(x, x2)
-
-        x = self.up4(x, x1)
-
-        # segmentation head
-        logits = self.outc(x)
-        # logits = self.activation(logits)
-
-        # classification head
-        clsx = F.adaptive_avg_pool2d(x5, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
-        clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
-        label = self.linear(clsx)
-        return label, logits
-
-
-class AgUNet(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=False):
-        super(AgUNet, self).__init__()
-        self.n_channels = n_channels
-        self.n_classes = n_classes
-        self.bilinear = bilinear    # bilinear表示是否使用双线性插值
-
-        self.inc = (DoubleConv(n_channels, 64))
-        self.down1 = (Down(64, 128))
-        self.down2 = (Down(128, 256))
-        self.down3 = (Down(256, 512))
-        factor = 2 if bilinear else 1
-        self.down4 = (Down(512, 1024 // factor))
         # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
         self.up1 = (AGUp(1024, 512 // factor, bilinear))
         self.up2 = (AGUp(512, 256 // factor, bilinear))
@@ -324,185 +317,113 @@ class AgUNet(nn.Module):
     def forward(self, x):
         # encoder
         x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        x4 = self.down3(x3)
-        x5 = self.down4(x4)
+        x1_skip = self.inca(x1) * x1
+        x1_skip = self.insa(x1_skip) * x1_skip
+        x2, x2_skip = self.down1(x1)
+        x3, x3_skip = self.down2(x2)
+        x4, x4_skip = self.down3(x3)
+        x5, x5_skip = self.down4(x4)
 
         # decoder
         # decoder with attention gates
-        x = self.up1(x5, x4)
+        x = self.up1(x5_skip, x4_skip)
 
-        x = self.up2(x, x3)
+        x = self.up2(x, x3_skip)
 
-        x = self.up3(x, x2)
+        x = self.up3(x, x2_skip)
 
-        x = self.up4(x, x1)
+        x = self.up4(x, x1_skip)
 
         # segmentation head
         logits = self.outc(x)
         # logits = self.activation(logits)
 
         # classification head
-        clsx = F.adaptive_avg_pool2d(x5, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
+        clsx = F.adaptive_avg_pool2d(x5_skip, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
         clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
         label = self.linear(clsx)
         return label, logits
 
 
-class AgUNetseg(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=False):
-        super(AgUNetseg, self).__init__()
-        self.n_channels = n_channels
-        self.n_classes = n_classes
-        self.bilinear = bilinear    # bilinear表示是否使用双线性插值
-
-        self.inc = (DoubleConv(n_channels, 64))
-        self.down1 = (Down(64, 128))
-        self.down2 = (Down(128, 256))
-        self.down3 = (Down(256, 512))
-        factor = 2 if bilinear else 1
-        self.down4 = (Down(512, 1024 // factor))
-        # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
-        self.up1 = (AGUp(1024, 512 // factor, bilinear))
-        self.up2 = (AGUp(512, 256 // factor, bilinear))
-        self.up3 = (AGUp(256, 128 // factor, bilinear))
-        self.up4 = (AGUp(128, 64, bilinear))
-        self.outc = (OutConv(64, n_classes))
-        self.activation = nn.Sigmoid()
-
-
-    def forward(self, x):
-        # encoder
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        x4 = self.down3(x3)
-        x5 = self.down4(x4)
-
-        # decoder
-        # decoder with attention gates
-        x = self.up1(x5, x4)
-
-        x = self.up2(x, x3)
-
-        x = self.up3(x, x2)
-
-        x = self.up4(x, x1)
-
-        # segmentation head
-        logits = self.outc(x)
-        # logits = self.activation(logits)
-
-        return logits
-
-
-class UNetcls(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=False):
-        super(UNetcls, self).__init__()
-        self.n_channels = n_channels
-        self.n_classes = n_classes
-        self.bilinear = bilinear    # bilinear表示是否使用双线性插值
-
-        self.inc = (DoubleConv(n_channels, 64))
-        self.down1 = (Down(64, 128))
-        self.down2 = (Down(128, 256))
-        self.down3 = (Down(256, 512))
-        factor = 2 if bilinear else 1
-        self.down4 = (Down(512, 1024 // factor))
-        # classification head
-        self.linear = nn.Linear(1024, 1)
-
-    def forward(self, x):
-        # encoder
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        x4 = self.down3(x3)
-        x5 = self.down4(x4)
-
-        # classification head
-        clsx = F.adaptive_avg_pool2d(x5, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
-        clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
-        label = self.linear(clsx)
-        return label
-
-    def use_checkpointing(self):
-        self.inc = torch.utils.checkpoint(self.inc)
-        self.down1 = torch.utils.checkpoint(self.down1)
-        self.down2 = torch.utils.checkpoint(self.down2)
-        self.down3 = torch.utils.checkpoint(self.down3)
-        self.down4 = torch.utils.checkpoint(self.down4)
-        self.up1 = torch.utils.checkpoint(self.up1)
-        self.up2 = torch.utils.checkpoint(self.up2)
-        self.up3 = torch.utils.checkpoint(self.up3)
-        self.up4 = torch.utils.checkpoint(self.up4)
-        self.outc = torch.utils.checkpoint(self.outc)
-
-
-class Res101UNet(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=False):
-        super(Res101UNet, self).__init__()
+class AgCBAMPixViTUNet(nn.Module):
+    def __init__(self, img_size, n_channels, n_classes, bilinear=False):
+        super(AgCBAMPixViTUNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear  # bilinear表示是否使用双线性插值
 
-        self.encoder = Encoder()
+        self.inc = (DoubleConv(n_channels, 64))
+        self.inca = ChannelAttention(64)
+        self.insa = SpatialAttention()
+        self.down1 = (DownwithCBAM(64, 128, method='maxpool'))
+        self.down2 = (DownwithCBAM(128, 256, method='maxpool'))
+        self.down3 = (DownwithCBAM(256, 512, method='maxpool'))
         factor = 2 if bilinear else 1
-        self.up1 = (AGUp(2048, 1024 // factor, bilinear))
-        self.up2 = (AGUp(1024, 512 // factor, bilinear))
-        self.up3 = (AGUp(512, 256 // factor, bilinear))
-        self.up4 = (AGUp(256, 64, bilinear))
+        self.down4 = (Down(512, 1024 // factor, method='maxpool'))
+
+        self.PixViT = PixViT(
+            features=1024, n_heads=8, n_blocks=6, ffn_features=4096,
+            embed_features=1024, activ='gelu', norm=None,
+            image_shape=(1024, img_size // 16, img_size // 16), rezero=True
+        )
+
+        # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
+        self.up1 = (AGUp(1024, 512 // factor, bilinear))
+        self.up2 = (AGUp(512, 256 // factor, bilinear))
+        self.up3 = (AGUp(256, 128 // factor, bilinear))
+        self.up4 = (AGUp(128, 64, bilinear))
         self.outc = (OutConv(64, n_classes))
-        self.up5 = nn.ConvTranspose2d(64, 64, 2, stride=2)  # ConvTranspose2d是为了将特征图的尺寸放大一倍，
-        self.ca5 = ChannelAttention(2048)
-        # 参数分别为输入通道数，输出通道数，卷积核大小，步长，padding
-        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
         self.activation = nn.Sigmoid()
 
         # classification head
-        self.linear = nn.Linear(2048, 1)
+        self.linear = nn.Linear(1024, 1)
 
     def forward(self, x):
         # encoder
-        x1, x2, x3, x4, x5 = self.encoder(x)
-        x5 = self.ca5(x5) * x5
-        # features = self.encoder(x)
-        # features = features[1:]  # remove first skip with same spatial resolution
-        # x1, x2, x3, x4, x5 = features
-
+        x1 = self.inc(x)
+        x1_skip = self.inca(x1) * x1
+        x1_skip = self.insa(x1_skip) * x1_skip
+        x2, x2_skip = self.down1(x1)
+        x3, x3_skip = self.down2(x2)
+        x4, x4_skip = self.down3(x3)
+        x5 = self.down4(x4)
+        x5 = self.PixViT(x5)
+        # decoder
         # decoder with attention gates
-        x = self.up1(x5, x4)
+        x = self.up1(x5, x4_skip)
 
-        x = self.up2(x, x3)
+        x = self.up2(x, x3_skip)
 
-        x = self.up3(x, x2)
+        x = self.up3(x, x2_skip)
 
-        x = self.up4(x, x1)
-        x = self.up5(x)
+        x = self.up4(x, x1_skip)
+
         # segmentation head
-        x = self.outc(x)
+        logits = self.outc(x)
         # logits = self.activation(logits)
 
-        logits = self.upsample(x)
-
-
         # classification head
-        clsx = F.adaptive_avg_pool2d(x5, (1, 1))   # 维度变化为[batch_size, 2048, 1, 1]
-        clsx = clsx.view(-1, 2048)
+        clsx = F.adaptive_avg_pool2d(x5, (1, 1))  # 维度变化为[batch_size, 1024, 1, 1]
+        clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
         label = self.linear(clsx)
         return label, logits
 
 
 if __name__ == '__main__':
-    model = Res101UNet(3, 1)
+    img_size = 512
+    model = AgCBAMPixViTUNet(img_size, 3, 1)
     # model = UNet(3, 1)
     model.eval()
-    input = torch.randn(10, 3, 256, 256)
-    label = torch.randn(10, 3, 256, 256)
+    input = torch.randn(10, 3, img_size, img_size)
+    label = torch.randn(10, 3, img_size, img_size)
     labels, logits = model(input)
+    print('labels:', labels)
+    print('logits:', logits)
+
     print(labels.shape)
     print(logits.shape)
+
+
 
 
 

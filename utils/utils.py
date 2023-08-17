@@ -15,6 +15,7 @@ from mymodels.testsmp import UNet as ResUnet
 from mymodels.ViT import ViT_model, ViTseg, ViTcls
 from mymodels.swinunet import SwinUnet
 from mymodels.MTunet import MTUNet
+from mymodels.CBAMUnet import AgCBAMUNet, AgCBAMPixViTUNet
 from mymodels.Transunet.Transunet import TransUNet
 from mymodels.swinViT import SwinTransformer, swin_base_patch4_window7_224, Swinseg, Swincls
 import os
@@ -317,9 +318,15 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
                 mlp_dim=mlp_dim,
                 block_num=8,
                 patch_dim=16,
-                class_num=1
-
+                class_num=1,
+                task='segcls',
             )
+        elif modelname == 'AgCBAMUNet':
+            model = AgCBAMUNet(channel, 1)
+        elif modelname == 'AgCBAMPixViTUNet':
+            model = AgCBAMPixViTUNet(channel, 1)
+        else:
+            assert False, 'model name error'
     return model
 
 

@@ -129,20 +129,46 @@ class Decoder(nn.Module):
         return x
 
 
-class TransUNet(nn.Module):
-    def __init__(self, img_dim, in_channels, out_channels, head_num, mlp_dim, block_num, patch_dim, class_num):
+class ClassificationHead(nn.Module):
+    def __init__(self, channels, class_num):
         super().__init__()
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear(channels, class_num)
 
+    def forward(self, x):
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        x = self.fc(x)
+
+        return x
+
+
+class TransUNet(nn.Module):
+    def __init__(self, img_dim, in_channels, out_channels, head_num, mlp_dim, block_num, patch_dim, class_num, task):
+        super().__init__()
+        self.task = task
         self.encoder = Encoder(img_dim, in_channels, out_channels,
                                head_num, mlp_dim, block_num, patch_dim)
-
-        self.decoder = Decoder(out_channels, class_num)
+        if self.task != 'oseg':
+            self.ClassificationHead = ClassificationHead(out_channels * 4, class_num)
+        else:
+            self.ClassificationHead = None
+        if self.task != 'ocls':
+            self.decoder = Decoder(out_channels, class_num)
 
     def forward(self, x):
         x, x1, x2, x3 = self.encoder(x)
-        x = self.decoder(x, x1, x2, x3)
 
-        return x
+        if self.task == 'oseg':
+            seg = self.decoder(x, x1, x2, x3)
+            return seg
+        elif self.task == 'ocls':
+            x_cls = self.ClassificationHead(x)
+            return x_cls
+        else:
+            seg = self.decoder(x, x1, x2, x3)
+            x_cls = self.ClassificationHead(x)
+            return x_cls, seg
 
 
 if __name__ == '__main__':
@@ -157,7 +183,8 @@ if __name__ == '__main__':
                           mlp_dim=mlp_dim,
                           block_num=8,
                           patch_dim=16,
-                          class_num=1)
+                          class_num=1,
+                          task='ocls')
 
-    print(transunet(torch.randn(1, 3, 224, 224)).shape)
+    print(transunet(torch.randn(1, 3, 224, 224)))
 
