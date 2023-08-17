@@ -311,7 +311,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
             mlp_dim = img_size * 4
             model = TransUNet(
                 img_dim=img_size,
-                in_channels=3,
+                in_channels=channel,
                 out_channels=img_size,
                 head_num=4,
                 mlp_dim=mlp_dim,
