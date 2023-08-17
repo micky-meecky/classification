@@ -734,6 +734,23 @@ if __name__ == '__main__':
     #     print(testacc[i])
 
     test_precision, test_recall, test_f1_score, test_acc = \
+        Train_breast('UNet_cls_seg_ch3_256_01', 6, 800, 'unet', 6e-4,
+                     Use_pretrained=False,
+                     _have_segtask=True,
+                     _only_segtask=False,
+                     is_continue_train=False,
+                     use_clip=False,
+                     channel=3,
+                     size=512,
+                     decayepoch=790,
+                     datasc='BUSI')
+    testp.append(test_precision)
+    testr.append(test_recall)
+    testf1.append(test_f1_score)
+    testacc.append(test_acc)
+
+'''
+    test_precision, test_recall, test_f1_score, test_acc = \
         Train_breast('ResUNet_cls_seg_ch3_256_01', 6, 800, 'ResUNet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
@@ -804,5 +821,5 @@ if __name__ == '__main__':
 
 
 
-
+'''
 
