@@ -135,7 +135,8 @@ class CustomGoogLeNet(GoogLeNet):
         return x
 
 
-def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtask=False, _only_segtask=False, channel=3):
+def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtask=False, _only_segtask=False,
+              channel=3, img_size=256):
     model = None
     if use_pretrained:
         if modelname == 'res101UNetsmp':
@@ -324,7 +325,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
         elif modelname == 'AgCBAMUNet':
             model = AgCBAMUNet(channel, 1)
         elif modelname == 'AgCBAMPixViTUNet':
-            model = AgCBAMPixViTUNet(channel, 1)
+            model = AgCBAMPixViTUNet(img_size, channel, 1)
         else:
             assert False, 'model name error'
     return model

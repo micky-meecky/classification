@@ -284,7 +284,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         _have_segtask = _have_segtask
 
     model = utils.InitModel(model_name, use_pretrained, class_num, _have_segtask,
-                            _only_segtask, channel)  # ---------------------------------------------
+                            _only_segtask, channel, size)  # ---------------------------------------------
     utils.init_weights(model)
     model, device = utils.Device(model)
 
