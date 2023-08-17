@@ -733,7 +733,6 @@ if __name__ == '__main__':
     #     print(testf1[i], end=', ')
     #     print(testacc[i])
 
-
     test_precision, test_recall, test_f1_score, test_acc = \
         Train_breast('Transunet_oseg_DDTI_ch1_224_00', 6, 800, 'Transunet', 6e-4,
                      Use_pretrained=False,
