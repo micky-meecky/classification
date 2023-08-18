@@ -711,14 +711,14 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('Transunet_cls_seg_BUSI_ch3_256_00', 6, 800, 'Transunet', 6e-4,
+        Train_breast('convUnet_cls_seg_ch3_256_00', 6, 800, 'convunet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
                      is_continue_train=False,
                      use_clip=False,
                      channel=3,
-                     size=256,
+                     size=512,
                      decayepoch=790,
                      datasc='BUSI')
     testp.append(test_precision)
