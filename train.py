@@ -710,32 +710,33 @@ if __name__ == '__main__':
     testf1 = []
     testacc = []
 
-    # test_precision, test_recall, test_f1_score, test_acc = \
-    #     Train_breast('preres101CBAMAGUnet_cls_seg_ch3_512_01', 6, 800, 'res101UNet', 6e-4,
-    #                  Use_pretrained=True,
-    #                  _have_segtask=True,
-    #                  _only_segtask=False,
-    #                  is_continue_train=False,
-    #                  use_clip=False,
-    #                  channel=3,
-    #                  size=512,
-    #                  decayepoch=790,
-    #                  datasc='BUSI')
-    # testp.append(test_precision)
-    # testr.append(test_recall)
-    # testf1.append(test_f1_score)
-    # testacc.append(test_acc)
-    #
-    # for i in range(len(testp)):
-    #     print('第' + str(i + 1) + '个实验结果：', end=', ')
-    #     print(testp[i], end=', ')
-    #     print(testr[i], end=', ')
-    #     print(testf1[i], end=', ')
-    #     print(testacc[i])
-
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('convpool_Unet_cls_seg_ch3_512_00', 6, 800, 'convunet', 6e-4,
+        Train_breast('Transunet_cls_seg_BUSI_ch3_256_00', 6, 800, 'Transunet', 6e-4,
                      Use_pretrained=False,
+                     _have_segtask=True,
+                     _only_segtask=False,
+                     is_continue_train=False,
+                     use_clip=False,
+                     channel=3,
+                     size=256,
+                     decayepoch=790,
+                     datasc='BUSI')
+    testp.append(test_precision)
+    testr.append(test_recall)
+    testf1.append(test_f1_score)
+    testacc.append(test_acc)
+
+    for i in range(len(testp)):
+        print('第' + str(i + 1) + '个实验结果：', end=', ')
+        print(testp[i], end=', ')
+        print(testr[i], end=', ')
+        print(testf1[i], end=', ')
+        print(testacc[i])
+
+    '''
+    test_precision, test_recall, test_f1_score, test_acc = \
+        Train_breast('preres101CBAMAGUnet_cls_seg_ch3_512_01', 6, 800, 'res101UNet', 6e-4,
+                     Use_pretrained=True,
                      _have_segtask=True,
                      _only_segtask=False,
                      is_continue_train=False,
@@ -756,7 +757,30 @@ if __name__ == '__main__':
         print(testf1[i], end=', ')
         print(testacc[i])
 
-'''
+    test_precision, test_recall, test_f1_score, test_acc = \
+        Train_breast('InDilatedUNet_cls_seg_ch3_512_00', 6, 800, 'InDilatedUNet', 6e-4,
+                     Use_pretrained=False,
+                     _have_segtask=True,
+                     _only_segtask=False,
+                     is_continue_train=False,
+                     use_clip=False,
+                     channel=3,
+                     size=256,
+                     decayepoch=790,
+                     datasc='BUSI')
+    testp.append(test_precision)
+    testr.append(test_recall)
+    testf1.append(test_f1_score)
+    testacc.append(test_acc)
+
+    for i in range(len(testp)):
+        print('第' + str(i + 1) + '个实验结果：', end=', ')
+        print(testp[i], end=', ')
+        print(testr[i], end=', ')
+        print(testf1[i], end=', ')
+        print(testacc[i])
+
+
     test_precision, test_recall, test_f1_score, test_acc = \
         Train_breast('ResUNet_cls_seg_ch3_256_01', 6, 800, 'ResUNet', 6e-4,
                      Use_pretrained=False,

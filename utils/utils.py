@@ -10,7 +10,7 @@ import pretrainedmodels.utils as utils
 from mymodels.models import Net
 from mymodels.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 from mymodels.unetr import UNETR, UNETRcls, UNETRseg, UNETRclsz12, UNETRclstoken
-from mymodels.Unet import UNet, UNetcls, UNetseg, Res101UNet, AgUNet, AgUNetseg, ResUNet
+from mymodels.Unet import UNet, UNetcls, UNetseg, Res101UNet, AgUNet, AgUNetseg, ResUNet, InDilatedUNet
 from mymodels.testsmp import UNet as ResUnet
 from mymodels.ViT import ViT_model, ViTseg, ViTcls
 from mymodels.swinunet import SwinUnet
@@ -319,7 +319,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
         elif modelname == 'MTunet':
             model = MTUNet()
         elif modelname == 'Transunet':
-            img_size = 224
+            img_size = 256
             mlp_dim = img_size * 4
             model = TransUNet(
                 img_dim=img_size,
@@ -338,6 +338,8 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
             model = AgCBAMPixViTUNet(img_size, channel, 1)
         elif modelname == 'ResUNet':
             model = ResUNet(channel, 1, 'convpool')
+        elif modelname == 'InDilatedUNet':
+            model = InDilatedUNet(channel, 1, 'maxpool')
         else:
             assert False, 'model name error'
     return model

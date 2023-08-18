@@ -1,9 +1,9 @@
 from typing import Optional, Union, List
 from .decoder import UnetDecoder
-from ..encoders import get_encoder
-from ..base import SegmentationModel
-from ..base import SegmentationHead, ClassificationHead
-# SegmentationHead12 = SegmentationHead
+from .encoders import get_encoder
+from .base import SegmentationModel
+from .base import SegmentationHead, ClassificationHead
+
 
 class Unet(SegmentationModel):
     """Unet_ is a fully convolution neural network for image semantic segmentation

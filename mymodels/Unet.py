@@ -8,6 +8,8 @@ import torch.nn.functional as F
 import torchvision.models as models
 from segmentation_models_pytorch.encoders import get_encoder
 from mymodels.CBAMUnet import ChannelAttention, SpatialAttention
+from mymodels.unet.unet_utils import MultiDilatedConv, CascadedDilatedConv, ResidualBlock, AttentionGate, Res101Encoder
+
 
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
@@ -27,39 +29,6 @@ class DoubleConv(nn.Module):
 
     def forward(self, x):
         return self.double_conv(x)
-
-
-class ResidualBlock(nn.Module):
-    def __init__(self, input_channels, output_channels, stride=1):
-        super(ResidualBlock, self).__init__()
-        assert output_channels % 4 == 0, "Output channels must be divisible by 4"
-        self.input_channels = input_channels
-        self.output_channels = output_channels
-        self.stride = stride
-        self.bn1 = nn.BatchNorm2d(input_channels)
-        self.relu = nn.ReLU(inplace=True)
-        self.conv1 = nn.Conv2d(input_channels, output_channels // 4, 1, 1, bias=False)
-        self.bn2 = nn.BatchNorm2d(output_channels // 4)
-        self.conv2 = nn.Conv2d(output_channels // 4, output_channels // 4, 3, stride, padding=1, bias=False)
-        self.bn3 = nn.BatchNorm2d(output_channels // 4)
-        self.conv3 = nn.Conv2d(output_channels // 4, output_channels, 1, 1, bias=False)
-        self.conv4 = nn.Conv2d(input_channels, output_channels, 1, stride, bias=False)
-
-    def forward(self, x):
-        residual = x
-        out = self.bn1(x)
-        out1 = self.relu(out)
-        out = self.conv1(out1)
-        out = self.bn2(out)
-        out = self.relu(out)
-        out = self.conv2(out)
-        out = self.bn3(out)
-        out = self.relu(out)
-        out = self.conv3(out)
-        if self.input_channels != self.output_channels or self.stride != 1:
-            residual = self.conv4(residual)
-        out += residual
-        return out
 
 
 class ResidualDown(nn.Module):
@@ -90,6 +59,75 @@ class ResidualDown(nn.Module):
             )
 
         self.dropout = nn.Dropout(0.1)
+
+    def forward(self, x):
+        if self.poolmethod == 'maxpool':
+            return self.maxpool_conv(x)
+        else:
+            return self.convpool_conv(x)
+
+
+class ReplaceDilatedDown(nn.Module):
+    """ 包含空洞多尺度空洞卷积的下采样模块"""
+    def __init__(self, in_channels, out_channels, poolmethod='maxpool', num_dilated_convs=1):
+        super().__init__()
+        self.poolmethod = poolmethod
+        dilated_convs = [MultiDilatedConv(out_channels if i == 0 else out_channels, out_channels)
+                         for i in range(num_dilated_convs)]
+        if poolmethod == 'maxpool':
+            # 方法一：
+            self.maxpool_conv = nn.Sequential(
+                nn.MaxPool2d(2),
+                nn.Conv2d(in_channels, out_channels, kernel_size=1),
+                nn.BatchNorm2d(out_channels),
+                nn.SiLU(inplace=True),
+                *dilated_convs,
+                nn.Dropout(0.1)
+            )
+        elif poolmethod == 'convpool':
+            # 方法二：
+            self.convpool_conv = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1),
+                nn.BatchNorm2d(out_channels),
+                nn.SiLU(inplace=True),
+                *dilated_convs,
+                nn.Dropout(0.1)
+            )
+
+        self.dropout = nn.Dropout(0.1)
+
+    def forward(self, x):
+        if self.poolmethod == 'maxpool':
+            return self.maxpool_conv(x)
+        else:
+            return self.convpool_conv(x)
+
+
+class InsertDilatedDown(nn.Module):
+    """在DoubleConv后插入MultiDilatedConv的下采样模块"""
+    def __init__(self, in_channels, out_channels, poolmethod='maxpool'):
+        super().__init__()
+        self.poolmethod = poolmethod
+
+        if poolmethod == 'maxpool':
+            self.maxpool_conv = nn.Sequential(
+                nn.MaxPool2d(2),
+                nn.Conv2d(in_channels, in_channels, kernel_size=1),
+                nn.BatchNorm2d(in_channels),
+                nn.SiLU(inplace=True),
+                DoubleConv(in_channels, out_channels),
+                MultiDilatedConv(out_channels, out_channels),
+                nn.Dropout(0.1)
+            )
+        elif poolmethod == 'convpool':
+            self.convpool_conv = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1),
+                nn.BatchNorm2d(out_channels),
+                nn.SiLU(inplace=True),
+                DoubleConv(out_channels, out_channels),
+                MultiDilatedConv(out_channels, out_channels),
+                nn.Dropout(0.1)
+            )
 
     def forward(self, x):
         if self.poolmethod == 'maxpool':
@@ -205,71 +243,6 @@ class OutConv(nn.Module):
         return self.conv(x)
 
 
-class AttentionGate(nn.Module):
-    def __init__(self, F_g, F_l, F_int):
-        super(AttentionGate, self).__init__()
-
-        # W_g用于对g进行特征转换，包含一个卷积层和一个批量归一化层
-        # 卷积层的作用是对输入特征进行线性变换，批量归一化层的作用是对特征进行归一化，使得网络更容易训练
-        self.W_g = nn.Sequential(
-            nn.Conv2d(F_g, F_int, kernel_size=1, stride=1, padding=0, bias=True),
-            nn.BatchNorm2d(F_int)
-        )
-
-        # W_x用于对x进行特征转换，包含一个卷积层和一个批量归一化层
-        # 卷积层和批量归一化层的作用同上
-        self.W_x = nn.Sequential(
-            nn.Conv2d(F_l, F_int, kernel_size=1, stride=1, padding=0, bias=True),
-            nn.BatchNorm2d(F_int)
-        )
-
-        # psi用于计算注意力系数，包含一个卷积层，一个批量归一化层和一个Sigmoid激活函数
-        # 卷积层和批量归一化层的作用同上，Sigmoid激活函数的作用是将特征转换到(0, 1)的范围内，使得它们可以作为注意力系数
-        self.psi = nn.Sequential(
-            nn.Conv2d(F_int, 1, kernel_size=1, stride=1, padding=0, bias=True),
-            nn.BatchNorm2d(1),
-            nn.Sigmoid()
-        )
-
-        # ReLU激活函数用于增加非线性
-        self.relu = nn.ReLU(inplace=True)
-
-    def forward(self, g, x):
-        # 对g进行特征转换
-        g1 = self.W_g(g)
-        # 对x进行特征转换
-        x1 = self.W_x(x)
-        # 将转换后的g和x相加，并通过ReLU激活函数进行非线性变换
-        psi = self.relu(g1 + x1)
-        # 计算注意力系数
-        psi = self.psi(psi)
-
-        # 将注意力系数应用到x上，得到最终的输出
-        return x * psi
-
-
-class Encoder(nn.Module):
-    def __init__(self):
-        super(Encoder, self).__init__()
-        resnet = models.resnet101(pretrained=True)
-        self.layer1 = nn.Sequential(resnet.conv1, resnet.bn1, resnet.relu, resnet.maxpool)
-        self.layer2 = resnet.layer1
-        self.layer3 = resnet.layer2
-        self.layer4 = resnet.layer3
-        self.layer5 = resnet.layer4
-        # Add the rest of the U-Net architecture here.
-
-    def forward(self, x):
-        x1 = self.layer1(x)
-        x2 = self.layer2(x1)
-        x3 = self.layer3(x2)
-        x4 = self.layer4(x3)
-        x5 = self.layer5(x4)
-        # Now, x1, x2, x3 and x4 are the output feature maps at different stages in the encoder.
-        # You can use these in your decoder part of the U-Net.
-        return x1, x2, x3, x4, x5
-
-
 class UNetseg(nn.Module):
     def __init__(self, n_channels, n_classes, method='maxpool', bilinear=False):
         super(UNetseg, self).__init__()
@@ -326,6 +299,59 @@ class UNet(nn.Module):
         self.down3 = (Down(256, 512, method))
         factor = 2 if bilinear else 1
         self.down4 = (Down(512, 1024 // factor, method))
+        # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
+        self.up1 = (Up(1024, 512 // factor, bilinear))
+        self.up2 = (Up(512, 256 // factor, bilinear))
+        self.up3 = (Up(256, 128 // factor, bilinear))
+        self.up4 = (Up(128, 64, bilinear))
+        self.outc = (OutConv(64, n_classes))
+        self.activation = nn.Sigmoid()
+
+        # classification head
+        self.linear = nn.Linear(1024, 1)
+
+    def forward(self, x):
+        # encoder
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x4 = self.down3(x3)
+        x5 = self.down4(x4)
+
+        # decoder
+        # decoder with attention gates
+        x = self.up1(x5, x4)
+
+        x = self.up2(x, x3)
+
+        x = self.up3(x, x2)
+
+        x = self.up4(x, x1)
+
+        # segmentation head
+        logits = self.outc(x)
+        # logits = self.activation(logits)
+
+        # classification head
+        clsx = F.adaptive_avg_pool2d(x5, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
+        clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
+        label = self.linear(clsx)
+        return label, logits
+
+
+class InDilatedUNet(nn.Module):
+    def __init__(self, n_channels, n_classes, method='maxpool', bilinear=False):
+        super(InDilatedUNet, self).__init__()
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.bilinear = bilinear    # bilinear表示是否使用双线性插值
+        num_dilated_convs = [1, 2, 3, 3, 3]
+        self.inc = MultiDilatedConv(n_channels, 64)
+        self.down1 = ReplaceDilatedDown(64, 128, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[1])
+        self.down2 = ReplaceDilatedDown(128, 256, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[2])
+        self.down3 = ReplaceDilatedDown(256, 512, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[3])
+        factor = 2 if bilinear else 1
+        self.down4 = ReplaceDilatedDown(512, 1024 // factor, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[4])
         # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
         self.up1 = (Up(1024, 512 // factor, bilinear))
         self.up2 = (Up(512, 256 // factor, bilinear))
@@ -569,7 +595,7 @@ class Res101UNet(nn.Module):
         self.n_classes = n_classes
         self.bilinear = bilinear  # bilinear表示是否使用双线性插值
 
-        self.encoder = Encoder()
+        self.encoder = Res101Encoder()
         factor = 2 if bilinear else 1
         self.up1 = (AGUp(2048, 1024 // factor, bilinear))
         self.up2 = (AGUp(1024, 512 // factor, bilinear))
@@ -618,12 +644,12 @@ class Res101UNet(nn.Module):
 
 if __name__ == '__main__':
     method = 'convpool'
-    model = ResUNet(3, 1, method)
+    model = InDilatedUNet(3, 1)
     # model = UNet(3, 1)
     model.eval()
     input = torch.randn(10, 3, 256, 256)
     label = torch.randn(10, 3, 256, 256)
-    labels, logits= model(input)
+    labels, logits = model(input)
     print(labels.shape)
     print(logits.shape)
 

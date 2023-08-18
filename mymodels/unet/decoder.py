@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ..base import modules as md
+from .base import modules as md
 
 
 class DecoderBlock(nn.Module):
