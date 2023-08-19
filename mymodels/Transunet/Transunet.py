@@ -96,16 +96,16 @@ class Encoder(nn.Module):
 
         x2 = self.encoder1(x1)
         x3 = self.encoder2(x2)
-        x = self.encoder3(x3)
+        x4 = self.encoder3(x3)
 
-        x = self.vit(x)
+        x = self.vit(x4)
         x = rearrange(x, "b (x y) c -> b c x y", x=self.vit_img_dim, y=self.vit_img_dim)
 
         x = self.conv2(x)
         x = self.norm2(x)
         x = self.relu(x)
 
-        return x, x1, x2, x3
+        return x, x1, x2, x3, x4
 
 
 class Decoder(nn.Module):
@@ -150,24 +150,24 @@ class TransUNet(nn.Module):
         self.encoder = Encoder(img_dim, in_channels, out_channels,
                                head_num, mlp_dim, block_num, patch_dim)
         if self.task != 'oseg':
-            self.ClassificationHead = ClassificationHead(out_channels * 4, class_num)
+            self.ClassificationHead = ClassificationHead(out_channels * 8, class_num)
         else:
             self.ClassificationHead = None
         if self.task != 'ocls':
             self.decoder = Decoder(out_channels, class_num)
 
     def forward(self, x):
-        x, x1, x2, x3 = self.encoder(x)
+        x, x1, x2, x3, x4 = self.encoder(x)
 
         if self.task == 'oseg':
             seg = self.decoder(x, x1, x2, x3)
             return seg
         elif self.task == 'ocls':
-            x_cls = self.ClassificationHead(x)
+            x_cls = self.ClassificationHead(x4)
             return x_cls
         else:
             seg = self.decoder(x, x1, x2, x3)
-            x_cls = self.ClassificationHead(x)
+            x_cls = self.ClassificationHead(x4)
             return x_cls, seg
 
 
@@ -179,12 +179,12 @@ if __name__ == '__main__':
     transunet = TransUNet(img_dim=img_size,
                           in_channels=3,
                           out_channels=img_size,
-                          head_num=4,
+                          head_num=8,
                           mlp_dim=mlp_dim,
                           block_num=8,
                           patch_dim=16,
                           class_num=1,
-                          task='ocls')
+                          task='kkk')
 
     print(transunet(torch.randn(1, 3, 224, 224)))
 

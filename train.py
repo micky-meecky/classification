@@ -425,7 +425,9 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                         # cls_loss = criterion_cls(outputs, targets4)
                     else:  # 如果是二分类，就用sigmoid
                         labels = torch.sigmoid(outputs)
-                        predicted = torch.round(labels)
+                        # predicted = torch.round(labels)  # 这是表示四舍五入，而不是取整数
+                        # 现大于0.8的赋为1，predicted = labels.gt(0.8)  # gt表示greater than，大于
+                        predicted = labels.gt(0.8)  # gt表示greater than，大于
                         targets4v = targets4.view(-1, 1)
                         targets4v = targets4v.to(torch.float)
                         # cls_loss = criterion_cls(outputs, targets4v)
