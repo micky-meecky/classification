@@ -133,7 +133,7 @@ class ClassificationHead(nn.Module):
     def __init__(self, channels, class_num):
         super().__init__()
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc1 = nn.Linear(channels, 1)
+        self.fc1 = nn.Linear(channels, 512)
         self.relu = nn.ReLU(inplace=True)
         self.dropout = nn.Dropout(0.1)
         self.fc2 = nn.Linear(512, class_num)
