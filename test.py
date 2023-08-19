@@ -88,7 +88,7 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
                     # predicted = torch.round(labels.data)
                     # predicted = torch.round(labels)  # 这是表示四舍五入，而不是取整数
                     # 现大于0.8的赋为1，predicted = labels.gt(0.8)  # gt表示greater than，大于
-                    predicted = labels.gt(0.8)  # gt表示greater than，大于
+                    predicted = labels.gt(0.5)  # gt表示greater than，大于
 
                 # 计算TP, FP, TN, FN
                 predicted = predicted.squeeze().long()

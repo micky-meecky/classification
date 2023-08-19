@@ -133,12 +133,18 @@ class ClassificationHead(nn.Module):
     def __init__(self, channels, class_num):
         super().__init__()
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(channels, class_num)
+        self.fc1 = nn.Linear(channels, channels / 2)
+        self.relu = nn.ReLU(inplace=True)
+        self.dropout = nn.Dropout(0.1)
+        self.fc2 = nn.Linear(channels / 2, class_num)
 
     def forward(self, x):
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
-        x = self.fc(x)
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.dropout(x)
+        x = self.fc2(x)
 
         return x
 
