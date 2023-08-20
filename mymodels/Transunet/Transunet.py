@@ -138,7 +138,6 @@ class ClassificationHead(nn.Module):
         self.dropout = nn.Dropout(0.1)
         self.fc2 = nn.Linear(512, class_num)
 
-
     def forward(self, x):
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
