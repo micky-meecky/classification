@@ -59,7 +59,6 @@ class ImageFolder_new(data.Dataset):
         GT = Image.open(GT_path).convert('L')
 
         aspect_ratio = image.size[1] / image.size[0]
-
         Transform = []
         Transform_GT = []  # 注意,GT的插值需要最近邻nearest,但是采取非线性插值可能有奇效
 
