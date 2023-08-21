@@ -228,7 +228,7 @@ def breast_loader(batch_size, testbs, device, validate_flag, use_clip, channel, 
     # distance_type = "dist_mask"
     # normal_flag = False
     image_size = size
-    num_workers = 0
+    num_workers = 1
 
     print('batch_size: ', batch_size)
     train_loader, valid_loader, test_loader = getdataset(device, csv_path, fold_k, fold_idx, image_size, batch_size,
