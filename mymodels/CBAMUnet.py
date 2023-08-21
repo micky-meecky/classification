@@ -92,8 +92,6 @@ class DoubleConv(nn.Module):
         return self.double_conv(x)
 
 
-
-
 class DownwithCBAM(nn.Module):
     """
     Downscaling with CBAM and maxpool or Conv2d to downsampling then double conv

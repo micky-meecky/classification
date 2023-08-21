@@ -284,7 +284,8 @@ class GaussianTrans(nn.Module):
 
     def forward(self, x):
         device = x[0].device
-        x, atten_x_full, atten_y_full, value_full = x  # atten_x_full(b, h, w, w, c)   atten_y_full(b, w, h, h, c) value_full(b, h, w, c)
+        x, atten_x_full, atten_y_full, value_full = x  # atten_x_full(b, h, w, w, c)   atten_y_full(b, w, h, h,
+        # c) value_full(b, h, w, c)
         new_value_full = torch.zeros_like(value_full)
 
         for r in range(x.shape[1]):  # row

@@ -54,3 +54,5 @@ print("删除变量后释放缓存后:", "."*100)
 print("变量实际占用内存空间：", 0, "M")
 print("GPU实际分配给的可用内存", memory_allocated, "M")
 print("GPU实际分配给的缓存", memory_reserved, "M")
+
+
