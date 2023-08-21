@@ -54,153 +54,83 @@ class ImageFolder_new(data.Dataset):
         image_path = self.image_paths[index]
         GT_path = self.GT_paths[index]
         class_item = self.class_list[index]
-        # 将class_item转化为tensor
-        class_item = torch.tensor(int(class_item))
 
-        # filename = image_path.split('/')[-1]
-        # GT_path = os.path.join(self.GT_paths, filename)
-
-        aspect_ratio = 1
-
-        # 先将PIL转为tensor
-        # transform = T.Compose([T.ToTensor()])
-        # transform_GT = T.Compose([T.ToTensor()])
-        # transform_contour = T.Compose([T.ToTensor()])
-        # transform_dist = T.Compose([T.ToTensor()])
-
-        # image = transform(Image.open(image_path))
-        # GT = transform_GT(Image.open(GT_path))
-        # contour = transform_contour(contour)
-        # dist = transform_dist(dist)
-
-        # 将images这些放在device，即GPU上
         image = Image.open(image_path)
-        GT = Image.open(GT_path)
-        # image = image.to(self.device)
-        # GT = GT.to(self.device)
-        # contour = contour.to(self.device)
-        # dist = dist.to(self.device)
+        GT = Image.open(GT_path).convert('L')
+
+        aspect_ratio = image.size[1] / image.size[0]
 
         Transform = []
         Transform_GT = []  # 注意,GT的插值需要最近邻nearest,但是采取非线性插值可能有奇效
-        # Transform_contour = []
-        # Transform_dist = []
 
-        # ResizeRange = random.randint(self.resize_range[0], self.resize_range[1])
+        ResizeRange = random.randint(self.resize_range[0], self.resize_range[1])
 
         p_transform = random.random()
 
         if (self.mode == 'train') and p_transform <= self.augmentation_prob:
+            Transform.append(
+                T.Resize((int(ResizeRange * aspect_ratio), ResizeRange), interpolation=Image.BICUBIC))  # 双三次
+            Transform_GT.append(
+                T.Resize((int(ResizeRange * aspect_ratio), ResizeRange), interpolation=Image.NEAREST))  # 最近邻
 
-            # 修改亮度、对比度。
-            # Transform.append(T.ColorJitter(brightness=0.25, contrast=0.25))
-            # Transform_GT.append(T.ColorJitter(brightness=0.25, contrast=0.25))
-            # Transform_contour.append(T.ColorJitter(brightness=0.25, contrast=0.25))
-            # Transform_dist.append(T.ColorJitter(brightness=0.25, contrast=0.25))
-            #
-            # T.Grayscale(num_output_channels=3),  # 随机转为灰度图
-
-            # Transform.append(T.RandomApply([T.RandomErasing(p=0.5)], p=0.5))
-            # Transform_GT.append(T.RandomApply([T.RandomErasing(p=0.5)], p=0.5))
-            # Transform_contour.append(T.RandomApply([T.RandomErasing(p=0.5)], p=0.5))
-            # Transform_dist.append(T.RandomApply([T.RandomErasing(p=0.5)], p=0.5))
-
-            # Transform.append(
-            #     T.Resize((int(ResizeRange * aspect_ratio), ResizeRange), interpolation=Image.BICUBIC))  # 双三次
-            # Transform_GT.append(
-            #     T.Resize((int(ResizeRange * aspect_ratio), ResizeRange), interpolation=Image.NEAREST))  # 最近邻
-            # Transform_contour.append(
-            #     T.Resize((int(ResizeRange * aspect_ratio), ResizeRange), interpolation=Image.NEAREST))  # 最近邻
-            # Transform_dist.append(
-            #     T.Resize((int(ResizeRange * aspect_ratio), ResizeRange), interpolation=Image.NEAREST))  # 最近邻
-
-            RotationDegree = random.randint(0, 7)
+            RotationDegree = random.randint(0, 3)
             RotationDegree = self.RotationDegree[RotationDegree]
             if (RotationDegree == 90) or (RotationDegree == 270):
-                aspect_ratio = 1 / aspect_ratio  # 这里交换一下宽高比,因为旋转了
+                aspect_ratio = 1 / aspect_ratio
 
-            Transform.append(T.RandomRotation((RotationDegree, RotationDegree)))  # RandomRotation的两个参数分别是旋转角度的下界和上界
+            Transform.append(T.RandomRotation((RotationDegree, RotationDegree)))
             Transform_GT.append(T.RandomRotation((RotationDegree, RotationDegree)))
-            # Transform_contour.append(T.RandomRotation((RotationDegree, RotationDegree)))
-            # Transform_dist.append(T.RandomRotation((RotationDegree, RotationDegree)))
 
             # 在大旋转间隔基础上,微小调整旋转角度
             RotationRange = random.randint(-10, 10)
             Transform.append(T.RandomRotation((RotationRange, RotationRange)))
             Transform_GT.append(T.RandomRotation((RotationRange, RotationRange)))
-            # Transform_contour.append(T.RandomRotation((RotationRange, RotationRange)))
-            # Transform_dist.append(T.RandomRotation((RotationRange, RotationRange)))
 
             CropRange = random.randint(self.CropRange[0], self.CropRange[1])
             Transform.append(T.CenterCrop((int(CropRange * aspect_ratio), CropRange)))
             Transform_GT.append(T.CenterCrop((int(CropRange * aspect_ratio), CropRange)))
-            # Transform_contour.append(T.CenterCrop((int(CropRange * aspect_ratio), CropRange)))
-            # Transform_dist.append(T.CenterCrop((int(CropRange * aspect_ratio), CropRange)))
 
             Transform = T.Compose(Transform)
             Transform_GT = T.Compose(Transform_GT)
-            # Transform_contour = T.Compose(Transform_contour)
-            # Transform_dist = T.Compose(Transform_dist)
 
-            image = Transform(image)  # 对image进行transform操作
+            image = Transform(image)
             GT = Transform_GT(GT)
-            # contour = Transform_contour(contour)
-            # dist = Transform_dist(dist)
 
+            # crop
+            ShiftRange_left = random.randint(0, 20)
+            ShiftRange_upper = random.randint(0, 20)
+            ShiftRange_right = image.size[0] - random.randint(0, 20)
+            ShiftRange_lower = image.size[1] - random.randint(0, 20)
+            image = image.crop(box=(ShiftRange_left, ShiftRange_upper, ShiftRange_right, ShiftRange_lower))
+            GT = GT.crop(box=(ShiftRange_left, ShiftRange_upper, ShiftRange_right, ShiftRange_lower))
             # flip
-            if random.random() < self.augmentation_prob:
-                image = ImageOps.mirror(image)  # 水平翻转
-                GT = ImageOps.mirror(GT)  # 水平翻转对应的GT
-
-            if random.random() < self.augmentation_prob:
-                image = ImageOps.flip(image)  # 垂直翻转
-                GT = ImageOps.flip(GT)  # 垂直翻转对应的GT
-            # if random.random() < self.augmentation_prob:
-            #     image = torch.flip(image, dims=[2])
-            #     GT = torch.flip(GT, dims=[2])
-            #     # contour = torch.flip(contour, dims=[2])
-            #     # dist = torch.flip(dist, dims=[2])
-            #
-            # if random.random() < self.augmentation_prob:
-            #     image = torch.flip(image, dims=[1])
-            #     GT = torch.flip(GT, dims=[1])
-            #     # contour = torch.flip(contour, dims=[1])
-            #     # dist = torch.flip(dist, dims=[1])
-
-            # Transform = T.ColorJitter(brightness=0.2,contrast=0.2,hue=0.02)
-            # image = Transform(image)
+            if random.random() < 0.5:
+                image = F.hflip(image)
+                GT = F.hflip(GT)
+            if random.random() < 0.5:
+                image = F.vflip(image)
+                GT = F.vflip(GT)
 
             Transform = []
             Transform_GT = []
-            # Transform_contour = []
-            # Transform_dist = []
 
         final_size = self.image_size
-        # 如果image的高和宽不等于final_size，则进行resize
-        # 检查是否为PIL Image对象
-        if isinstance(image, Image.Image):
-            if image.size != (final_size, final_size):
-                image = image.resize((final_size, final_size), Image.BICUBIC)
-                GT = GT.resize((final_size, final_size), Image.NEAREST)
-        # 检查是否为PyTorch张量
-        elif isinstance(image, torch.Tensor):
-            if image.size()[0] != final_size or image.size()[1] != final_size:
-                transform = T.Resize((final_size, final_size), interpolation=Image.BICUBIC)
-                transform_GT = T.Resize((final_size, final_size), interpolation=Image.NEAREST)
-                image = transform(image)
-                GT = transform_GT(GT)
-        else:
-            raise TypeError("Unsupported type for image")
+        Transform.append(T.Resize((final_size, final_size), interpolation=Image.BICUBIC))
+        Transform_GT.append(T.Resize((final_size, final_size), interpolation=Image.NEAREST))
 
-        # convert to tensor
         Transform.append(T.ToTensor())
         Transform_GT.append(T.ToTensor())
+
+        # if image.mode == 'RGB':
+        #     Transform.append(T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]))
+        # # print('tensor has be normalized')
+
         Transform = T.Compose(Transform)
         Transform_GT = T.Compose(Transform_GT)
+
         image = Transform(image)
         GT = Transform_GT(GT)
-        # 将GT转为三通道
-
+        class_item = torch.tensor(int(class_item))
 
         return image_path, image, GT, class_item
 
