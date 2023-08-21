@@ -228,7 +228,7 @@ def breast_loader(batch_size, testbs, device, validate_flag, use_clip, channel, 
     # distance_type = "dist_mask"
     # normal_flag = False
     image_size = size
-    num_workers = 1
+    num_workers = 2
 
     print('batch_size: ', batch_size)
     train_loader, valid_loader, test_loader = getdataset(device, csv_path, fold_k, fold_idx, image_size, batch_size,
@@ -356,7 +356,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             for i, data in tqdm(enumerate(datas, 0), total=len(datas)):
                 (img_file_name, inputs, targets1, targets4) = data
                 # 由于上面进行stack的时候必须保证相同大小的张量，从而targets1变成了三通道的，这里只需要第一个通道即可，维度保持微bs x 1 x 512 x 512
-                targets1 = targets1[:, 0, :, :].unsqueeze(1)
+                # targets1 = targets1[:, 0, :, :].unsqueeze(1)
                 if epoch == 0:
                     # 没必要每次试验，因为只需要案例图像就够了，不需要在每次实验的时候都保存。况且每一epoch的图都不一样
                     # DrawSavePic(img_file_name, inputs, targets1, targets2, targets3, train_pic_list)

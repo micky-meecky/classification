@@ -3,6 +3,7 @@ import random
 
 import torch
 from PIL import Image
+from PIL import ImageOps
 from torch.utils import data
 from torchvision import transforms as T
 from torchvision.transforms import functional as F
@@ -26,6 +27,7 @@ import time
 # random.seed(random_seed)
 sep = os.sep  # os.sep根据你所处的平台，自动采用相应的分隔符号
 
+
 class ImageFolder_new(data.Dataset):
     def __init__(self, seg_list, GT_list, class_list, contour_list, dist_list, image_list, image_size=512,
                  mode='train', augmentation_prob=0.4, load_preseg=False, device='cpu'):
@@ -35,10 +37,6 @@ class ImageFolder_new(data.Dataset):
         self.class_list = class_list
         # self.contour_paths = contour_list
         # self.dist_paths = dist_list
-
-        self.load_preseg = load_preseg
-        if self.load_preseg:
-            self.seg_paths = seg_list
 
         self.image_size = image_size
         self.mode = mode
@@ -62,32 +60,24 @@ class ImageFolder_new(data.Dataset):
         # filename = image_path.split('/')[-1]
         # GT_path = os.path.join(self.GT_paths, filename)
 
-        # image = Image.open(image_path)
-        # GT = Image.open(GT_path)
-        # contour_o = contour = Image.open(self.contour_paths[index])
-        # dist_o = dist = Image.open(self.dist_paths[index])
-        # image = image.convert('RGB')
-
-        if self.load_preseg:
-            seg_path = self.seg_paths[index]
-            seg = Image.open(seg_path)
-
         aspect_ratio = 1
 
         # 先将PIL转为tensor
-        transform = T.Compose([T.ToTensor()])
-        transform_GT = T.Compose([T.ToTensor()])
+        # transform = T.Compose([T.ToTensor()])
+        # transform_GT = T.Compose([T.ToTensor()])
         # transform_contour = T.Compose([T.ToTensor()])
         # transform_dist = T.Compose([T.ToTensor()])
 
-        image = transform(Image.open(image_path))
-        GT = transform_GT(Image.open(GT_path))
+        # image = transform(Image.open(image_path))
+        # GT = transform_GT(Image.open(GT_path))
         # contour = transform_contour(contour)
         # dist = transform_dist(dist)
 
         # 将images这些放在device，即GPU上
-        image = image.to(self.device)
-        GT = GT.to(self.device)
+        image = Image.open(image_path)
+        GT = Image.open(GT_path)
+        # image = image.to(self.device)
+        # GT = GT.to(self.device)
         # contour = contour.to(self.device)
         # dist = dist.to(self.device)
 
@@ -99,10 +89,6 @@ class ImageFolder_new(data.Dataset):
         # ResizeRange = random.randint(self.resize_range[0], self.resize_range[1])
 
         p_transform = random.random()
-
-        # 如果GT是单通道的话，需要将其转化为三通道
-        if GT.shape[0] == 1:
-            GT = GT.repeat(3, 1, 1)
 
         if (self.mode == 'train') and p_transform <= self.augmentation_prob:
 
@@ -160,64 +146,26 @@ class ImageFolder_new(data.Dataset):
             GT = Transform_GT(GT)
             # contour = Transform_contour(contour)
             # dist = Transform_dist(dist)
-            if self.load_preseg:
-                seg = Transform_GT(seg)
-
-            # crop
-            # ShiftRange_left = random.randint(0, 20)
-            # ShiftRange_upper = random.randint(0, 20)
-            # ShiftRange_right = image.size[0] - random.randint(0, 20)
-            # ShiftRange_lower = image.size[1] - random.randint(0, 20)
-            # image = image.crop(box=(ShiftRange_left, ShiftRange_upper, ShiftRange_right, ShiftRange_lower))
-            # GT = GT.crop(box=(ShiftRange_left, ShiftRange_upper, ShiftRange_right, ShiftRange_lower))
-            # contour = contour.crop(box=(ShiftRange_left, ShiftRange_upper, ShiftRange_right, ShiftRange_lower))
-            # dist = dist.crop(box=(ShiftRange_left, ShiftRange_upper, ShiftRange_right, ShiftRange_lower))
-            # if self.load_preseg:
-            #     seg = seg.crop(box=(ShiftRange_left, ShiftRange_upper, ShiftRange_right, ShiftRange_lower))
-
-            # crop
-            # ShiftRange_left = random.randint(0, 20)
-            # ShiftRange_upper = random.randint(0, 20)
-            # ShiftRange_right = image.size(2) - random.randint(0, 20)
-            # ShiftRange_lower = image.size(1) - random.randint(0, 20)
-            #
-            # image = image[:, ShiftRange_upper:ShiftRange_lower, ShiftRange_left:ShiftRange_right]
-            # GT = GT[:, ShiftRange_upper:ShiftRange_lower, ShiftRange_left:ShiftRange_right]
-            # contour = contour[:, ShiftRange_upper:ShiftRange_lower, ShiftRange_left:ShiftRange_right]
-            # dist = dist[:, ShiftRange_upper:ShiftRange_lower, ShiftRange_left:ShiftRange_right]
-
-            # # flip
-            # if random.random() < 0.5:
-            #     image = F.hflip(image)
-            #     GT = F.hflip(GT)
-            #     contour = F.hflip(contour)
-            #     dist = F.hflip(dist)
-            #     if self.load_preseg:
-            #         seg = F.hflip(seg)
-            # if random.random() < 0.5:
-            #     image = F.vflip(image)
-            #     GT = F.vflip(GT)
-            #     contour = F.vflip(contour)
-            #     dist = F.vflip(dist)
-            #     if self.load_preseg:
-            #         seg = F.vflip(seg)
 
             # flip
-            if random.random() < 0.5:
-                image = torch.flip(image, dims=[2])
-                GT = torch.flip(GT, dims=[2])
-                # contour = torch.flip(contour, dims=[2])
-                # dist = torch.flip(dist, dims=[2])
-                if self.load_preseg:
-                    seg = torch.flip(seg, dims=[2])
+            if random.random() < self.augmentation_prob:
+                image = ImageOps.mirror(image)  # 水平翻转
+                GT = ImageOps.mirror(GT)  # 水平翻转对应的GT
 
-            if random.random() < 0.5:
-                image = torch.flip(image, dims=[1])
-                GT = torch.flip(GT, dims=[1])
-                # contour = torch.flip(contour, dims=[1])
-                # dist = torch.flip(dist, dims=[1])
-                if self.load_preseg:
-                    seg = torch.flip(seg, dims=[1])
+            if random.random() < self.augmentation_prob:
+                image = ImageOps.flip(image)  # 垂直翻转
+                GT = ImageOps.flip(GT)  # 垂直翻转对应的GT
+            # if random.random() < self.augmentation_prob:
+            #     image = torch.flip(image, dims=[2])
+            #     GT = torch.flip(GT, dims=[2])
+            #     # contour = torch.flip(contour, dims=[2])
+            #     # dist = torch.flip(dist, dims=[2])
+            #
+            # if random.random() < self.augmentation_prob:
+            #     image = torch.flip(image, dims=[1])
+            #     GT = torch.flip(GT, dims=[1])
+            #     # contour = torch.flip(contour, dims=[1])
+            #     # dist = torch.flip(dist, dims=[1])
 
             # Transform = T.ColorJitter(brightness=0.2,contrast=0.2,hue=0.02)
             # image = Transform(image)
@@ -229,49 +177,32 @@ class ImageFolder_new(data.Dataset):
 
         final_size = self.image_size
         # 如果image的高和宽不等于final_size，则进行resize
-        if image.size()[0] != final_size or image.size()[1] != final_size:
-            Transform.append(T.Resize((final_size, final_size), interpolation=Image.BICUBIC))
-            Transform_GT.append(T.Resize((final_size, final_size), interpolation=Image.NEAREST))
-            # Transform_contour.append(T.Resize((final_size, final_size)))
-            # Transform_dist.append(T.Resize((final_size, final_size)))
-            if self.load_preseg:
-                Transform.append(T.Resize((final_size, final_size)))
+        # 检查是否为PIL Image对象
+        if isinstance(image, Image.Image):
+            if image.size != (final_size, final_size):
+                image = image.resize((final_size, final_size), Image.BICUBIC)
+                GT = GT.resize((final_size, final_size), Image.NEAREST)
+        # 检查是否为PyTorch张量
+        elif isinstance(image, torch.Tensor):
+            if image.size()[0] != final_size or image.size()[1] != final_size:
+                transform = T.Resize((final_size, final_size), interpolation=Image.BICUBIC)
+                transform_GT = T.Resize((final_size, final_size), interpolation=Image.NEAREST)
+                image = transform(image)
+                GT = transform_GT(GT)
+        else:
+            raise TypeError("Unsupported type for image")
 
-
-        # Transform.append(T.Resize((final_size, final_size), interpolation=Image.BICUBIC))
-        # Transform_GT.append(T.Resize((final_size, final_size), interpolation=Image.NEAREST))
-        # Transform_contour.append(T.Resize((final_size, final_size), interpolation=Image.NEAREST))
-        # Transform_dist.append(T.Resize((final_size, final_size), interpolation=Image.NEAREST))
-
-        # Transform.append(T.ToTensor())
-        # Transform_GT.append(T.ToTensor())
-        # Transform_contour.append(T.ToTensor())
-        # Transform_dist.append(T.ToTensor())
-
-        if image.mode == 'RGB':
-            Transform.append(T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]))
-        # print('tensor has be normalized')
-
+        # convert to tensor
+        Transform.append(T.ToTensor())
+        Transform_GT.append(T.ToTensor())
         Transform = T.Compose(Transform)
         Transform_GT = T.Compose(Transform_GT)
-        # Transform_contour = T.Compose(Transform_contour)
-        # Transform_dist = T.Compose(Transform_dist)
-
         image = Transform(image)
         GT = Transform_GT(GT)
-        # contour = Transform_contour(contour)
-        # dist = Transform_dist(dist)
-        if self.load_preseg:
-            seg = Transform_GT(seg)
-        # print(GT.shape)
-        # 如果是rgb,则需要
-        # Norm_ = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-        # image = Norm_(image)
-        if self.load_preseg:
-            # print('load seg')
-            return image_path, image, GT, seg
-        else:
-            return image_path, image, GT, class_item
+        # 将GT转为三通道
+
+
+        return image_path, image, GT, class_item
 
     def __len__(self):
         """Returns the total number of font files."""
@@ -393,6 +324,7 @@ class ImageFolder_new_difficult(data.Dataset):
 
 def worker_init_fn(worker_id):
     torch.cuda.empty_cache()  # 在每个子进程中调用torch.cuda.empty_cache()命令
+
 
 def get_loader(seg_list,
                GT_list,
