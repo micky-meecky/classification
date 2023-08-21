@@ -293,7 +293,8 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
                 else:
                     model = UNetcls(channel, 1, 'convpool')
 
-
+        elif modelname == 'agconvunet':
+            model = AgUNet(channel, 1, 'convpool')
         elif modelname == 'agunet':
             model = AgUNet(channel, 1)
         elif modelname == 'agunetseg':
