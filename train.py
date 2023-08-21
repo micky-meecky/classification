@@ -756,7 +756,6 @@ if __name__ == '__main__':
     #     print(testf1[i], end=', ')
     #     print(testacc[i])
 
-
     test_precision, test_recall, test_f1_score, test_acc = \
         Train_breast('agconvUnet_cls_seg_ch3_512_00', 6, 800, 'agconvunet', 6e-4,
                      Use_pretrained=False,
