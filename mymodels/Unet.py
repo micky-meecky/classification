@@ -140,15 +140,16 @@ class SideConv2d(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
         # 使用深度可分离卷积，5x5卷积核
-        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size=5, padding=2, stride=2, groups=in_channels)
+        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1, stride=2, groups=in_channels)
         self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+        # self.sideconv1 = nn.Conv2d(in_channels, out_channels, kernel_size=5, stride=2, padding=2)
         # BN + ReLU
         self.bn_relu_1 = nn.Sequential(
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         )
-        # 将侧边特征图下采样后与下采样后的特征图拼接后再进行一次卷积，用1x1卷积代替
-        self.sideconv2 = nn.Conv2d(out_channels * 2, out_channels, kernel_size=3, stride=1, padding=1)
+        # 将侧边特征图下采样后与下采样后的特征图拼接后再进行一次卷积
+        self.sideconv2 = nn.Conv2d(out_channels * 2, out_channels, kernel_size=1)
         # BN + ReLU
         self.bn_relu_2 = nn.Sequential(
             nn.BatchNorm2d(out_channels),
@@ -158,6 +159,7 @@ class SideConv2d(nn.Module):
     def forward(self, x, side):
         side = self.depthwise(side)
         side = self.pointwise(side)
+        # side = self.sideconv1(side)
         side = self.bn_relu_1(side)
         side = torch.cat([x, side], dim=1)
         side = self.sideconv2(side)
