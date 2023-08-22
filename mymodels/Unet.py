@@ -161,7 +161,9 @@ class SideConv2d(nn.Module):
         side = self.pointwise(side)
         # side = self.sideconv1(side)
         side = self.bn_relu_1(side)
-        side = torch.cat([x, side], dim=1)
+        side = torch.cat([x, side], dim=1)  # 拼接
+        # 按元素相加
+        # side = x + side
         side = self.sideconv2(side)
         side = self.bn_relu_2(side)
         return side
