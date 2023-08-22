@@ -149,7 +149,7 @@ class SideConv2d(nn.Module):
             nn.ReLU(inplace=True)
         )
         # 将侧边特征图下采样后与下采样后的特征图拼接后再进行一次卷积
-        self.sideconv2 = nn.Conv2d(out_channels * 2, out_channels, kernel_size=1)
+        self.sideconv2 = nn.Conv2d(out_channels * 1, out_channels, kernel_size=3, padding=1)
         # BN + ReLU
         self.bn_relu_2 = nn.Sequential(
             nn.BatchNorm2d(out_channels),
@@ -161,9 +161,9 @@ class SideConv2d(nn.Module):
         side = self.pointwise(side)
         # side = self.sideconv1(side)
         side = self.bn_relu_1(side)
-        side = torch.cat([x, side], dim=1)  # 拼接
+        # side = torch.cat([x, side], dim=1)  # 拼接
         # 按元素相加
-        # side = x + side
+        side = x + side
         side = self.sideconv2(side)
         side = self.bn_relu_2(side)
         return side
