@@ -757,14 +757,14 @@ if __name__ == '__main__':
     #     print(testacc[i])
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('AgconvUnet_cls_seg_ch3_512_00', 6, 800, 'agconvunet', 6e-4,
+        Train_breast('SideUNet_cls_seg_ch3_256_00', 6, 800, 'SideUNet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
                      is_continue_train=False,
                      use_clip=False,
                      channel=3,
-                     size=512,
+                     size=256,
                      decayepoch=790,
                      datasc='BUSI')
     testp.append(test_precision)

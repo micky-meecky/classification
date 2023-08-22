@@ -10,7 +10,7 @@ import pretrainedmodels.utils as utils
 from mymodels.models import Net
 from mymodels.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 from mymodels.unetr import UNETR, UNETRcls, UNETRseg, UNETRclsz12, UNETRclstoken
-from mymodels.Unet import UNet, UNetcls, UNetseg, Res101UNet, AgUNet, AgUNetseg, ResUNet, InDilatedUNet
+from mymodels.Unet import UNet, UNetcls, UNetseg, Res101UNet, AgUNet, AgUNetseg, ResUNet, InDilatedUNet, SideUNet
 from mymodels.testsmp import UNet as ResUnet
 from mymodels.ViT import ViT_model, ViTseg, ViTcls
 from mymodels.swinunet import SwinUnet
@@ -341,6 +341,8 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
             model = ResUNet(channel, 1, 'convpool')
         elif modelname == 'InDilatedUNet':
             model = InDilatedUNet(channel, 1, 'maxpool')
+        elif modelname == 'SideUNet':
+            model = SideUNet(channel, 1)
         else:
             assert False, 'model name error'
     return model

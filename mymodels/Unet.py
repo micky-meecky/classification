@@ -136,6 +136,72 @@ class InsertDilatedDown(nn.Module):
             return self.convpool_conv(x)
 
 
+class SideConv2d(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        # 使用深度可分离卷积，5x5卷积核
+        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size=5, padding=2, stride=2, groups=in_channels)
+        self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+        # BN + ReLU
+        self.bn_relu_1 = nn.Sequential(
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
+        # 将侧边特征图下采样后与下采样后的特征图拼接后再进行一次卷积，用1x1卷积代替
+        self.sideconv2 = nn.Conv2d(out_channels * 2, out_channels, kernel_size=3, stride=1, padding=1)
+        # BN + ReLU
+        self.bn_relu_2 = nn.Sequential(
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
+
+    def forward(self, x, side):
+        side = self.depthwise(side)
+        side = self.pointwise(side)
+        side = self.bn_relu_1(side)
+        side = torch.cat([x, side], dim=1)
+        side = self.sideconv2(side)
+        side = self.bn_relu_2(side)
+        return side
+
+
+class SideDown(nn.Module):
+    """Downscaling with maxpool then double conv"""
+
+    def __init__(self, in_channels, out_channels, method='maxpool', layernum=222):
+        super().__init__()
+        self.method = method
+        if layernum == 1:
+            side_in_channels = 3
+        else:
+            side_in_channels = in_channels
+        self.sideconv = SideConv2d(side_in_channels, out_channels)
+        if method == 'maxpool':
+            # 方法一：
+            self.maxpool_conv = nn.Sequential(
+                nn.MaxPool2d(2),
+                DoubleConv(in_channels, out_channels),
+            )
+        elif method == 'convpool':
+            # 方法二：
+            self.convpool_conv = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1),
+                nn.BatchNorm2d(out_channels),
+                nn.SiLU(inplace=True),
+                DoubleConv(out_channels, out_channels),
+                nn.Dropout(0.1)
+            )
+
+    def forward(self, x, side):
+        if self.method == 'maxpool':
+            downsample = self.maxpool_conv(x)
+        else:
+            downsample = self.convpool_conv(x)
+
+        side = self.sideconv(downsample, side)
+        return downsample, side
+
+
 class Down(nn.Module):
     """Downscaling with maxpool then double conv"""
 
@@ -330,6 +396,60 @@ class UNet(nn.Module):
 
         # classification head
         clsx = F.adaptive_avg_pool2d(x5, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
+        clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
+        label = self.linear(clsx)
+        return label, logits
+
+
+class SideUNet(nn.Module):
+    def __init__(self, n_channels, n_classes, method='maxpool', bilinear=False):
+        super(SideUNet, self).__init__()
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.bilinear = bilinear    # bilinear表示是否使用双线性插值
+
+        self.inc = (DoubleConv(n_channels, 64))
+        self.down1 = (SideDown(64, 128, method, layernum=1))
+        self.down2 = (SideDown(128, 256, method))
+        self.down3 = (SideDown(256, 512, method))
+        factor = 2 if bilinear else 1
+        self.down4 = (SideDown(512, 1024 // factor, method))
+        # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
+        self.up1 = (Up(1024, 512 // factor, bilinear))
+        self.up2 = (Up(512, 256 // factor, bilinear))
+        self.up3 = (Up(256, 128 // factor, bilinear))
+        self.up4 = (Up(128, 64, bilinear))
+        self.outc = (OutConv(64, n_classes))
+        self.activation = nn.Sigmoid()
+
+        # classification head
+        self.linear = nn.Linear(1024, 1)
+
+    def forward(self, x):
+        # encoder
+        x1 = self.inc(x)
+        x2, side_x2 = self.down1(x1, x)
+        x3, side_x3 = self.down2(x2, side_x2)
+        x4, side_x4 = self.down3(x3, side_x3)
+        x5, side_x5 = self.down4(x4, side_x4)
+        # x5 就没用了，清除掉
+        del x5
+
+        # decoder
+        x = self.up1(side_x5, x4)
+
+        x = self.up2(x, x3)
+
+        x = self.up3(x, x2)
+
+        x = self.up4(x, x1)
+
+        # segmentation head
+        logits = self.outc(x)
+        # logits = self.activation(logits)
+
+        # classification head
+        clsx = F.adaptive_avg_pool2d(side_x5, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
         clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
         label = self.linear(clsx)
         return label, logits
@@ -640,7 +760,7 @@ class Res101UNet(nn.Module):
 
 if __name__ == '__main__':
     method = 'convpool'
-    model = InDilatedUNet(3, 1)
+    model = SideUNet(3, 1)
     # model = UNet(3, 1)
     model.eval()
     input = torch.randn(10, 3, 256, 256)
