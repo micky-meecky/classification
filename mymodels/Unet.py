@@ -452,6 +452,7 @@ class AuxclsUNet(nn.Module):
         label = self.linear(clsx)
         label = self.auxclsact(label)
         predicted = torch.round(label)
+        predicted = 1 - predicted
         # segmentation head
         logits = self.outc(x)
         logits = self.auxclsact(logits)
