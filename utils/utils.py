@@ -346,8 +346,6 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
             model = SideUNet(channel, 1)
         elif modelname == 'SideconvUNet':
             model = SideUNet(channel, 1, 'convpool')
-        elif modelname == 'AuxclsUNet':
-            model = AuxclsUNet(channel, 1)
         else:
             assert False, 'model name error'
     return model
