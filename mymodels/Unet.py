@@ -425,6 +425,7 @@ class AuxclsUNet(nn.Module):
         self.up4 = (Up(128, 64, bilinear))
         self.outc = (OutConv(64, n_classes))
         self.auxclsact = nn.Sigmoid()
+        self.segact = nn.Sigmoid()
         # classification head
         self.linear = nn.Linear(1024, 1)
 
@@ -455,7 +456,7 @@ class AuxclsUNet(nn.Module):
         predicted = 1 - predicted
         # segmentation head
         logits = self.outc(x)
-        logits = self.auxclsact(logits)
+        logits = self.segact(logits)
         # 为了达成classification-guided module，便将predicted与logits相乘
         logits = logits * predicted.unsqueeze(2).unsqueeze(3).expand_as(logits)
 
