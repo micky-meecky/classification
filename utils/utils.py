@@ -342,9 +342,11 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
         elif modelname == 'InDilatedUNet':
             model = InDilatedUNet(channel, 1, 'maxpool')
         elif modelname == 'SideUNet':
-            model = SideUNet(channel, 1)
+            model = SideUNet(channel, 1, 'NoSE')
         elif modelname == 'SideconvUNet':
-            model = SideUNet(channel, 1, 'convpool')
+            model = SideUNet(channel, 1, 'NoSE', 'convpool')
+        elif modelname == 'SideSEUNet':
+            model = SideUNet(channel, 1, 'SE')
         else:
             assert False, 'model name error'
     return model

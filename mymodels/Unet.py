@@ -137,7 +137,7 @@ class InsertDilatedDown(nn.Module):
             return self.convpool_conv(x)
 
 
-class SideConv2d(nn.Module):
+class SideSEConv2d(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
         # 使用深度可分离卷积，5x5卷积核
@@ -150,7 +150,7 @@ class SideConv2d(nn.Module):
             nn.ReLU(inplace=True)
         )
         # 将侧边特征图下采样后与下采样后的特征图拼接后再进行一次卷积
-        self.sideconv2 = nn.Conv2d(out_channels * 2, out_channels, kernel_size=3, padding=1)
+        self.sideconv2 = nn.Conv2d(out_channels * 2, out_channels, kernel_size=1)
         # BN + ReLU
         self.bn_relu_2 = nn.Sequential(
             nn.BatchNorm2d(out_channels),
@@ -172,17 +172,53 @@ class SideConv2d(nn.Module):
         return side
 
 
+class SideConv2d(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        # 使用深度可分离卷积，5x5卷积核
+        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1, stride=2, groups=in_channels)
+        self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+        # self.sideconv1 = nn.Conv2d(in_channels, out_channels, kernel_size=5, stride=2, padding=2)
+        # BN + ReLU
+        self.bn_relu_1 = nn.Sequential(
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
+        # 将侧边特征图下采样后与下采样后的特征图拼接后再进行一次卷积
+        self.sideconv2 = nn.Conv2d(out_channels * 2, out_channels, kernel_size=1)
+        # BN + ReLU
+        self.bn_relu_2 = nn.Sequential(
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
+
+    def forward(self, x, side):
+        side = self.depthwise(side)
+        side = self.pointwise(side)
+        # side = self.sideconv1(side)
+        side = self.bn_relu_1(side)
+        side = torch.cat([x, side], dim=1)  # 拼接
+        # 按元素相加
+        # side = x + side
+        side = self.sideconv2(side)
+        side = self.bn_relu_2(side)
+        return side
+
+
 class SideDown(nn.Module):
     """Downscaling with maxpool then double conv"""
 
-    def __init__(self, in_channels, out_channels, method='maxpool', layernum=222):
+    def __init__(self, in_channels, out_channels, sidemode='SE', method='maxpool', layernum=222):
         super().__init__()
         self.method = method
         if layernum == 1:
             side_in_channels = 3
         else:
             side_in_channels = in_channels
-        self.sideconv = SideConv2d(side_in_channels, out_channels)
+        if sidemode == 'SE':
+            self.sideconv = SideSEConv2d(side_in_channels, out_channels)
+        else:
+            self.sideconv = SideConv2d(side_in_channels, out_channels)
         if method == 'maxpool':
             # 方法一：
             self.maxpool_conv = nn.Sequential(
@@ -409,18 +445,18 @@ class UNet(nn.Module):
 
 
 class SideUNet(nn.Module):
-    def __init__(self, n_channels, n_classes, method='maxpool', bilinear=False):
+    def __init__(self, n_channels, n_classes, sidemode='SE', method='maxpool', bilinear=False):
         super(SideUNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear    # bilinear表示是否使用双线性插值
 
         self.inc = (DoubleConv(n_channels, 64))
-        self.down1 = (SideDown(64, 128, method, layernum=1))
-        self.down2 = (SideDown(128, 256, method))
-        self.down3 = (SideDown(256, 512, method))
+        self.down1 = (SideDown(64, 128, sidemode, method, layernum=1))
+        self.down2 = (SideDown(128, 256, sidemode, method))
+        self.down3 = (SideDown(256, 512, sidemode, method))
         factor = 2 if bilinear else 1
-        self.down4 = (SideDown(512, 1024 // factor, method))
+        self.down4 = (SideDown(512, 1024 // factor, sidemode, method))
         # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
         self.up1 = (Up(1024, 512 // factor, bilinear))
         self.up2 = (Up(512, 256 // factor, bilinear))
