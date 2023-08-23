@@ -23,9 +23,9 @@ class SEModule(nn.Module):
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         # 激励阶段：使用两个全连接层学习通道间的相互依赖关系
         self.fc = nn.Sequential(
-            nn.Linear(channels, channels // reduction), # 减小维度
+            nn.Linear(channels, channels // reduction),  # 减小维度
             nn.ReLU(inplace=True),                      # ReLU激活函数
-            nn.Linear(channels // reduction, channels), # 恢复原始维度
+            nn.Linear(channels // reduction, channels),  # 恢复原始维度
             nn.Sigmoid()                                # Sigmoid激活函数确保输出在0到1之间
         )
 

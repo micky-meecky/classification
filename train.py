@@ -250,7 +250,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     lr = lr  # 学习率  -----------------------------------------------------
     validate_flag = True  # 是否使用验证集 -----------------------------------------------------
     lr_low = 1e-15  # 学习率下限  ------------------------------------------------------
-    lr_warm_epoch = 3  # warm up 的 epoch 数 -----------------------------------------------------
+    lr_warm_epoch = 10  # warm up 的 epoch 数 -----------------------------------------------------
     lr_cos_epoch = decayepoch  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 100  # 学习率下降的epoch数 -----------------------------------------------------
     decay_step = 10  # 学习率下降的epoch数 -----------------------------------------------------
@@ -742,14 +742,14 @@ if __name__ == '__main__':
     #     print(testacc[i])
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('SideSEUNet_cls_seg_ch3_256_01', 6, 800, 'SideSEUNet', 6e-4,
+        Train_breast('Unet_cls_seg_ch3_512_00', 6, 800, 'UNet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
                      is_continue_train=False,
                      use_clip=False,
                      channel=3,
-                     size=256,
+                     size=512,
                      decayepoch=790,
                      datasc='BUSI',
                      clsaux=False)
