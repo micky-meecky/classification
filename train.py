@@ -242,7 +242,7 @@ def breast_loader(batch_size, testbs, device, validate_flag, use_clip, channel, 
 
 def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segtask, _only_segtask,
                  is_continue_train,
-                 use_clip, channel, size, decayepoch, datasc
+                 use_clip, channel, size, decayepoch, datasc, clsaux
                  ):
     project = Project  # project name-----------------------------------------------------
     epoch_num = epoch  # epoch_num -----------------------------------------------------
@@ -402,6 +402,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                 else:
                     if _have_segtask:
                         outputs, segout = model(inputs)
+                        segout = torch.sigmoid(segout)
                     else:
                         outputs = model(inputs)
 
@@ -419,9 +420,9 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                     if _have_segtask:
                         # 根据分类的结果，分类为1的代表的是没有结节的样本，而分类为0的代表的是有结节的样本。
                         # 没有结节的话，则将segout乘以0，有结节的话，则将segout乘以1
-                        cls_predicted = 1 - predicted  # 这里的predicted是0或者1，所以1-predicted就是1或者0
-                        segout = torch.sigmoid(segout)
-                        segout = segout * cls_predicted.view(-1, 1, 1, 1)  # 要转换成bs x 1 x 1 x 1
+                        if clsaux:
+                            cls_predicted = 1 - predicted  # 这里的predicted是0或者1，所以1-predicted就是1或者0
+                            segout = segout * cls_predicted.view(-1, 1, 1, 1)  # 要转换成bs x 1 x 1 x 1
                         SR_flat = segout.view(segout.size(0), -1)
                         GT_flat = targets1.view(targets1.size(0), -1)
                         # seg_loss = criterion_seg(SR_flat, GT_flat, device)
@@ -717,7 +718,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UNet_cls_seg_ch3_256_00', 6, 800, 'unet', 6e-4,
+        Train_breast('clxauxUNet_cls_seg_ch3_256_00', 6, 800, 'unet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
@@ -726,7 +727,8 @@ if __name__ == '__main__':
                      channel=3,
                      size=256,
                      decayepoch=790,
-                     datasc='BUSI')
+                     datasc='BUSI',
+                     clsaux=True)
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)
