@@ -402,7 +402,26 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                 else:
                     if _have_segtask:
                         outputs, segout = model(inputs)
-                        # segout = torch.sigmoid(segout)
+                    else:
+                        outputs = model(inputs)
+
+                    if class_num > 2:
+                        labels = F.softmax(outputs, dim=1)  # -----------------------------------------------------
+                        _, predicted = torch.max(labels.data, 1)
+                        # cls_loss = criterion_cls(outputs, targets4)
+                    else:  # 如果是二分类，就用sigmoid
+                        labels = torch.sigmoid(outputs)
+                        predicted = torch.round(labels)  # 这是表示四舍五入，而不是取整数
+                        targets4v = targets4.view(-1, 1)
+                        targets4v = targets4v.to(torch.float)
+                        # cls_loss = criterion_cls(outputs, targets4v)
+
+                    if _have_segtask:
+                        # 根据分类的结果，分类为1的代表的是没有结节的样本，而分类为0的代表的是有结节的样本。
+                        # 没有结节的话，则将segout乘以0，有结节的话，则将segout乘以1
+                        cls_predicted = 1 - predicted  # 这里的predicted是0或者1，所以1-predicted就是1或者0
+                        segout = torch.sigmoid(segout)
+                        segout = segout * cls_predicted.view(-1, 1, 1, 1)  # 要转换成bs x 1 x 1 x 1
                         SR_flat = segout.view(segout.size(0), -1)
                         GT_flat = targets1.view(targets1.size(0), -1)
                         # seg_loss = criterion_seg(SR_flat, GT_flat, device)
@@ -416,19 +435,6 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                         DClist.append(DC)
                         IOUlist.append(IOU)
                         Acclist.append(Acc)
-                    else:
-                        outputs = model(inputs)
-
-                    if class_num > 2:
-                        labels = F.softmax(outputs, dim=1)  # -----------------------------------------------------
-                        _, predicted = torch.max(labels.data, 1)
-                        # cls_loss = criterion_cls(outputs, targets4)
-                    else:  # 如果是二分类，就用sigmoid
-                        # labels = torch.sigmoid(outputs)
-                        predicted = torch.round(outputs)  # 这是表示四舍五入，而不是取整数
-                        targets4v = targets4.view(-1, 1)
-                        targets4v = targets4v.to(torch.float)
-                        # cls_loss = criterion_cls(outputs, targets4v)
 
                     if _have_segtask:
                         seg_loss, cls_loss, loss, log_vars = mtl(outputs, SR_flat, targets4v, GT_flat, criterion_seg,
