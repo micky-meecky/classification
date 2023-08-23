@@ -67,16 +67,6 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
             else:
                 if _have_segtask:
                     labels, segout = model(images)
-                    segout = torch.sigmoid(segout)
-                    SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
-                    # 将这些指标存到一个list里面，方便后面计算平均值
-                    SElist.append(SE)
-                    PClist.append(PC)
-                    F1list.append(F1)
-                    JSlist.append(JS)
-                    DClist.append(DC)
-                    IOUlist.append(IOU)
-                    Acclist.append(Acc)
                 else:
                     labels = model(images)
                     # labels = torch.exp(labels)  # -----------------------------------------------------
@@ -86,6 +76,20 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
                 else:  # 如果是二分类，就用sigmoid
                     labels = torch.sigmoid(labels)
                     predicted = torch.round(labels.data)
+
+                if _have_segtask:
+                    cls_predicted = 1 - predicted  # 这里的predicted是0或者1，所以1-predicted就是1或者0
+                    segout = torch.sigmoid(segout)
+                    segout = segout * cls_predicted.view(-1, 1, 1, 1)  # 要转换成bs x 1 x 1 x 1
+                    SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
+                    # 将这些指标存到一个list里面，方便后面计算平均值
+                    SElist.append(SE)
+                    PClist.append(PC)
+                    F1list.append(F1)
+                    JSlist.append(JS)
+                    DClist.append(DC)
+                    IOUlist.append(IOU)
+                    Acclist.append(Acc)
 
                 # 计算TP, FP, TN, FN
                 predicted = predicted.squeeze().long()
@@ -196,16 +200,6 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
             else:
                 if _have_segtask:
                     labels, segout = model(images)
-                    segout = torch.sigmoid(segout)
-                    SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
-                    # 将这些指标存到一个list里面，方便后面计算平均值
-                    SElist.append(SE)
-                    PClist.append(PC)
-                    F1list.append(F1)
-                    JSlist.append(JS)
-                    DClist.append(DC)
-                    IOUlist.append(IOU)
-                    Acclist.append(Acc)
                 else:
                     labels = model(images)
                     # labels = torch.exp(labels)  # -----------------------------------------------------
@@ -215,6 +209,20 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
                 else:  # 如果是二分类，就用sigmoid
                     labels = torch.sigmoid(labels)
                     predicted = torch.round(labels.data)
+
+                if _have_segtask:
+                    cls_predicted = 1 - predicted  # 这里的predicted是0或者1，所以1-predicted就是1或者0
+                    segout = torch.sigmoid(segout)
+                    segout = segout * cls_predicted.view(-1, 1, 1, 1)  # 要转换成bs x 1 x 1 x 1
+                    SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
+                    # 将这些指标存到一个list里面，方便后面计算平均值
+                    SElist.append(SE)
+                    PClist.append(PC)
+                    F1list.append(F1)
+                    JSlist.append(JS)
+                    DClist.append(DC)
+                    IOUlist.append(IOU)
+                    Acclist.append(Acc)
 
                 # 计算TP, FP, TN, FN
                 predicted = predicted.squeeze().long()
