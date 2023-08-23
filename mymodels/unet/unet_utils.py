@@ -16,6 +16,36 @@ import torchvision.models as models
 from mymodels.CBAMUnet import ChannelAttention, SpatialAttention
 
 
+class SEModule(nn.Module):
+    def __init__(self, channels, reduction=16):
+        super(SEModule, self).__init__()
+        # 挤压阶段：使用全局平均池化将空间维度挤压为1
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        # 激励阶段：使用两个全连接层学习通道间的相互依赖关系
+        self.fc = nn.Sequential(
+            nn.Linear(channels, channels // reduction), # 减小维度
+            nn.ReLU(inplace=True),                      # ReLU激活函数
+            nn.Linear(channels // reduction, channels), # 恢复原始维度
+            nn.Sigmoid()                                # Sigmoid激活函数确保输出在0到1之间
+        )
+
+    def forward(self, x):
+        # 输入x的维度为：(batch_size, channels, height, width)
+
+        # 挤压阶段
+        b, c, _, _ = x.size()
+        y = self.avg_pool(x).view(b, c)
+        # y的维度为：(batch_size, channels)
+
+        # 激励阶段
+        y = self.fc(y).view(b, c, 1, 1)
+        # y的维度为：(batch_size, channels, 1, 1)
+
+        # 将挤压和激励的结果与原始输入相乘
+        return x * y.expand_as(x)
+        # 输出的维度与输入相同：(batch_size, channels, height, width)
+
+
 class MultiDilatedConv(nn.Module):
     def __init__(self, in_channels, out_channels, dilation_rates=[1, 2, 4]):
         super().__init__()

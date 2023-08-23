@@ -8,7 +8,8 @@ import torch.nn.functional as F
 import torchvision.models as models
 from segmentation_models_pytorch.encoders import get_encoder
 from mymodels.CBAMUnet import ChannelAttention, SpatialAttention
-from mymodels.unet.unet_utils import MultiDilatedConv, CascadedDilatedConv, ResidualBlock, AttentionGate, Res101Encoder
+from mymodels.unet.unet_utils import MultiDilatedConv, CascadedDilatedConv, ResidualBlock, AttentionGate, \
+    Res101Encoder, SEModule
 
 
 class DoubleConv(nn.Module):
@@ -155,6 +156,7 @@ class SideConv2d(nn.Module):
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         )
+        self.se = SEModule(out_channels)
 
     def forward(self, x, side):
         side = self.depthwise(side)
@@ -166,6 +168,7 @@ class SideConv2d(nn.Module):
         # side = x + side
         side = self.sideconv2(side)
         side = self.bn_relu_2(side)
+        side = self.se(side)
         return side
 
 
