@@ -382,7 +382,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
 
                 if _only_segtask:
                     segout = model(inputs)
-                    segout = torch.sigmoid(segout)
+                    # segout = torch.sigmoid(segout)
                     SR_flat = segout.view(segout.size(0), -1)
                     GT_flat = targets1.view(targets1.size(0), -1)
                     loss = criterion_seg(SR_flat, GT_flat, device)
@@ -402,7 +402,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                 else:
                     if _have_segtask:
                         outputs, segout = model(inputs)
-                        segout = torch.sigmoid(segout)
+                        # segout = torch.sigmoid(segout)
                         SR_flat = segout.view(segout.size(0), -1)
                         GT_flat = targets1.view(targets1.size(0), -1)
                         # seg_loss = criterion_seg(SR_flat, GT_flat, device)
@@ -424,8 +424,8 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                         _, predicted = torch.max(labels.data, 1)
                         # cls_loss = criterion_cls(outputs, targets4)
                     else:  # 如果是二分类，就用sigmoid
-                        labels = torch.sigmoid(outputs)
-                        predicted = torch.round(labels)  # 这是表示四舍五入，而不是取整数
+                        # labels = torch.sigmoid(outputs)
+                        predicted = torch.round(outputs)  # 这是表示四舍五入，而不是取整数
                         targets4v = targets4.view(-1, 1)
                         targets4v = targets4v.to(torch.float)
                         # cls_loss = criterion_cls(outputs, targets4v)
@@ -711,7 +711,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('SideconvUNet_cls_seg_ch3_256_00', 6, 800, 'SideconvUNet', 6e-4,
+        Train_breast('AuxclsUNet_cls_seg_ch3_256_00', 6, 800, 'AuxclsUNet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
