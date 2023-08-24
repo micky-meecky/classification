@@ -748,7 +748,7 @@ if __name__ == '__main__':
     #     print(testacc[i])
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('InDilatedUNet_cls_seg_ch3_256_01', 6, 800, 'InDilatedUNet', 6e-4,
+        Train_breast('CasDilatedUNet_cls_seg_ch3_256_00', 6, 800, 'CasDilatedUNet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,

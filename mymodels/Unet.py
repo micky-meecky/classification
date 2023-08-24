@@ -549,6 +549,57 @@ class InDilatedUNet(nn.Module):
         return label, logits
 
 
+class CasDilatedUNet(nn.Module):
+    def __init__(self, n_channels, n_classes, Method='maxpool', bilinear=False):
+        super(CasDilatedUNet, self).__init__()
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.bilinear = bilinear    # bilinear表示是否使用双线性插值
+        self.inc = DoubleConv(n_channels, 64)
+        self.down1 = InsertDilatedDown(64, 128, poolmethod=Method)
+        self.down2 = InsertDilatedDown(128, 256, poolmethod=Method)
+        self.down3 = InsertDilatedDown(256, 512, poolmethod=Method)
+        factor = 2 if bilinear else 1
+        self.down4 = InsertDilatedDown(512, 1024 // factor, poolmethod=Method)
+        # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
+        self.up1 = (Up(1024, 512 // factor, bilinear))
+        self.up2 = (Up(512, 256 // factor, bilinear))
+        self.up3 = (Up(256, 128 // factor, bilinear))
+        self.up4 = (Up(128, 64, bilinear))
+        self.outc = (OutConv(64, n_classes))
+
+        # classification head
+        self.linear = nn.Linear(1024, 1)
+
+    def forward(self, x):
+        # encoder
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x4 = self.down3(x3)
+        x5 = self.down4(x4)
+
+        # decoder
+        # decoder with attention gates
+        x = self.up1(x5, x4)
+
+        x = self.up2(x, x3)
+
+        x = self.up3(x, x2)
+
+        x = self.up4(x, x1)
+
+        # segmentation head
+        logits = self.outc(x)
+        # logits = self.activation(logits)
+
+        # classification head
+        clsx = F.adaptive_avg_pool2d(x5, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
+        clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
+        label = self.linear(clsx)
+        return label, logits
+
+
 class ResUNet(nn.Module):
     def __init__(self, n_channels, n_classes, method='maxpool', bilinear=False):
         super(ResUNet, self).__init__()

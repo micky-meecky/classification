@@ -10,7 +10,8 @@ import pretrainedmodels.utils as utils
 from mymodels.models import Net
 from mymodels.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 from mymodels.unetr import UNETR, UNETRcls, UNETRseg, UNETRclsz12, UNETRclstoken
-from mymodels.Unet import UNet, UNetcls, UNetseg, Res101UNet, AgUNet, AgUNetseg, ResUNet, InDilatedUNet, SideUNet
+from mymodels.Unet import UNet, UNetcls, UNetseg, Res101UNet, AgUNet, AgUNetseg, ResUNet, InDilatedUNet, SideUNet, \
+    CasDilatedUNet
 from mymodels.testsmp import UNet as ResUnet
 from mymodels.ViT import ViT_model, ViTseg, ViTcls
 from mymodels.swinunet import SwinUnet
@@ -107,7 +108,7 @@ class MultiTaskLossWrapper(nn.Module):
         num = GT_flat.size(0)
         seg_loss = seg_loss / num
         cls_loss = cls_loss / num
-        loss = loss / num / 2    # 除以2是因为有两个loss
+        loss = loss / num / 2  # 除以2是因为有两个loss
         return seg_loss, cls_loss, loss, self.log_vars
 
 
@@ -140,7 +141,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
     model = None
     if use_pretrained:
         if modelname == 'res101UNetsmp':
-            model = ResUnet(encoder_name='resnet101', in_channels=channel,oseg=True)
+            model = ResUnet(encoder_name='resnet101', in_channels=channel, oseg=True)
         if modelname == 'res101UNet':
             model = Res101UNet(channel, 1)
         if modelname == 'preswin_vit_segc':
@@ -174,7 +175,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
             #         param.requires_grad = False
         if modelname == 'preswin_vit_cls':
             # 创建新模型实例
-            model = Swincls(oseg=False, task= 'cls', channel=channel)
+            model = Swincls(oseg=False, task='cls', channel=channel)
 
             # 加载预训练权重
             model_path = os.path.join(os.path.expanduser("~"),
@@ -341,6 +342,8 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
             model = ResUNet(channel, 1, 'convpool')
         elif modelname == 'InDilatedUNet':
             model = InDilatedUNet(channel, 1, 'maxpool')
+        elif modelname == 'CasDilatedUNet':
+            model = CasDilatedUNet(channel, 1, 'maxpool')
         elif modelname == 'SideUNet':
             model = SideUNet(channel, 1, 'NoSE')
         elif modelname == 'SideconvUNet':
@@ -559,8 +562,8 @@ if __name__ == '__main__':
     lr_low = 1e-15  # 最低学习率
     decay_step = 10  # 每decay_step个epoch衰减一次
     decay_ratio = 0.951  # 每decay_step个epoch衰减一次，衰减比例为decay_ratio
-    num_epochs_decay = 40   # 从第几个epoch开始衰减
-    lr_warm_epoch = 6   # warmup的epoch数
+    num_epochs_decay = 40  # 从第几个epoch开始衰减
+    lr_warm_epoch = 6  # warmup的epoch数
     lr_cos_epoch = 790  # cos衰减的epoch数
     optimizer = torch.optim.Adam([torch.randn(3, 3)], lr=lr)
     lr_sch = LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer)
@@ -572,6 +575,3 @@ if __name__ == '__main__':
         # 将学习率记录在一个列表lr_list中
         lr_list.append(GetCurrentLr(optimizer))
         print('epoch: {}, lr: {}'.format(epoch, GetCurrentLr(optimizer)))
-
-
-
