@@ -69,7 +69,7 @@ class ResidualDown(nn.Module):
 
 
 class ReplaceDilatedDown(nn.Module):
-    """ 包含空洞多尺度空洞卷积的下采样模块"""
+    """ 包含多尺度空洞卷积的下采样模块"""
     def __init__(self, in_channels, out_channels, poolmethod='maxpool', num_dilated_convs=1):
         super().__init__()
         self.poolmethod = poolmethod
@@ -503,7 +503,7 @@ class InDilatedUNet(nn.Module):
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear    # bilinear表示是否使用双线性插值
-        num_dilated_convs = [1, 2, 3, 3, 3]
+        num_dilated_convs = [1, 2, 2, 3, 3]
         self.inc = MultiDilatedConv(n_channels, 64)
         self.down1 = ReplaceDilatedDown(64, 128, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[1])
         self.down2 = ReplaceDilatedDown(128, 256, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[2])
@@ -802,6 +802,7 @@ class Res101UNet(nn.Module):
 if __name__ == '__main__':
     method = 'convpool'
     model = InDilatedUNet(3, 1)
+    print(model)
     # model = UNet(3, 1)
     model.eval()
     input = torch.randn(10, 3, 256, 256)

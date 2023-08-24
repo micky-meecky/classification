@@ -47,7 +47,7 @@ class SEModule(nn.Module):
 
 
 class MultiDilatedConv(nn.Module):
-    def __init__(self, in_channels, out_channels, dilation_rates=[1, 2, 4]):
+    def __init__(self, in_channels, out_channels, dilation_rates=[1, 2, 3]):
         super().__init__()
         self.convs = nn.ModuleList([
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=d, dilation=d, bias=False)
