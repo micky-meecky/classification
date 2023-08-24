@@ -549,6 +549,12 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
 
     print('Finished Training\n')
     if is_test:
+        #测试最后一epoch 的模型效果并输出
+        test_precision, test_recall, test_f1_score, test_acc = \
+            test.test('test', test_loader, model, SegImgSavePath, device, class_num, _have_segtask, _only_segtask)
+        print('test_precision, test_recall, test_f1_score, test_acc:', test_precision, test_recall, test_f1_score,
+              test_acc)
+        print('最后一epoch的模型效果测试完毕')
         mini_loss_model = save_model_dir + '/best' + '.pth'
         model.load_state_dict(torch.load(mini_loss_model, map_location=device))
         test_precision, test_recall, test_f1_score, test_acc = \
@@ -742,14 +748,14 @@ if __name__ == '__main__':
     #     print(testacc[i])
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('Unet_cls_seg_ch3_512_00', 6, 800, 'unet', 6e-4,
+        Train_breast('SideSEUNet_cls_seg_ch3_256_01', 6, 800, 'SideSEUNet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
                      is_continue_train=False,
                      use_clip=False,
                      channel=3,
-                     size=512,
+                     size=256,
                      decayepoch=790,
                      datasc='BUSI',
                      clsaux=False)

@@ -803,7 +803,7 @@ class Res101UNet(nn.Module):
 
 if __name__ == '__main__':
     method = 'convpool'
-    model = SideUNet(3, 1)
+    model = InDilatedUNet(3, 1)
     # model = UNet(3, 1)
     model.eval()
     input = torch.randn(10, 3, 256, 256)
