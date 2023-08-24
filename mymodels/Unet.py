@@ -94,14 +94,14 @@ class ReplaceDilatedDown(nn.Module):
                 *dilated_convs,
                 nn.Dropout(0.1)
             )
-
+        self.se = SEModule(out_channels)
         self.dropout = nn.Dropout(0.1)
 
     def forward(self, x):
         if self.poolmethod == 'maxpool':
-            return self.maxpool_conv(x)
+            return self.se(self.maxpool_conv(x))
         else:
-            return self.convpool_conv(x)
+            return self.se(self.convpool_conv(x))
 
 
 class InsertDilatedDown(nn.Module):
@@ -503,13 +503,13 @@ class InDilatedUNet(nn.Module):
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear    # bilinear表示是否使用双线性插值
-        num_dilated_convs = [1, 2, 2, 2, 2]
-        self.inc = MultiDilatedConv(n_channels, 64)
-        self.down1 = ReplaceDilatedDown(64, 128, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[1])
-        self.down2 = ReplaceDilatedDown(128, 256, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[2])
-        self.down3 = ReplaceDilatedDown(256, 512, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[3])
+        num_dilated_convs = [2, 2, 2, 2]
+        self.inc = DoubleConv(n_channels, 64)
+        self.down1 = ReplaceDilatedDown(64, 128, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[0])
+        self.down2 = ReplaceDilatedDown(128, 256, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[1])
+        self.down3 = ReplaceDilatedDown(256, 512, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[2])
         factor = 2 if bilinear else 1
-        self.down4 = ReplaceDilatedDown(512, 1024 // factor, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[4])
+        self.down4 = ReplaceDilatedDown(512, 1024 // factor, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[3])
         # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
         self.up1 = (Up(1024, 512 // factor, bilinear))
         self.up2 = (Up(512, 256 // factor, bilinear))
