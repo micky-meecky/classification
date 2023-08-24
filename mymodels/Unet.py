@@ -503,7 +503,7 @@ class InDilatedUNet(nn.Module):
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear    # bilinear表示是否使用双线性插值
-        num_dilated_convs = [1, 2, 2, 3, 3]
+        num_dilated_convs = [1, 2, 2, 2, 2]
         self.inc = MultiDilatedConv(n_channels, 64)
         self.down1 = ReplaceDilatedDown(64, 128, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[1])
         self.down2 = ReplaceDilatedDown(128, 256, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[2])
