@@ -463,7 +463,6 @@ class SideUNet(nn.Module):
         self.up3 = (Up(256, 128 // factor, bilinear))
         self.up4 = (Up(128, 64, bilinear))
         self.outc = (OutConv(64, n_classes))
-        self.activation = nn.Sigmoid()
 
         # classification head
         self.linear = nn.Linear(1024, 1)
@@ -517,7 +516,6 @@ class InDilatedUNet(nn.Module):
         self.up3 = (Up(256, 128 // factor, bilinear))
         self.up4 = (Up(128, 64, bilinear))
         self.outc = (OutConv(64, n_classes))
-        self.activation = nn.Sigmoid()
 
         # classification head
         self.linear = nn.Linear(1024, 1)
