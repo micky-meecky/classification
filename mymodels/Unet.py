@@ -498,18 +498,18 @@ class SideUNet(nn.Module):
 
 
 class InDilatedUNet(nn.Module):
-    def __init__(self, n_channels, n_classes, method='maxpool', bilinear=False):
+    def __init__(self, n_channels, n_classes, Method='maxpool', bilinear=False):
         super(InDilatedUNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear    # bilinear表示是否使用双线性插值
         num_dilated_convs = [2, 2, 2, 2]
         self.inc = DoubleConv(n_channels, 64)
-        self.down1 = ReplaceDilatedDown(64, 128, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[0])
-        self.down2 = ReplaceDilatedDown(128, 256, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[1])
-        self.down3 = ReplaceDilatedDown(256, 512, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[2])
+        self.down1 = ReplaceDilatedDown(64, 128, poolmethod=Method, num_dilated_convs=num_dilated_convs[0])
+        self.down2 = ReplaceDilatedDown(128, 256, poolmethod=Method, num_dilated_convs=num_dilated_convs[1])
+        self.down3 = ReplaceDilatedDown(256, 512, poolmethod=Method, num_dilated_convs=num_dilated_convs[2])
         factor = 2 if bilinear else 1
-        self.down4 = ReplaceDilatedDown(512, 1024 // factor, poolmethod='maxpool', num_dilated_convs=num_dilated_convs[3])
+        self.down4 = ReplaceDilatedDown(512, 1024 // factor, poolmethod=Method, num_dilated_convs=num_dilated_convs[3])
         # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
         self.up1 = (Up(1024, 512 // factor, bilinear))
         self.up2 = (Up(512, 256 // factor, bilinear))
