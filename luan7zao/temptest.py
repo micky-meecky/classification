@@ -6,6 +6,14 @@ import numpy as np
 # 定义分布式策略
 strategy = tf.distribute.MirroredStrategy()
 
+import tensorflow as tf
+physical_devices = tf.config.list_physical_devices('GPU')
+if len(physical_devices) == 0:
+    print("No GPUs were found.")
+else:
+    print("Found the following GPUs:", physical_devices)
+
+
 # 在策略作用域内定义模型、损失函数和训练步骤
 with strategy.scope():
     # 定义下采样块
