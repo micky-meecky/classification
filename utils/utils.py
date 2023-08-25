@@ -14,7 +14,7 @@ from mymodels.testsmp import UNet as ResUnet
 from mymodels.ViT import ViT_model, ViTseg, ViTcls
 from mymodels.swinunet import SwinUnet
 from mymodels.MTunet import MTUNet
-from mymodels.CBAMUnet import AgCBAMUNet, AgCBAMPixViTUNet, CBAMUNet, SideCBAMUNet
+from mymodels.CBAMUnet import AgCBAMUNet, AgCBAMPixViTUNet, CBAMUNet, SideCBAMUNet, SideAgCBAMUNet
 from mymodels.Transunet.Transunet import TransUNet
 from mymodels.swinViT import swin_base_patch4_window7_224, Swinseg, Swincls
 import os
@@ -340,6 +340,8 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
             model = CBAMUNet(channel, 1)
         elif modelname == 'SideCBAMUNet':
             model = SideCBAMUNet(channel, 1)
+        elif modelname == 'SideAgCBAMUNet':
+            model = SideAgCBAMUNet(channel, 1)
         elif modelname == 'ResUNet':
             model = ResUNet(channel, 1, 'convpool')
         elif modelname == 'InDilatedUNet':
