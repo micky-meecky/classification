@@ -445,18 +445,18 @@ class UNet(nn.Module):
 
 
 class SideUNet(nn.Module):
-    def __init__(self, n_channels, n_classes, sidemode='SE', method='maxpool', bilinear=False):
+    def __init__(self, n_channels, n_classes, sidemode='SE', Method='maxpool', bilinear=False):
         super(SideUNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear    # bilinear表示是否使用双线性插值
 
         self.inc = (DoubleConv(n_channels, 64))
-        self.down1 = (SideDown(64, 128, sidemode, method, layernum=1))
-        self.down2 = (SideDown(128, 256, sidemode, method))
-        self.down3 = (SideDown(256, 512, sidemode, method))
+        self.down1 = (SideDown(64, 128, sidemode, Method, layernum=1))
+        self.down2 = (SideDown(128, 256, sidemode, Method))
+        self.down3 = (SideDown(256, 512, sidemode, Method))
         factor = 2 if bilinear else 1
-        self.down4 = (SideDown(512, 1024 // factor, sidemode, method))
+        self.down4 = (SideDown(512, 1024 // factor, sidemode, Method))
         # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
         self.up1 = (Up(1024, 512 // factor, bilinear))
         self.up2 = (Up(512, 256 // factor, bilinear))

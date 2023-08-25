@@ -748,7 +748,7 @@ if __name__ == '__main__':
     #     print(testacc[i])
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('SideSEUNet_cls_seg_ch3_256_01', 6, 800, 'SideSEUNet', 6e-4,
+        Train_breast('AgUnet_cls_seg_ch3_256_02', 6, 800, 'agunet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
@@ -770,6 +770,30 @@ if __name__ == '__main__':
         print(testr[i], end=', ')
         print(testf1[i], end=', ')
         print(testacc[i])
+    #
+    # test_precision, test_recall, test_f1_score, test_acc = \
+    #     Train_breast('CBAMUNet_cls_seg_ch3_256_01', 6, 800, 'CBAMUNet', 6e-4,
+    #                  Use_pretrained=False,
+    #                  _have_segtask=True,
+    #                  _only_segtask=False,
+    #                  is_continue_train=False,
+    #                  use_clip=False,
+    #                  channel=3,
+    #                  size=256,
+    #                  decayepoch=790,
+    #                  datasc='BUSI',
+    #                  clsaux=False)
+    # testp.append(test_precision)
+    # testr.append(test_recall)
+    # testf1.append(test_f1_score)
+    # testacc.append(test_acc)
+    #
+    # for i in range(len(testp)):
+    #     print('第' + str(i + 1) + '个实验结果：', end=', ')
+    #     print(testp[i], end=', ')
+    #     print(testr[i], end=', ')
+    #     print(testf1[i], end=', ')
+    #     print(testacc[i])
 
 
     '''

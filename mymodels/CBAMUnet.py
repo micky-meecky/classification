@@ -16,39 +16,7 @@ import torch.nn.functional as F
 import torchvision.models as models
 from segmentation_models_pytorch.encoders import get_encoder
 from mymodels.generatorGAN import PixelwiseViT as PixViT
-
-
-class ChannelAttention(nn.Module):
-    def __init__(self, in_planes, ratio=16):
-        super(ChannelAttention, self).__init__()
-        self.avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.max_pool = nn.AdaptiveMaxPool2d(1)
-
-        self.fc = nn.Sequential(nn.Conv2d(in_planes, in_planes // 16, 1, bias=False),
-                                nn.ReLU(),
-                                nn.Conv2d(in_planes // 16, in_planes, 1, bias=False))
-        self.sigmoid = nn.Sigmoid()
-
-    def forward(self, x):
-        avg_out = self.fc(self.avg_pool(x))
-        max_out = self.fc(self.max_pool(x))
-        out = avg_out + max_out
-        return self.sigmoid(out)
-
-
-class SpatialAttention(nn.Module):
-    def __init__(self, kernel_size=7):
-        super(SpatialAttention, self).__init__()
-
-        self.conv1 = nn.Conv2d(2, 1, kernel_size, padding=kernel_size // 2, bias=False)
-        self.sigmoid = nn.Sigmoid()
-
-    def forward(self, x):
-        avg_out = torch.mean(x, dim=1, keepdim=True)
-        max_out, _ = torch.max(x, dim=1, keepdim=True)
-        x = torch.cat([avg_out, max_out], dim=1)
-        x = self.conv1(x)
-        return self.sigmoid(x)
+from mymodels.unet.unet_utils import ChannelAttention, SpatialAttention
 
 
 class DoubleConvWithCBAM(nn.Module):
@@ -345,8 +313,66 @@ class AgCBAMUNet(nn.Module):
         return label, logits
 
 
+class CBAMUNet(nn.Module):
+    def __init__(self, n_channels, n_classes, Method='maxpool', bilinear=False):
+        super(CBAMUNet, self).__init__()
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.bilinear = bilinear    # bilinear表示是否使用双线性插值
+
+        self.inc = (DoubleConv(n_channels, 64))
+        self.inca = ChannelAttention(64)
+        self.insa = SpatialAttention()
+        self.down1 = (DownwithCBAM(64, 128, method=Method))
+        self.down2 = (DownwithCBAM(128, 256, method=Method))
+        self.down3 = (DownwithCBAM(256, 512, method=Method))
+        factor = 2 if bilinear else 1
+        self.down4 = (DownwithCBAM(512, 1024 // factor, method=Method))
+
+        # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
+        self.up1 = (Up(1024, 512 // factor, bilinear))
+        self.up2 = (Up(512, 256 // factor, bilinear))
+        self.up3 = (Up(256, 128 // factor, bilinear))
+        self.up4 = (Up(128, 64, bilinear))
+        self.outc = (OutConv(64, n_classes))
+        self.activation = nn.Sigmoid()
+
+        # classification head
+        self.linear = nn.Linear(1024, 1)
+
+    def forward(self, x):
+        # encoder
+        x1 = self.inc(x)
+        x1_skip = self.inca(x1) * x1
+        x1_skip = self.insa(x1_skip) * x1_skip
+        x2, x2_skip = self.down1(x1)
+        x3, x3_skip = self.down2(x2)
+        x4, x4_skip = self.down3(x3)
+        x5, x5_skip = self.down4(x4)
+
+        # decoder
+        # decoder with attention gates
+        x = self.up1(x5_skip, x4_skip)
+
+        x = self.up2(x, x3_skip)
+
+        x = self.up3(x, x2_skip)
+
+        x = self.up4(x, x1_skip)
+
+        # segmentation head
+        logits = self.outc(x)
+        # logits = self.activation(logits)
+
+        # classification head
+        clsx = F.adaptive_avg_pool2d(x5_skip, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
+        clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
+        label = self.linear(clsx)
+        return label, logits
+
+
 class AgCBAMPixViTUNet(nn.Module):
-    def __init__(self, img_size, n_channels, n_classes, bilinear=False):
+    def __init__(self, img_size, n_channels, n_classes, Method='maxpool', bilinear=False):
         super(AgCBAMPixViTUNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
@@ -355,11 +381,11 @@ class AgCBAMPixViTUNet(nn.Module):
         self.inc = (DoubleConv(n_channels, 64))
         self.inca = ChannelAttention(64)
         self.insa = SpatialAttention()
-        self.down1 = (DownwithCBAM(64, 128, method='maxpool'))
-        self.down2 = (DownwithCBAM(128, 256, method='maxpool'))
-        self.down3 = (DownwithCBAM(256, 512, method='maxpool'))
+        self.down1 = (DownwithCBAM(64, 128, method=Method))
+        self.down2 = (DownwithCBAM(128, 256, method=Method))
+        self.down3 = (DownwithCBAM(256, 512, method=Method))
         factor = 2 if bilinear else 1
-        self.down4 = (Down(512, 1024 // factor, method='maxpool'))
+        self.down4 = (Down(512, 1024 // factor, method=Method))
 
         self.PixViT = PixViT(
             features=1024, n_heads=8, n_blocks=12, ffn_features=4096,
@@ -410,9 +436,9 @@ class AgCBAMPixViTUNet(nn.Module):
 
 
 if __name__ == '__main__':
-    img_size = 512
-    model = AgCBAMPixViTUNet(img_size, 3, 1)
-    # model = UNet(3, 1)
+    img_size = 256
+    # model = CBAMUNet(img_size, 3)
+    model = CBAMUNet(3, 1)
     model.eval()
     input = torch.randn(10, 3, img_size, img_size)
     label = torch.randn(10, 3, img_size, img_size)
