@@ -68,10 +68,10 @@ def Device(model):
         # device_ids = [i for i in range(torch.cuda.device_count())]
         if torch.cuda.device_count() > 1:
             # 设置为使用1,2,3号GPU
-            device_ids = [1, 2, 3]  # 使用的是3个GPU，哪三个呢，当然是1,2,3号了
+            device_ids = [1, 2, 3]  # 使用的是3个GPU，1,2,3号
             print("\n Using GPU device: {}".format(device_ids))
         else:
-            device_ids = [0]  # 使用的是1个GPU，哪一个呢，当然是0号了
+            device_ids = [0]  # 使用的是1个GPU，0号
             print("\n Using GPU device: {}".format(device_ids[0]))
         device = f"cuda:{device_ids[0]}"
         model.to(device)
