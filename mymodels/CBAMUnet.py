@@ -16,7 +16,7 @@ import torch.nn.functional as F
 import torchvision.models as models
 from segmentation_models_pytorch.encoders import get_encoder
 from mymodels.generatorGAN import PixelwiseViT as PixViT
-from mymodels.unet.unet_utils import ChannelAttention, SpatialAttention
+from mymodels.unet.unet_utils import ChannelAttention, SpatialAttention, SideSEConv2d, SideConv2d
 
 
 class DoubleConvWithCBAM(nn.Module):
@@ -65,7 +65,6 @@ class DownwithCBAM(nn.Module):
     Downscaling with CBAM and maxpool or Conv2d to downsampling then double conv
     extract feature map for next layer, CBAM is used to another route for skip connection
     """
-
     def __init__(self, in_channels, out_channels, method='maxpool'):
         super().__init__()
         self.method = method
@@ -84,7 +83,7 @@ class DownwithCBAM(nn.Module):
             self.convpool_conv = nn.Sequential(
                 nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1),
                 nn.BatchNorm2d(out_channels),
-                nn.SiLU(inplace=True),
+                nn.SiLU(inplace=True),  # SiLu 是一个新的激活函数，其实就是Sigmoid和ReLU的结合
                 DoubleConv(out_channels, out_channels),
                 nn.Dropout(0.1)
             )
@@ -97,12 +96,74 @@ class DownwithCBAM(nn.Module):
             skip_out = self.ca(out) * out
             skip_out = self.sa(skip_out) * skip_out
             return out, skip_out
-
         else:
             out = self.convpool_conv(x)
             skip_out = self.ca(out) * out
             skip_out = self.sa(skip_out) * skip_out
             return out, skip_out
+
+
+class SideDownwithCBAM(nn.Module):
+    """
+    Downscaling with CBAM and maxpool or Conv2d to downsampling then double conv
+    extract feature map for next layer, CBAM is used to another route for skip connection
+    layernum：当前层数，用于判断是否为第一层， 如果是第一层，侧边模块的输入通道数为3，否则为in_channels
+    """
+    def __init__(self, in_channels, out_channels, sidemode='SE', method='maxpool', layernum=222, Islastlayer=False):
+        super().__init__()
+        self.method = method
+        if layernum == 1:
+            side_in_channels = 3
+        else:
+            side_in_channels = in_channels
+        if sidemode == 'SE':
+            self.sideconv = SideSEConv2d(side_in_channels, out_channels)
+        else:
+            self.sideconv = SideConv2d(side_in_channels, out_channels)
+        self.Islastlayer = Islastlayer
+        if method == 'maxpool':
+            # 方法一：
+            self.maxpool_conv = nn.Sequential(
+                nn.MaxPool2d(2),
+                nn.Conv2d(in_channels, in_channels, kernel_size=1),
+                nn.BatchNorm2d(in_channels),
+                nn.SiLU(inplace=True),
+                DoubleConv(in_channels, out_channels),
+                nn.Dropout(0.1)
+            )
+        elif method == 'convpool':
+            # 方法二：
+            self.convpool_conv = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1),
+                nn.BatchNorm2d(out_channels),
+                nn.SiLU(inplace=True),  # SiLu 是一个新的激活函数，其实就是Sigmoid和ReLU的结合
+                DoubleConv(out_channels, out_channels),
+                nn.Dropout(0.1)
+            )
+        self.ca = ChannelAttention(out_channels)
+        self.sa = SpatialAttention()
+
+    def forward(self, x, side):
+        if self.method == 'maxpool':
+            out = self.maxpool_conv(x)
+            side = self.sideconv(out, side)
+            if self.Islastlayer is True:
+                skip_out = self.ca(side) * side
+                skip_out = self.sa(skip_out) * skip_out
+            else:
+                skip_out = self.ca(out) * out
+                skip_out = self.sa(skip_out) * skip_out
+            return out, skip_out, side
+        else:
+            out = self.convpool_conv(x)
+            side = self.sideconv(out, side)
+            if self.Islastlayer is True:
+                skip_out = self.ca(side) * side
+                skip_out = self.sa(skip_out) * skip_out
+            else:
+                skip_out = self.ca(out) * out
+                skip_out = self.sa(skip_out) * skip_out
+            return out, skip_out, side
 
 
 class Down(nn.Module):
@@ -371,6 +432,64 @@ class CBAMUNet(nn.Module):
         return label, logits
 
 
+class SideCBAMUNet(nn.Module):
+    def __init__(self, n_channels, n_classes, Method='maxpool', bilinear=False):
+        super(SideCBAMUNet, self).__init__()
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.bilinear = bilinear    # bilinear表示是否使用双线性插值
+
+        self.inc = (DoubleConv(n_channels, 64))
+        self.inca = ChannelAttention(64)
+        self.insa = SpatialAttention()
+        self.down1 = (SideDownwithCBAM(64, 128, method=Method, layernum=1))
+        self.down2 = (SideDownwithCBAM(128, 256, method=Method))
+        self.down3 = (SideDownwithCBAM(256, 512, method=Method))
+        factor = 2 if bilinear else 1
+        self.down4 = (SideDownwithCBAM(512, 1024 // factor, method=Method, Islastlayer=True))
+
+        # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
+        self.up1 = (Up(1024, 512 // factor, bilinear))
+        self.up2 = (Up(512, 256 // factor, bilinear))
+        self.up3 = (Up(256, 128 // factor, bilinear))
+        self.up4 = (Up(128, 64, bilinear))
+        self.outc = (OutConv(64, n_classes))
+        self.activation = nn.Sigmoid()
+
+        # classification head
+        self.linear = nn.Linear(1024, 1)
+
+    def forward(self, x):
+        # encoder
+        x1 = self.inc(x)
+        x1_skip = self.inca(x1) * x1
+        x1_skip = self.insa(x1_skip) * x1_skip
+        x2, x2_skip, side_x2 = self.down1(x1, x)
+        x3, x3_skip, side_x3 = self.down2(x2, side_x2)
+        x4, x4_skip, side_x4 = self.down3(x3, side_x3)
+        _, x5_skip, side_x5 = self.down4(x4, side_x4)
+
+        # decoder
+        # decoder with attention gates
+        x = self.up1(x5_skip, x4_skip)
+
+        x = self.up2(x, x3_skip)
+
+        x = self.up3(x, x2_skip)
+
+        x = self.up4(x, x1_skip)
+
+        # segmentation head
+        logits = self.outc(x)
+        # logits = self.activation(logits)
+
+        # classification head
+        clsx = F.adaptive_avg_pool2d(x5_skip, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
+        clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
+        label = self.linear(clsx)
+        return label, logits
+
+
 class AgCBAMPixViTUNet(nn.Module):
     def __init__(self, img_size, n_channels, n_classes, Method='maxpool', bilinear=False):
         super(AgCBAMPixViTUNet, self).__init__()
@@ -438,7 +557,7 @@ class AgCBAMPixViTUNet(nn.Module):
 if __name__ == '__main__':
     img_size = 256
     # model = CBAMUNet(img_size, 3)
-    model = CBAMUNet(3, 1)
+    model = SideCBAMUNet(3, 1)
     model.eval()
     input = torch.randn(10, 3, img_size, img_size)
     label = torch.randn(10, 3, img_size, img_size)

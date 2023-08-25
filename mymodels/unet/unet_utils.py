@@ -15,6 +15,74 @@ import torch.nn.functional as F
 import torchvision.models as models
 
 
+class SideSEConv2d(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        # 使用深度可分离卷积，5x5卷积核
+        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1, stride=2, groups=in_channels)
+        self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+        # self.sideconv1 = nn.Conv2d(in_channels, out_channels, kernel_size=5, stride=2, padding=2)
+        # BN + ReLU
+        self.bn_relu_1 = nn.Sequential(
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
+        # 将侧边特征图下采样后与下采样后的特征图拼接后再进行一次卷积
+        self.sideconv2 = nn.Conv2d(out_channels * 2, out_channels, kernel_size=1)
+        # BN + ReLU
+        self.bn_relu_2 = nn.Sequential(
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
+        self.se = SEModule(out_channels)
+
+    def forward(self, x, side):
+        side = self.depthwise(side)
+        side = self.pointwise(side)
+        # side = self.sideconv1(side)
+        side = self.bn_relu_1(side)
+        side = self.se(side)
+        side = torch.cat([x, side], dim=1)  # 拼接
+        # 按元素相加
+        # side = x + side
+        side = self.sideconv2(side)
+        side = self.bn_relu_2(side)
+        return side
+
+
+class SideConv2d(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        # 使用深度可分离卷积，5x5卷积核
+        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1, stride=2, groups=in_channels)
+        self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+        # self.sideconv1 = nn.Conv2d(in_channels, out_channels, kernel_size=5, stride=2, padding=2)
+        # BN + ReLU
+        self.bn_relu_1 = nn.Sequential(
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
+        # 将侧边特征图下采样后与下采样后的特征图拼接后再进行一次卷积
+        self.sideconv2 = nn.Conv2d(out_channels * 2, out_channels, kernel_size=1)
+        # BN + ReLU
+        self.bn_relu_2 = nn.Sequential(
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
+
+    def forward(self, x, side):
+        side = self.depthwise(side)
+        side = self.pointwise(side)
+        # side = self.sideconv1(side)
+        side = self.bn_relu_1(side)
+        side = torch.cat([x, side], dim=1)  # 拼接
+        # 按元素相加
+        # side = x + side
+        side = self.sideconv2(side)
+        side = self.bn_relu_2(side)
+        return side
+
+
 class ChannelAttention(nn.Module):
     def __init__(self, in_planes, ratio=16):
         super(ChannelAttention, self).__init__()

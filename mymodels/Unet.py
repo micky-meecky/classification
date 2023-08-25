@@ -9,7 +9,7 @@ import torchvision.models as models
 from segmentation_models_pytorch.encoders import get_encoder
 from mymodels.CBAMUnet import ChannelAttention, SpatialAttention
 from mymodels.unet.unet_utils import MultiDilatedConv, CascadedDilatedConv, ResidualBlock, AttentionGate, \
-    Res101Encoder, SEModule
+    Res101Encoder, SEModule, SideSEConv2d, SideConv2d
 
 
 class DoubleConv(nn.Module):
@@ -137,76 +137,15 @@ class InsertDilatedDown(nn.Module):
             return self.convpool_conv(x)
 
 
-class SideSEConv2d(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super().__init__()
-        # 使用深度可分离卷积，5x5卷积核
-        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1, stride=2, groups=in_channels)
-        self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1)
-        # self.sideconv1 = nn.Conv2d(in_channels, out_channels, kernel_size=5, stride=2, padding=2)
-        # BN + ReLU
-        self.bn_relu_1 = nn.Sequential(
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
-        )
-        # 将侧边特征图下采样后与下采样后的特征图拼接后再进行一次卷积
-        self.sideconv2 = nn.Conv2d(out_channels * 2, out_channels, kernel_size=1)
-        # BN + ReLU
-        self.bn_relu_2 = nn.Sequential(
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
-        )
-        self.se = SEModule(out_channels)
-
-    def forward(self, x, side):
-        side = self.depthwise(side)
-        side = self.pointwise(side)
-        # side = self.sideconv1(side)
-        side = self.bn_relu_1(side)
-        side = self.se(side)
-        side = torch.cat([x, side], dim=1)  # 拼接
-        # 按元素相加
-        # side = x + side
-        side = self.sideconv2(side)
-        side = self.bn_relu_2(side)
-        return side
-
-
-class SideConv2d(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super().__init__()
-        # 使用深度可分离卷积，5x5卷积核
-        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1, stride=2, groups=in_channels)
-        self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1)
-        # self.sideconv1 = nn.Conv2d(in_channels, out_channels, kernel_size=5, stride=2, padding=2)
-        # BN + ReLU
-        self.bn_relu_1 = nn.Sequential(
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
-        )
-        # 将侧边特征图下采样后与下采样后的特征图拼接后再进行一次卷积
-        self.sideconv2 = nn.Conv2d(out_channels * 2, out_channels, kernel_size=1)
-        # BN + ReLU
-        self.bn_relu_2 = nn.Sequential(
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
-        )
-
-    def forward(self, x, side):
-        side = self.depthwise(side)
-        side = self.pointwise(side)
-        # side = self.sideconv1(side)
-        side = self.bn_relu_1(side)
-        side = torch.cat([x, side], dim=1)  # 拼接
-        # 按元素相加
-        # side = x + side
-        side = self.sideconv2(side)
-        side = self.bn_relu_2(side)
-        return side
-
-
 class SideDown(nn.Module):
-    """Downscaling with maxpool then double conv"""
+    """Downscaling with maxpool then double conv
+       Param：
+           in_channels：输入通道数
+           out_channels：输出通道数
+           method：下采样方法，有两种：'maxpool'和'convpool'
+           sidemode：侧边模块，有两种：'SE'和'Conv'
+           layernum：当前层数，用于判断是否为第一层， 如果是第一层，侧边模块的输入通道数为3，否则为in_channels
+    """
 
     def __init__(self, in_channels, out_channels, sidemode='SE', method='maxpool', layernum=222):
         super().__init__()
