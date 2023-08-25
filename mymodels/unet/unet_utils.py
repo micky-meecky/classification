@@ -160,11 +160,13 @@ class MultiDilatedConv(nn.Module):
             for d in dilation_rates
         ])
         self.combine_conv = nn.Conv2d(out_channels * len(dilation_rates), out_channels, kernel_size=1)
+        self.bn = nn.BatchNorm2d(out_channels)  # 添加批量归一化层
+        self.act = nn.SiLU(inplace=True)  # 添加SiLU激活函数
 
     def forward(self, x):
         features = [conv(x) for conv in self.convs]
         combined_features = torch.cat(features, dim=1)
-        return self.combine_conv(combined_features)
+        return self.act(self.bn(self.combine_conv(combined_features)))
 
 
 class CascadedDilatedConv(nn.Module):
