@@ -500,11 +500,11 @@ class SideAgCBAMUNet(nn.Module):
         self.inc = (DoubleConv(n_channels, 64))
         self.inca = ChannelAttention(64)
         self.insa = SpatialAttention()
-        self.down1 = (SideDownwithCBAM(64, 128, method=Method, layernum=1))
-        self.down2 = (SideDownwithCBAM(128, 256, method=Method))
-        self.down3 = (SideDownwithCBAM(256, 512, method=Method))
+        self.down1 = (SideDownwithCBAM(64, 128, sidemode='SE3', method=Method, layernum=1))
+        self.down2 = (SideDownwithCBAM(128, 256, sidemode='SE3', method=Method))
+        self.down3 = (SideDownwithCBAM(256, 512, sidemode='SE3', method=Method))
         factor = 2 if bilinear else 1
-        self.down4 = (SideDownwithCBAM(512, 1024 // factor, method=Method, Islastlayer=True))
+        self.down4 = (SideDownwithCBAM(512, 1024 // factor, sidemode='SE3', method=Method, Islastlayer=True))
 
         # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
         self.up1 = (AGUp(1024, 512 // factor, bilinear))
