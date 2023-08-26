@@ -574,7 +574,7 @@ class AgCBAMPixViTUNet(nn.Module):
         self.down4 = (Down(512, 1024 // factor, method=Method))
 
         self.PixViT = PixViT(
-            features=1024, n_heads=8, n_blocks=12, ffn_features=4096,
+            features=1024, n_heads=8, n_blocks=2, ffn_features=4096,
             embed_features=1024, activ='gelu', norm=None,
             image_shape=(1024, img_size // 16, img_size // 16), rezero=True
         )
