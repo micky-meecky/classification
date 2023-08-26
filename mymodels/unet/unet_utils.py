@@ -34,21 +34,19 @@ class SideSEConv2d(nn.Module):
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         )
-        self.se1 = SEModule(out_channels)
-        self.se2 = SEModule(out_channels)
+        self.se = SEModule(out_channels)
 
     def forward(self, x, side):
         side = self.depthwise(side)
         side = self.pointwise(side)
         # side = self.sideconv1(side)
         side = self.bn_relu_1(side)
-        side = self.se1(side)
         side = torch.cat([x, side], dim=1)  # 拼接
         # 按元素相加
         # side = x + side
         side = self.sideconv2(side)
         side = self.bn_relu_2(side)
-        side = self.se2(side)
+        side = self.se(side)
         return side
 
 

@@ -109,7 +109,7 @@ class SideDownwithCBAM(nn.Module):
     extract feature map for next layer, CBAM is used to another route for skip connection
     layernum：当前层数，用于判断是否为第一层， 如果是第一层，侧边模块的输入通道数为3，否则为in_channels
     """
-    def __init__(self, in_channels, out_channels, sidemode='SE', method='maxpool', layernum=222, Islastlayer=False):
+    def __init__(self, in_channels, out_channels, sidemode='NOSE', method='maxpool', layernum=222, Islastlayer=False):
         super().__init__()
         self.method = method
         if layernum == 1:
@@ -442,11 +442,11 @@ class SideCBAMUNet(nn.Module):
         self.inc = (DoubleConv(n_channels, 64))
         self.inca = ChannelAttention(64)
         self.insa = SpatialAttention()
-        self.down1 = (SideDownwithCBAM(64, 128, method=Method, layernum=1))
-        self.down2 = (SideDownwithCBAM(128, 256, method=Method))
-        self.down3 = (SideDownwithCBAM(256, 512, method=Method))
+        self.down1 = (SideDownwithCBAM(64, 128, sidemode='SE', method=Method, layernum=1))
+        self.down2 = (SideDownwithCBAM(128, 256, sidemode='SE', method=Method))
+        self.down3 = (SideDownwithCBAM(256, 512, sidemode='SE', method=Method))
         factor = 2 if bilinear else 1
-        self.down4 = (SideDownwithCBAM(512, 1024 // factor, method=Method, Islastlayer=True))
+        self.down4 = (SideDownwithCBAM(512, 1024 // factor, sidemode='SE', method=Method, Islastlayer=True))
 
         # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
         self.up1 = (Up(1024, 512 // factor, bilinear))
