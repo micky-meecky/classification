@@ -11,8 +11,37 @@
 """
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torchvision.models as models
+
+
+def getModelSize(model):
+    param_size = 0
+    param_sum = 0
+    for param in model.parameters():
+        param_size += param.nelement() * param.element_size()
+        param_sum += param.nelement()
+    buffer_size = 0
+    buffer_sum = 0
+    for buffer in model.buffers():
+        buffer_size += buffer.nelement() * buffer.element_size()
+        buffer_sum += buffer.nelement()
+    all_size = (param_size + buffer_size) / 1024 / 1024
+
+    # 单位转换
+    param_size_MB = param_size / 1024 / 1024
+    buffer_size_MB = buffer_size / 1024 / 1024
+
+    # 参数量单位选择
+    if param_sum >= 1e9:
+        param_sum_str = f"{param_sum / 1e9}B"
+    elif param_sum >= 1e6:
+        param_sum_str = f"{param_sum / 1e6}M"
+    else:
+        param_sum_str = f"{param_sum / 1e3}K"
+
+    # 格式化输出
+    print(f"参数大小：{param_size_MB:.3f}MB， 参数量：{param_sum_str}， 缓存大小：{buffer_size_MB:.3f}MB， 缓存量：{buffer_sum}， 总大小：{all_size:.3f}MB")
+
 
 
 class SideSEConv2d(nn.Module):

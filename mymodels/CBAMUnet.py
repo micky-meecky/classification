@@ -13,8 +13,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision.models as models
-from segmentation_models_pytorch.encoders import get_encoder
+from mymodels.unet.unet_utils import getModelSize
 from mymodels.generatorGAN import PixelwiseViT as PixViT
 from mymodels.unet.unet_utils import ChannelAttention, SpatialAttention, SideSEConv2d, SideConv2d
 
@@ -879,6 +878,7 @@ class PixViTUNet(nn.Module):
 if __name__ == '__main__':
     img_size = 256
     model = SideCBAMPixViTUNet(img_size, 3, 1)
+    getModelSize(model)
     # model = SideCBAMUNet(3, 1)
     model.eval()
     input = torch.randn(10, 3, img_size, img_size)

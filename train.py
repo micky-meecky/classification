@@ -31,8 +31,7 @@ from utils.myloss import SoftDiceLossNew, JaccardLoss, BCEWithLogitsLossCustom, 
     BCEWithLogitsLossCustomcls
 import test
 from utils import utils
-import multiprocessing as mp
-from mymodels import OpenDataSet
+from mymodels.unet.unet_utils import getModelSize
 
 import warnings
 
@@ -41,22 +40,6 @@ warnings.filterwarnings('ignore',
                         message='Argument \'interpolation\' of type int is deprecated since 0.13 and will be removed in 0.15. Please use InterpolationMode enum.')
 
 sep = os.sep  # os.sep根据你所处的平台，自动采用相应的分隔符号
-
-
-def getModelSize(model):
-    param_size = 0
-    param_sum = 0
-    for param in model.parameters():
-        param_size += param.nelement() * param.element_size()
-        param_sum += param.nelement()
-    buffer_size = 0
-    buffer_sum = 0
-    for buffer in model.buffers():
-        buffer_size += buffer.nelement() * buffer.element_size()
-        buffer_sum += buffer.nelement()
-    all_size = (param_size + buffer_size) / 1024 / 1024
-    print('模型总大小为：{:.3f}MB'.format(all_size))
-    return param_size, param_sum, buffer_size, buffer_sum, all_size
 
 
 def mnist_loader():
@@ -288,7 +271,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     utils.init_weights(model)
     model, device = utils.Device(model)
 
-    print(getModelSize(model))
+    getModelSize(model)
     print('project: ', project)
     train_loader, valid_loader, test_loader = breast_loader(bs, testbs, device, validate_flag,
                                                             use_clip, channel, size, datasc)
@@ -724,15 +707,15 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('SACPvUnet_cls_seg_ch3_256_00', 6, 800, 'SideAgCBAMPixViTUNet', 6e-4,
+        Train_breast('M_UNet_oseg_ch3_256_00', 6, 400, 'M_UNet_seg', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
-                     _only_segtask=False,
+                     _only_segtask=True,
                      is_continue_train=False,
                      use_clip=False,
                      channel=3,
                      size=256,
-                     decayepoch=790,
+                     decayepoch=390,
                      datasc='BUSI',
                      clsaux=False)
     testp.append(test_precision)
