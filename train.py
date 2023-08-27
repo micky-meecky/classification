@@ -282,7 +282,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         print('load model')
 
     if _only_segtask:
-        criterion_seg = SoftDiceLossold()
+        criterion_seg = SoftDiceLossNew()
         optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))  # ----------------------------------------
     else:
         if use_clip:
