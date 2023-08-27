@@ -49,20 +49,24 @@ class SoftDiceLossold(nn.Module):
     def __init__(self, weight=None, size_average=True):
         super(SoftDiceLossold, self).__init__()
 
-    def forward(self, probs, targets):
+    def forward(self, probs, targets, device):
         num = targets.size(0)
         smooth = 1
 
-        # probs = F.sigmoid(logits)
-        # m1 = probs.view(num, -1)
-        # m2 = targets.view(num, -1)
-        m1 = probs
-        m2 = targets
-        intersection = (m1 * m2)
+        # 初始化损失为0
+        loss = 0
+        for i in range(num):
+            m1 = probs[i].clone()  # 创建新的tensor以避免修改原tensor
+            m2 = targets[i].clone()  # 创建新的tensor以避免修改原tensor
+            intersection = (m1 * m2)
+            m1sum = m1.sum()
+            m2sum = m2.sum()
+            intersum = intersection.sum()
+            score = (2. * intersum + smooth) / (m1sum + m2sum + smooth)
+            loss += 1 - score
+        loss = loss / num
+        return loss
 
-        score = 2. * (intersection.sum(1) + smooth) / (m1.sum(1) + m2.sum(1) + smooth)
-        score = 1 - score.sum() / num
-        return score
 
 class JaccardLoss(nn.Module):
     def __init__(self, weight=None, size_average=True):

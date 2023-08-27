@@ -365,7 +365,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
 
                 if _only_segtask:
                     segout = model(inputs)
-                    # segout = torch.sigmoid(segout)
+                    segout = torch.sigmoid(segout)
                     SR_flat = segout.view(segout.size(0), -1)
                     GT_flat = targets1.view(targets1.size(0), -1)
                     loss = criterion_seg(SR_flat, GT_flat, device)
