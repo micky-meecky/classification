@@ -28,7 +28,7 @@ from dataset.data_loader import get_loader_difficult, get_loader, DrawSavePic
 from utils.tictoc import TicToc
 import utils.evaluation as ue
 from utils.myloss import SoftDiceLossNew, JaccardLoss, BCEWithLogitsLossCustom, SoftDiceLossNewvar, \
-    BCEWithLogitsLossCustomcls
+    BCEWithLogitsLossCustomcls, SoftDiceLossold
 import test
 from utils import utils
 from mymodels.unet.unet_utils import getModelSize
@@ -282,7 +282,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         print('load model')
 
     if _only_segtask:
-        criterion_seg = SoftDiceLossNew()
+        criterion_seg = SoftDiceLossold()
         optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))  # ----------------------------------------
     else:
         if use_clip:

@@ -903,12 +903,12 @@ class M_UNet_seg(nn.Module):
     def forward(self, x):
         # encoder
         x1 = self.inc1(x)  # x: 256, 256, 3 ---- x1: 256, 256, 16
-        xl1 = self.left1(x)  # xl1: 128 x 128 x 16
+        xl1 = self.left1(x)  # xl1: 128 x 128 x 3
         x1 = self.inc2(torch.cat([x, x1], dim=1))  # x1: 256, 256, 32
         x2 = self.down1(x1, xl1)  # x2: 128, 128, 48
-        xl2 = self.left2(xl1)  # xl2: 64, 64, 48
+        xl2 = self.left2(xl1)  # xl2: 64, 64, 3
         x3 = self.down2(x2, xl2)  # x3: 64, 64, 64
-        xl3 = self.left3(xl2)  # xl3: 32, 32, 64
+        xl3 = self.left3(xl2)  # xl3: 32, 32, 3
         x4 = self.down3(x3, xl3)  # x4: 32, 32, 128
 
         # bottleneck
