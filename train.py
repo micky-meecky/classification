@@ -713,7 +713,7 @@ if __name__ == '__main__':
                      _only_segtask=True,
                      is_continue_train=False,
                      use_clip=False,
-                     channel=3,
+                     channel=1,
                      size=256,
                      decayepoch=390,
                      datasc='BUSI',
