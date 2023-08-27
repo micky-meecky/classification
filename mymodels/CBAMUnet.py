@@ -759,11 +759,11 @@ class SideAgCBAMPixViTUNet(nn.Module):
         self.inc = (DoubleConv(n_channels, 64))
         self.inca = ChannelAttention(64)
         self.insa = SpatialAttention()
-        self.down1 = SideDownwithCBAM(64, 128, sidemode='SE3', method=Method, layernum=1)
-        self.down2 = SideDownwithCBAM(128, 256, sidemode='SE3', method=Method)
-        self.down3 = SideDownwithCBAM(256, 512, sidemode='SE3', method=Method)
+        self.down1 = SideDownwithCBAM(64, 128, sidemode='SE', method=Method, layernum=1)
+        self.down2 = SideDownwithCBAM(128, 256, sidemode='SE', method=Method)
+        self.down3 = SideDownwithCBAM(256, 512, sidemode='SE', method=Method)
         factor = 2 if bilinear else 1
-        self.down4 = SideDownwithCBAM(512, 1024 // factor, sidemode='SE3', method=Method,
+        self.down4 = SideDownwithCBAM(512, 1024 // factor, sidemode='SE', method=Method,
                                       Islastlayer=True, IsPixViT=True)
 
         self.PixViT = PixViT(
