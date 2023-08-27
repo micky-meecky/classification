@@ -707,7 +707,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('M_UNet_oseg_ch3_256_00', 16, 400, 'M_UNet_seg', 3e-4,
+        Train_breast('M_UNet_oseg_ch1_256_00', 16, 400, 'M_UNet_seg', 3e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=True,
