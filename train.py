@@ -724,7 +724,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('AgCBAMminiPixViTUNet_cls_seg_ch3_256_00', 6, 800, 'AgCBAMPixViTUNet', 6e-4,
+        Train_breast('SACPvUnet_cls_seg_ch3_256_00', 6, 800, 'SideAgCBAMPixViTUNet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
