@@ -211,11 +211,11 @@ class DSUNetPlusPlusSeg(nn.Module):
         x0_4, _ = self.up1_3(x1_3, x0_3, torch.cat([forskip0_0, forskip0_1, forskip0_2], dim=1))
 
         out0_1 = self.outc0_1(x0_1)
-        out1_1 = self.outc1_1(x0_2)
-        out2_1 = self.outc2_1(x0_3)
-        out3_1 = self.outc3_1(x0_4)
+        out0_2 = self.outc1_1(x0_2)
+        out0_3= self.outc2_1(x0_3)
+        out0_4 = self.outc3_1(x0_4)
 
-        return out0_1, out1_1, out2_1, out3_1
+        return out0_1, out0_2, out0_3, out0_4
 
 
 if __name__ == '__main__':

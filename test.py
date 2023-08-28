@@ -21,7 +21,8 @@ import torch.nn.functional as F
 
 def trainvalid(mode: str, dataloader: DataLoader, model,
                device: torch.device, writer, Iter,
-               class_num, _have_segtask: bool, _only_segtask: bool):
+               class_num, _have_segtask: bool, _only_segtask: bool,
+               deepsup: bool, clsaux: bool):
     printcontent = mode + 'set testing...'
     print(printcontent)
     segoutputcontent = mode + ' segmentation output'
@@ -52,22 +53,39 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
                 # targets1 = targets1.to(device)
                 targets4 = targets4.to(device)
             if _only_segtask:
-                targets1 = targets1.to(device)
-                segout = model(images)
-                segout = torch.sigmoid(segout)
-                SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
-                # 将这些指标存到一个list里面，方便后面计算平均值
-                SElist.append(SE)
-                PClist.append(PC)
-                F1list.append(F1)
-                JSlist.append(JS)
-                DClist.append(DC)
-                IOUlist.append(IOU)
-                Acclist.append(Acc)
+                if deepsup is False:
+                    targets1 = targets1.to(device)
+                    segout = model(images)
+                    segout = torch.sigmoid(segout)
+                    SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
+                    # 将这些指标存到一个list里面，方便后面计算平均值
+                    SElist.append(SE)
+                    PClist.append(PC)
+                    F1list.append(F1)
+                    JSlist.append(JS)
+                    DClist.append(DC)
+                    IOUlist.append(IOU)
+                    Acclist.append(Acc)
+                else:
+                    targets1 = targets1.to(device)
+                    _, _, _, segout0_4 = model(images)
+                    segout0_4 = torch.sigmoid(segout0_4)
+                    SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout0_4, targets1, device)
+                    SElist.append(SE)
+                    PClist.append(PC)
+                    F1list.append(F1)
+                    JSlist.append(JS)
+                    DClist.append(DC)
+                    IOUlist.append(IOU)
+                    Acclist.append(Acc)
             else:
                 if _have_segtask:
-                    labels, segout = model(images)
-                    segout = torch.sigmoid(segout)
+                    if deepsup is False:
+                        labels, segout = model(images)
+                        segout = torch.sigmoid(segout)
+                    else:
+                        labels, _, _, segout0_4 = model(images)
+                        segout0_4 = torch.sigmoid(segout0_4)
                 else:
                     labels = model(images)
                     # labels = torch.exp(labels)  # -----------------------------------------------------
@@ -79,17 +97,31 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
                     predicted = torch.round(labels.data)
 
                 if _have_segtask:
-                    cls_predicted = 1 - predicted  # 这里的predicted是0或者1，所以1-predicted就是1或者0
-                    segout = segout * cls_predicted.view(-1, 1, 1, 1)  # 要转换成bs x 1 x 1 x 1
-                    SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
-                    # 将这些指标存到一个list里面，方便后面计算平均值
-                    SElist.append(SE)
-                    PClist.append(PC)
-                    F1list.append(F1)
-                    JSlist.append(JS)
-                    DClist.append(DC)
-                    IOUlist.append(IOU)
-                    Acclist.append(Acc)
+                    if deepsup is False:
+                        if clsaux:
+                            cls_predicted = 1 - predicted  # 这里的predicted是0或者1，所以1-predicted就是1或者0
+                            segout = segout * cls_predicted.view(-1, 1, 1, 1)  # 要转换成bs x 1 x 1 x 1
+                        SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
+                        # 将这些指标存到一个list里面，方便后面计算平均值
+                        SElist.append(SE)
+                        PClist.append(PC)
+                        F1list.append(F1)
+                        JSlist.append(JS)
+                        DClist.append(DC)
+                        IOUlist.append(IOU)
+                        Acclist.append(Acc)
+                    else:
+                        if clsaux:
+                            cls_predicted = 1 - predicted
+                            segout0_4 = segout0_4 * cls_predicted.view(-1, 1, 1, 1)
+                        SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout0_4, targets1, device)
+                        SElist.append(SE)
+                        PClist.append(PC)
+                        F1list.append(F1)
+                        JSlist.append(JS)
+                        DClist.append(DC)
+                        IOUlist.append(IOU)
+                        Acclist.append(Acc)
 
                 # 计算TP, FP, TN, FN
                 predicted = predicted.squeeze().long()
@@ -154,7 +186,7 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
 
 
 def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch.device,
-         class_num, _have_segtask: bool, _only_segtask: bool):
+         class_num, _have_segtask: bool, _only_segtask: bool, deepsup: bool, clsaux: bool):
     printcontent = mode + 'set testing...'
     print(printcontent)
     segoutputcontent = mode + ' segmentation output'
@@ -185,22 +217,39 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
                 # targets1 = targets1.to(device)
                 targets4 = targets4.to(device)
             if _only_segtask:
-                targets1 = targets1.to(device)
-                segout = model(images)
-                segout = torch.sigmoid(segout)
-                SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
-                # 将这些指标存到一个list里面，方便后面计算平均值
-                SElist.append(SE)
-                PClist.append(PC)
-                F1list.append(F1)
-                JSlist.append(JS)
-                DClist.append(DC)
-                IOUlist.append(IOU)
-                Acclist.append(Acc)
+                if deepsup is False:
+                    targets1 = targets1.to(device)
+                    segout = model(images)
+                    segout = torch.sigmoid(segout)
+                    SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
+                    # 将这些指标存到一个list里面，方便后面计算平均值
+                    SElist.append(SE)
+                    PClist.append(PC)
+                    F1list.append(F1)
+                    JSlist.append(JS)
+                    DClist.append(DC)
+                    IOUlist.append(IOU)
+                    Acclist.append(Acc)
+                else:
+                    targets1 = targets1.to(device)
+                    _, _, _, segout0_4 = model(images)
+                    segout0_4 = torch.sigmoid(segout0_4)
+                    SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout0_4, targets1, device)
+                    SElist.append(SE)
+                    PClist.append(PC)
+                    F1list.append(F1)
+                    JSlist.append(JS)
+                    DClist.append(DC)
+                    IOUlist.append(IOU)
+                    Acclist.append(Acc)
             else:
                 if _have_segtask:
-                    labels, segout = model(images)
-                    segout = torch.sigmoid(segout)
+                    if deepsup is False:
+                        labels, segout = model(images)
+                        segout = torch.sigmoid(segout)
+                    else:
+                        labels, _, _, segout0_4 = model(images)
+                        segout0_4 = torch.sigmoid(segout0_4)
                 else:
                     labels = model(images)
                     # labels = torch.exp(labels)  # -----------------------------------------------------
@@ -212,17 +261,31 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
                     predicted = torch.round(labels.data)
 
                 if _have_segtask:
-                    cls_predicted = 1 - predicted  # 这里的predicted是0或者1，所以1-predicted就是1或者0
-                    segout = segout * cls_predicted.view(-1, 1, 1, 1)  # 要转换成bs x 1 x 1 x 1
-                    SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
-                    # 将这些指标存到一个list里面，方便后面计算平均值
-                    SElist.append(SE)
-                    PClist.append(PC)
-                    F1list.append(F1)
-                    JSlist.append(JS)
-                    DClist.append(DC)
-                    IOUlist.append(IOU)
-                    Acclist.append(Acc)
+                    if deepsup is False:
+                        if clsaux:
+                            cls_predicted = 1 - predicted  # 这里的predicted是0或者1，所以1-predicted就是1或者0
+                            segout = segout * cls_predicted.view(-1, 1, 1, 1)  # 要转换成bs x 1 x 1 x 1
+                        SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
+                        # 将这些指标存到一个list里面，方便后面计算平均值
+                        SElist.append(SE)
+                        PClist.append(PC)
+                        F1list.append(F1)
+                        JSlist.append(JS)
+                        DClist.append(DC)
+                        IOUlist.append(IOU)
+                        Acclist.append(Acc)
+                    else:
+                        if clsaux:
+                            cls_predicted = 1 - predicted
+                            segout0_4 = segout0_4 * cls_predicted.view(-1, 1, 1, 1)
+                        SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout0_4, targets1, device)
+                        SElist.append(SE)
+                        PClist.append(PC)
+                        F1list.append(F1)
+                        JSlist.append(JS)
+                        DClist.append(DC)
+                        IOUlist.append(IOU)
+                        Acclist.append(Acc)
 
                 # 计算TP, FP, TN, FN
                 predicted = predicted.squeeze().long()

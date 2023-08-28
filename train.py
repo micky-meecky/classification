@@ -225,7 +225,7 @@ def breast_loader(batch_size, testbs, device, validate_flag, use_clip, channel, 
 
 def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segtask, _only_segtask,
                  is_continue_train,
-                 use_clip, channel, size, decayepoch, datasc, clsaux
+                 use_clip, channel, size, decayepoch, datasc, clsaux, deepsup=False
                  ):
     project = Project  # project name-----------------------------------------------------
     epoch_num = epoch  # epoch_num -----------------------------------------------------
@@ -255,7 +255,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     contentvalid = "----per epoch training&vlidation test Time: "
     contentwholeepoch = "----whole epoch Time: "
     contenttotal = "----total cost: "
-    is_train = True
+    is_train = False
     is_test = True  # False
     best_valid_acc = 0
     best_valid_score = 0
@@ -364,28 +364,61 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                         targets1 = targets1.to(device)
 
                 if _only_segtask:
-                    segout = model(inputs)
-                    segout = torch.sigmoid(segout)
-                    SR_flat = segout.view(segout.size(0), -1)
-                    GT_flat = targets1.view(targets1.size(0), -1)
-                    loss = criterion_seg(SR_flat, GT_flat, device)
-                    seg_running_loss += loss
-                    SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
-                    # 将这些指标存到一个list里面，方便后面计算平均值
-                    SElist.append(SE)
-                    PClist.append(PC)
-                    F1list.append(F1)
-                    JSlist.append(JS)
-                    DClist.append(DC)
-                    IOUlist.append(IOU)
-                    Acclist.append(Acc)
+                    if deepsup is False:
+                        segout = model(inputs)
+                        segout = torch.sigmoid(segout)
+                        SR_flat = segout.view(segout.size(0), -1)
+                        GT_flat = targets1.view(targets1.size(0), -1)
+                        loss = criterion_seg(SR_flat, GT_flat, device)
+                        seg_running_loss += loss
+                        SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
+                        # 将这些指标存到一个list里面，方便后面计算平均值
+                        SElist.append(SE)
+                        PClist.append(PC)
+                        F1list.append(F1)
+                        JSlist.append(JS)
+                        DClist.append(DC)
+                        IOUlist.append(IOU)
+                        Acclist.append(Acc)
+                    else:
+                        segout0_1, segout0_2, segout0_3, segout0_4 = model(inputs)
+                        segout0_1 = torch.sigmoid(segout0_1)
+                        segout0_2 = torch.sigmoid(segout0_2)
+                        segout0_3 = torch.sigmoid(segout0_3)
+                        segout0_4 = torch.sigmoid(segout0_4)
+                        segout0_1 = segout0_1.view(segout0_1.size(0), -1)
+                        segout0_2 = segout0_2.view(segout0_2.size(0), -1)
+                        segout0_3 = segout0_3.view(segout0_3.size(0), -1)
+                        segout0_4 = segout0_4.view(segout0_4.size(0), -1)
+                        targets1 = targets1.view(targets1.size(0), -1)
+                        loss0_1 = criterion_seg(segout0_1, targets1, device)
+                        loss0_2 = criterion_seg(segout0_2, targets1, device)
+                        loss0_3 = criterion_seg(segout0_3, targets1, device)
+                        loss0_4 = criterion_seg(segout0_4, targets1, device)
+                        loss = loss0_1 + loss0_2 + loss0_3 + loss0_4
+                        seg_running_loss += loss
+                        SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout0_4, targets1, device)
+                        SElist.append(SE)
+                        PClist.append(PC)
+                        F1list.append(F1)
+                        JSlist.append(JS)
+                        DClist.append(DC)
+                        IOUlist.append(IOU)
+                        Acclist.append(Acc)
 
                     loss.backward()
                     optimizer.step()
                 else:
                     if _have_segtask:
-                        outputs, segout = model(inputs)
-                        segout = torch.sigmoid(segout)
+                        if deepsup is False:
+                            outputs, segout = model(inputs)
+                            segout = torch.sigmoid(segout)
+                        else:
+                            outputs, segout0_1, segout0_2, segout0_3, segout0_4 = model(inputs)
+                            segout0_1 = torch.sigmoid(segout0_1)
+                            segout0_2 = torch.sigmoid(segout0_2)
+                            segout0_3 = torch.sigmoid(segout0_3)
+                            segout0_4 = torch.sigmoid(segout0_4)
                     else:
                         outputs = model(inputs)
 
@@ -401,24 +434,51 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                         # cls_loss = criterion_cls(outputs, targets4v)
 
                     if _have_segtask:
-                        # 根据分类的结果，分类为1的代表的是没有结节的样本，而分类为0的代表的是有结节的样本。
-                        # 没有结节的话，则将segout乘以0，有结节的话，则将segout乘以1
-                        if clsaux:
-                            cls_predicted = 1 - predicted  # 这里的predicted是0或者1，所以1-predicted就是1或者0
-                            segout = segout * cls_predicted.view(-1, 1, 1, 1)  # 要转换成bs x 1 x 1 x 1
-                        SR_flat = segout.view(segout.size(0), -1)
-                        GT_flat = targets1.view(targets1.size(0), -1)
-                        # seg_loss = criterion_seg(SR_flat, GT_flat, device)
-                        # seg_running_loss += seg_loss.item()
-                        SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
-                        # 将这些指标存到一个list里面，方便后面计算平均值
-                        SElist.append(SE)
-                        PClist.append(PC)
-                        F1list.append(F1)
-                        JSlist.append(JS)
-                        DClist.append(DC)
-                        IOUlist.append(IOU)
-                        Acclist.append(Acc)
+                        if deepsup is False:
+                            # 根据分类的结果，分类为1的代表的是没有结节的样本，而分类为0的代表的是有结节的样本。
+                            # 没有结节的话，则将segout乘以0，有结节的话，则将segout乘以1
+                            if clsaux:
+                                cls_predicted = 1 - predicted  # 这里的predicted是0或者1，所以1-predicted就是1或者0
+                                segout = segout * cls_predicted.view(-1, 1, 1, 1)  # 要转换成bs x 1 x 1 x 1
+                            SR_flat = segout.view(segout.size(0), -1)
+                            GT_flat = targets1.view(targets1.size(0), -1)
+                            # seg_loss = criterion_seg(SR_flat, GT_flat, device)
+                            # seg_running_loss += seg_loss.item()
+                            SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout, targets1, device)
+                            # 将这些指标存到一个list里面，方便后面计算平均值
+                            SElist.append(SE)
+                            PClist.append(PC)
+                            F1list.append(F1)
+                            JSlist.append(JS)
+                            DClist.append(DC)
+                            IOUlist.append(IOU)
+                            Acclist.append(Acc)
+                        else:
+                            if clsaux:
+                                cls_predicted = 1 - predicted
+                                segout0_1 = segout0_1 * cls_predicted.view(-1, 1, 1, 1)
+                                segout0_2 = segout0_2 * cls_predicted.view(-1, 1, 1, 1)
+                                segout0_3 = segout0_3 * cls_predicted.view(-1, 1, 1, 1)
+                                segout0_4 = segout0_4 * cls_predicted.view(-1, 1, 1, 1)
+                            segout0_1 = segout0_1.view(segout0_1.size(0), -1)
+                            segout0_2 = segout0_2.view(segout0_2.size(0), -1)
+                            segout0_3 = segout0_3.view(segout0_3.size(0), -1)
+                            segout0_4 = segout0_4.view(segout0_4.size(0), -1)
+                            targets1 = targets1.view(targets1.size(0), -1)
+                            loss0_1 = criterion_seg(segout0_1, targets1, device)
+                            loss0_2 = criterion_seg(segout0_2, targets1, device)
+                            loss0_3 = criterion_seg(segout0_3, targets1, device)
+                            loss0_4 = criterion_seg(segout0_4, targets1, device)
+                            loss = loss0_1 + loss0_2 + loss0_3 + loss0_4
+                            seg_running_loss += loss
+                            SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout0_4, targets1, device)
+                            SElist.append(SE)
+                            PClist.append(PC)
+                            F1list.append(F1)
+                            JSlist.append(JS)
+                            DClist.append(DC)
+                            IOUlist.append(IOU)
+                            Acclist.append(Acc)
 
                     if _have_segtask:
                         seg_loss, cls_loss, loss, log_vars = mtl(outputs, SR_flat, targets4v, GT_flat, criterion_seg,
@@ -490,7 +550,9 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                         valid_iou = test.trainvalid('valid', valid_loader, model, device, writer, Iter,
                                                     class_num,
                                                     _have_segtask,
-                                                    _only_segtask)
+                                                    _only_segtask,
+                                                    deepsup,
+                                                    clsaux)
                         valid_score = valid_iou
                     else:
                         valid_acc, valid_iou = test.trainvalid('valid', valid_loader, model, device, writer, Iter,
@@ -534,14 +596,16 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     if is_test:
         #测试最后一epoch 的模型效果并输出
         test_precision, test_recall, test_f1_score, test_acc = \
-            test.test('test', test_loader, model, SegImgSavePath, device, class_num, _have_segtask, _only_segtask)
+            test.test('test', test_loader, model, SegImgSavePath, device, class_num,
+                      _have_segtask, _only_segtask, deepsup, clsaux)
         print('test_precision, test_recall, test_f1_score, test_acc:', test_precision, test_recall, test_f1_score,
               test_acc)
         print('最后一epoch的模型效果测试完毕')
         mini_loss_model = save_model_dir + '/best' + '.pth'
         model.load_state_dict(torch.load(mini_loss_model, map_location=device))
         test_precision, test_recall, test_f1_score, test_acc = \
-            test.test('test', test_loader, model, SegImgSavePath, device, class_num, _have_segtask, _only_segtask)
+            test.test('test', test_loader, model, SegImgSavePath, device, class_num,
+                      _have_segtask, _only_segtask, deepsup, clsaux)
     print('\nFinished Testing\n')
     # test(model)
 
@@ -707,17 +771,18 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('SSACPvUnet_cls_seg_ch3_256_00', 6, 800, 'SideAgCBAMPixViTUNet', 6e-4,
+        Train_breast('DSUNetPlusPlusSeg_oseg_ch1_256_00', 6, 800, 'DSUNetPlusPlusSeg', 8e-3,
                      Use_pretrained=False,
                      _have_segtask=True,
-                     _only_segtask=False,
+                     _only_segtask=True,
                      is_continue_train=False,
                      use_clip=False,
-                     channel=3,
+                     channel=1,
                      size=256,
                      decayepoch=790,
                      datasc='BUSI',
-                     clsaux=False)
+                     clsaux=False,
+                     deepsup=True)
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)

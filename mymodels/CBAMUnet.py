@@ -877,13 +877,24 @@ class PixViTUNet(nn.Module):
 
 if __name__ == '__main__':
     img_size = 256
-    model = SideCBAMPixViTUNet(img_size, 3, 1)
+    model = SideAgCBAMPixViTUNet(img_size, 3, 1)
     getModelSize(model)
     # model = SideCBAMUNet(3, 1)
     model.eval()
-    input = torch.randn(10, 3, img_size, img_size)
-    label = torch.randn(10, 3, img_size, img_size)
+    input = torch.randn(2, 3, img_size, img_size)
+    label = torch.randn(2, 1, img_size, img_size)
     labels, logits = model(input)
+
+    # 定义loss
+    criterion = nn.BCEWithLogitsLoss()
+    loss = criterion(logits, label)
+    print('loss:', loss)
+
+    # 定义优化器
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    optimizer.zero_grad()
+    loss.backward()
+
     print('labels:', labels)
     print('logits:', logits)
 
