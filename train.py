@@ -464,13 +464,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                             segout0_2 = segout0_2.view(segout0_2.size(0), -1)
                             segout0_3 = segout0_3.view(segout0_3.size(0), -1)
                             segout0_4 = segout0_4.view(segout0_4.size(0), -1)
-                            targets1 = targets1.view(targets1.size(0), -1)
-                            loss0_1 = criterion_seg(segout0_1, targets1, device)
-                            loss0_2 = criterion_seg(segout0_2, targets1, device)
-                            loss0_3 = criterion_seg(segout0_3, targets1, device)
-                            loss0_4 = criterion_seg(segout0_4, targets1, device)
-                            loss = loss0_1 + loss0_2 + loss0_3 + loss0_4
-                            seg_running_loss += loss
+                            GT_flat = targets1.view(targets1.size(0), -1)
                             SE, PC, F1, JS, DC, IOU, Acc = ue.get_all_seg(segout0_4, targets1, device)
                             SElist.append(SE)
                             PClist.append(PC)
@@ -481,9 +475,16 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                             Acclist.append(Acc)
 
                     if _have_segtask:
-                        seg_loss, cls_loss, loss, log_vars = mtl(outputs, SR_flat, targets4v, GT_flat, criterion_seg,
-                                                                 criterion_cls)
-                        seg_running_loss += seg_loss.item()
+                        if deepsup is False:
+                            seg_loss, cls_loss, loss, log_vars = mtl(outputs, SR_flat, targets4v, GT_flat, criterion_seg,
+                                                                 criterion_cls, deepsup)
+                            seg_running_loss += seg_loss.item()
+                        else:
+                            seg_loss, cls_loss, loss, log_vars = mtl(outputs,
+                                                                     [segout0_1, segout0_2, segout0_3, segout0_4],
+                                                                     targets4v, GT_flat, criterion_seg, criterion_cls,
+                                                                     deepsup)
+                            seg_running_loss += seg_loss.item()
                     else:
                         cls_loss = criterion_cls(outputs, targets4v)
                         loss = cls_loss

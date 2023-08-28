@@ -100,16 +100,36 @@ class MultiTaskLossWrapper(nn.Module):
                 targets4v,
                 GT_flat,
                 criterion_seg,
-                criterion_cls):
-        seg_loss = criterion_seg(SR_flat, GT_flat, self.device, self.log_vars[0])
-        cls_loss = criterion_cls(cls_out, targets4v, self.log_vars[1])
-        loss = seg_loss + cls_loss
-        # 求平均
-        num = GT_flat.size(0)
-        seg_loss = seg_loss / num
-        cls_loss = cls_loss / num
-        loss = loss / num / 2  # 除以2是因为有两个loss
-        return seg_loss, cls_loss, loss, self.log_vars
+                criterion_cls,
+                deepsup=False,
+                ):
+        if deepsup is False:
+            seg_loss = criterion_seg(SR_flat, GT_flat, self.device, self.log_vars[0])
+            cls_loss = criterion_cls(cls_out, targets4v, self.log_vars[1])
+            loss = seg_loss + cls_loss
+            # 求平均
+            num = GT_flat.size(0)
+            seg_loss = seg_loss / num
+            cls_loss = cls_loss / num
+            loss = loss / num / 2  # 除以2是因为有两个loss
+            return seg_loss, cls_loss, loss, self.log_vars
+        else:
+            SR_flat0_1, SR_flat0_2, SR_flat0_3, SR_flat0_4 = SR_flat  # 这时候SR_flat是一个列表
+            seg_loss0_1 = criterion_seg(SR_flat0_1, GT_flat, self.device, self.log_vars[0])
+            seg_loss0_2 = criterion_seg(SR_flat0_2, GT_flat, self.device, self.log_vars[0])
+            seg_loss0_3 = criterion_seg(SR_flat0_3, GT_flat, self.device, self.log_vars[0])
+            seg_loss0_4 = criterion_seg(SR_flat0_4, GT_flat, self.device, self.log_vars[0])
+            seg_loss0 = seg_loss0_1 + seg_loss0_2 + seg_loss0_3 + seg_loss0_4
+            cls_loss = criterion_cls(cls_out, targets4v, self.log_vars[1])
+            loss = seg_loss0 + cls_loss
+            # 求平均
+            num = GT_flat.size(0)
+            seg_loss0 = seg_loss0 / num
+            cls_loss = cls_loss / num
+            loss = loss / num / 2  # 除以2是因为有两个loss
+            return seg_loss0, cls_loss, loss, self.log_vars
+
+
 
 
 class CustomGoogLeNet(GoogLeNet):
