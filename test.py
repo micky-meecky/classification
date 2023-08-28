@@ -84,7 +84,7 @@ def trainvalid(mode: str, dataloader: DataLoader, model,
                         labels, segout = model(images)
                         segout = torch.sigmoid(segout)
                     else:
-                        labels, _, _, segout0_4 = model(images)
+                        labels, _, _, _, segout0_4 = model(images)
                         segout0_4 = torch.sigmoid(segout0_4)
                 else:
                     labels = model(images)
