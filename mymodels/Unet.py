@@ -887,6 +887,9 @@ class M_UNet_seg(nn.Module):
         self.down3 = M_down(64, 128, self.cat_channels)
         self.left3 = M_legleft()
 
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear(128, 1)
+
         self.bottleneck = nn.Conv2d(128, 64, kernel_size=(3, 3), padding=1)
         self.bn = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
@@ -911,6 +914,11 @@ class M_UNet_seg(nn.Module):
         xl3 = self.left3(xl2)  # xl3: 32, 32, 3
         x4 = self.down3(x3, xl3)  # x4: 32, 32, 128
 
+        # classifier
+        clsout = self.avgpool(x4)
+        clsout = clsout.view(clsout.size(0), -1)
+        clsout = self.fc(clsout)
+
         # bottleneck
         x = self.bottleneck(x4)  # x: 32, 32, 64
         x = self.bn(x)
@@ -929,9 +937,7 @@ class M_UNet_seg(nn.Module):
 
         logits = self.outc(xr3)  # logits: 256, 256, 1
 
-        return logits
-
-        pass
+        return clsout, logits
 
 
 if __name__ == '__main__':
@@ -943,6 +949,6 @@ if __name__ == '__main__':
     model.eval()
     input = torch.randn(10, 3, 256, 256)
     label = torch.randn(10, 3, 256, 256)
-    logits = model(input)
-    # print(labels.shape)
+    labels, logits = model(input)
+    print(labels.shape)
     print(logits.shape)
