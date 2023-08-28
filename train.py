@@ -771,10 +771,10 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('DSUNetPlusPlusSeg_oseg_ch1_256_00', 6, 800, 'DSUNetPlusPlusSeg', 8e-3,
+        Train_breast('DSUNetPlusPlusSeg_cls_seg_ch1_256_00', 6, 800, 'DSUNetPlusPlus', 8e-3,
                      Use_pretrained=False,
                      _have_segtask=True,
-                     _only_segtask=True,
+                     _only_segtask=False,
                      is_continue_train=False,
                      use_clip=False,
                      channel=1,

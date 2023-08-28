@@ -13,7 +13,7 @@ from mymodels.Unet import UNet, UNetcls, UNetseg, Res101UNet, AgUNet, AgUNetseg,
 from mymodels.testsmp import UNet as ResUnet
 from mymodels.ViT import ViT_model, ViTseg, ViTcls
 from mymodels.swinunet import SwinUnet
-from mymodels.UnetPP import UNetPlusPlusSeg, DSUNetPlusPlusSeg
+from mymodels.UnetPP import UNetPlusPlusSeg, DSUNetPlusPlusSeg, DSUNetPlusPlus
 from mymodels.MTunet import MTUNet
 from mymodels.CBAMUnet import AgCBAMUNet, AgCBAMPixViTUNet, CBAMUNet, SideCBAMUNet, SideAgCBAMUNet, PixViTUNet, \
     CBAMPixViTUNet, SideCBAMPixViTUNet, SideAgCBAMPixViTUNet
@@ -370,6 +370,8 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
             model = UNetPlusPlusSeg(channel, 1)
         elif modelname == 'DSUNetPlusPlusSeg':
             model = DSUNetPlusPlusSeg(channel, 1)
+        elif modelname == 'DSUNetPlusPlus':
+            model = DSUNetPlusPlus(channel, 1)
         else:
             assert False, 'model name error'
     return model
