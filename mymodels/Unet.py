@@ -249,7 +249,7 @@ class AGUp(nn.Module):
         self.out_channels = out_channels
 
         # Attention gate
-        self.att = AttentionGate(F_g=in_channels // 2, F_l=out_channels, F_int=in_channels // 4)
+        self.att = AttentionGate(F_g=in_channels // 2, F_w=out_channels, F_int=in_channels // 4)
 
         # if bilinear, use the normal convolutions to reduce the number of channels
         if bilinear:

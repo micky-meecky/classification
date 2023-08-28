@@ -242,9 +242,9 @@ class ResidualBlock(nn.Module):
 
 
 class AttentionGate(nn.Module):
-    def __init__(self, F_g, F_l, F_int):
+    def __init__(self, F_g, F_w, F_int):
         super(AttentionGate, self).__init__()
-
+        # F_g 是g的通道数，F_w 是x的通道数，F_int 是中间层的通道数
         # W_g用于对g进行特征转换，包含一个卷积层和一个批量归一化层
         # 卷积层的作用是对输入特征进行线性变换，批量归一化层的作用是对特征进行归一化，使得网络更容易训练
         self.W_g = nn.Sequential(
@@ -255,7 +255,7 @@ class AttentionGate(nn.Module):
         # W_x用于对x进行特征转换，包含一个卷积层和一个批量归一化层
         # 卷积层和批量归一化层的作用同上
         self.W_x = nn.Sequential(
-            nn.Conv2d(F_l, F_int, kernel_size=1, stride=1, padding=0, bias=True),
+            nn.Conv2d(F_w, F_int, kernel_size=1, stride=1, padding=0, bias=True),
             nn.BatchNorm2d(F_int)
         )
 
