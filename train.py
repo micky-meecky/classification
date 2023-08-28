@@ -707,13 +707,13 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('UNetPlusPlusSeg_oseg_ch1_256_00', 6, 800, 'UNetPlusPlusSeg', 8e-3,
+        Train_breast('SSACPvUnet_cls_seg_ch3_256_00', 6, 800, 'SideAgCBAMPixViTUNet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
-                     _only_segtask=True,
+                     _only_segtask=False,
                      is_continue_train=False,
                      use_clip=False,
-                     channel=1,
+                     channel=3,
                      size=256,
                      decayepoch=790,
                      datasc='BUSI',
