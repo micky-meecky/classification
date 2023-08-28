@@ -559,7 +559,10 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                         valid_acc, valid_iou = test.trainvalid('valid', valid_loader, model, device, writer, Iter,
                                                                class_num,
                                                                _have_segtask,
-                                                               _only_segtask)
+                                                               _only_segtask,
+                                                               deepsup,
+                                                               clsaux
+                                                               )
                         valid_score = valid_acc + valid_iou
                     if valid_score > best_valid_score:
                         best_valid_score = valid_score
