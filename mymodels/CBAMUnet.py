@@ -497,6 +497,7 @@ class NewCBAMUNet(nn.Module):
         label = self.linear(clsx)
         return label, logits
 
+
 class SideCBAMUNet(nn.Module):
     def __init__(self, n_channels, n_classes, Method='maxpool', bilinear=False):
         super(SideCBAMUNet, self).__init__()
