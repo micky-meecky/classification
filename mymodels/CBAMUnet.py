@@ -843,11 +843,11 @@ class DSSideAgCBAMPixViTUNet(nn.Module):
         self.up4 = (AGUp(128, 64, bilinear))
         self.outc = (OutConv(64, n_classes))
 
-        self.sup3 = nn.Upsample(scale_factor=8, mode='bilinear')
+        self.sup3 = nn.Upsample(scale_factor=8, mode='bilinear', align_corners=True)
         self.outconv3 = OutConv(512, n_classes)
-        self.sup2 = nn.Upsample(scale_factor=4, mode='bilinear')
+        self.sup2 = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
         self.outconv2 = OutConv(256, n_classes)
-        self.sup1 = nn.Upsample(scale_factor=2, mode='bilinear')
+        self.sup1 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         self.outconv1 = OutConv(128, n_classes)
 
         # classification head
