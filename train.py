@@ -512,10 +512,6 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             # log_vars: [0.02311073988676071, -0.027175873517990112], 将这个里的每个元素分别求个exp再输出
             # exp_log_vars = [torch.exp(-log_var) for log_var in log_vars]
             # print('exp_log_vars:', exp_log_vars)
-            for name, param in model.named_parameters():
-                if not param.grad.is_contiguous():
-                    print(f"Parameter {name} is not contiguous!")
-                    param.grad = param.grad.contiguous()
             utils.PrintTrainInfo(_only_segtask, epoch, epoch_num, epoch_tp, epoch_fp, epoch_tn, epoch_fn, num_zero,
                                  num_one, tmp_pre, tmp_tar, writer, Iter)
             # 计时结束
@@ -779,7 +775,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('DSSideAgCBAMPixViTUNet_cls_seg_ch3_256_00', 6, 800, 'DSSideAgCBAMPixViTUNet', 6e-4,
+        Train_breast('CBAMPixViTUNet_cls_seg_ch3_256_01', 6, 800, 'CBAMPixViTUNet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
@@ -790,7 +786,7 @@ if __name__ == '__main__':
                      decayepoch=790,
                      datasc='BUSI',
                      clsaux=False,
-                     deepsup=True)
+                     deepsup=False)
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)
