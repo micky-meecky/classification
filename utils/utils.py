@@ -363,7 +363,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
         elif modelname == 'SideCBAMPixViTUNet':
             model = SideCBAMPixViTUNet(img_size, channel, 1)
         elif modelname == 'SideAgCBAMPixViTUNet':
-            model = SideAgCBAMPixViTUNet(img_size, channel, 1, Method='convpool')
+            model = SideAgCBAMPixViTUNet(img_size, channel, 1, Method='maxpool')
         elif modelname == 'PixViTUNet':
             model = PixViTUNet(img_size, channel, 1)
         elif modelname == 'CBAMUNet':
