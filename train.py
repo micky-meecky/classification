@@ -324,6 +324,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         writer = SummaryWriter(log_dir=log_dir)
         datas = train_loader  # -----------------------------------------------------
         utils.check_grad(model)
+
         for epoch in range(epoch_num):
             t.ticbegin()
             te.ticbegin()
@@ -511,7 +512,10 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             # log_vars: [0.02311073988676071, -0.027175873517990112], 将这个里的每个元素分别求个exp再输出
             # exp_log_vars = [torch.exp(-log_var) for log_var in log_vars]
             # print('exp_log_vars:', exp_log_vars)
-
+            for name, param in model.named_parameters():
+                if not param.grad.is_contiguous():
+                    print(f"Parameter {name} is not contiguous!")
+                    param.grad = param.grad.contiguous()
             utils.PrintTrainInfo(_only_segtask, epoch, epoch_num, epoch_tp, epoch_fp, epoch_tn, epoch_fn, num_zero,
                                  num_one, tmp_pre, tmp_tar, writer, Iter)
             # 计时结束
