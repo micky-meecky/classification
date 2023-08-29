@@ -15,7 +15,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from mymodels.unet.unet_utils import getModelSize
 from mymodels.generatorGAN import PixelwiseViT as PixViT
-from mymodels.unet.unet_utils import ChannelAttention, SpatialAttention, SideSEConv2d, SideConv2d
+from mymodels.unet.unet_utils import ChannelAttention, SpatialAttention, SideSEConv2d, SideConv2d, \
+    MultiDilatedConv
 
 
 class DoubleConvWithCBAM(nn.Module):
@@ -64,6 +65,7 @@ class DownwithCBAM(nn.Module):
     Downscaling with CBAM and maxpool or Conv2d to downsampling then double conv
     extract feature map for next layer, CBAM is used to another route for skip connection
     """
+
     def __init__(self, in_channels, out_channels, method='maxpool'):
         super().__init__()
         self.method = method
@@ -102,12 +104,59 @@ class DownwithCBAM(nn.Module):
             return out, skip_out
 
 
+class DilatedDownwithCBAM(nn.Module):
+    """
+    Downscaling with CBAM and maxpool or Conv2d to downsampling then double conv
+    extract feature map for next layer, CBAM is used to another route for skip connection
+    """
+
+    def __init__(self, in_channels, out_channels, method='maxpool'):
+        super().__init__()
+        self.method = method
+        if method == 'maxpool':
+            # 方法一：
+            self.maxpool_conv = nn.Sequential(
+                nn.MaxPool2d(2),
+                nn.Conv2d(in_channels, in_channels, kernel_size=1),
+                nn.BatchNorm2d(in_channels),
+                nn.SiLU(inplace=True),
+                DoubleConv(in_channels, out_channels),
+                MultiDilatedConv(out_channels, out_channels),
+                nn.Dropout(0.1)
+            )
+        elif method == 'convpool':
+            # 方法二：
+            self.convpool_conv = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1),
+                nn.BatchNorm2d(out_channels),
+                nn.SiLU(inplace=True),  # SiLu 是一个新的激活函数，其实就是Sigmoid和ReLU的结合
+                DoubleConv(out_channels, out_channels),
+                MultiDilatedConv(out_channels, out_channels),
+                nn.Dropout(0.1)
+            )
+        self.ca = ChannelAttention(out_channels)
+        self.sa = SpatialAttention()
+
+    def forward(self, x):
+        if self.method == 'maxpool':
+            out = self.maxpool_conv(x)
+            skip_out = self.ca(out) * out
+            skip_out = self.sa(skip_out) * skip_out
+            return out, skip_out
+        else:
+            out = self.convpool_conv(x)
+            skip_out = self.ca(out) * out
+            skip_out = self.sa(skip_out) * skip_out
+            return out, skip_out
+
+
 class SideDownwithCBAM(nn.Module):
     """
     Downscaling with CBAM and maxpool or Conv2d to downsampling then double conv
     extract feature map for next layer, CBAM is used to another route for skip connection
     layernum：当前层数，用于判断是否为第一层， 如果是第一层，侧边模块的输入通道数为3，否则为in_channels
     """
+
     def __init__(self, in_channels, out_channels, sidemode='NOSE',
                  method='maxpool', layernum=222,
                  Islastlayer=False, IsPixViT=False):
@@ -329,7 +378,7 @@ class AgCBAMUNet(nn.Module):
         super(AgCBAMUNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
-        self.bilinear = bilinear    # bilinear表示是否使用双线性插值
+        self.bilinear = bilinear  # bilinear表示是否使用双线性插值
 
         self.inc = (DoubleConv(n_channels, 64))
         self.inca = ChannelAttention(64)
@@ -376,7 +425,7 @@ class AgCBAMUNet(nn.Module):
         # logits = self.activation(logits)
 
         # classification head
-        clsx = F.adaptive_avg_pool2d(x5_skip, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
+        clsx = F.adaptive_avg_pool2d(x5_skip, (1, 1))  # 维度变化为[batch_size, 1024, 1, 1]
         clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
         label = self.linear(clsx)
         return label, logits
@@ -387,7 +436,7 @@ class CBAMUNet(nn.Module):
         super(CBAMUNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
-        self.bilinear = bilinear    # bilinear表示是否使用双线性插值
+        self.bilinear = bilinear  # bilinear表示是否使用双线性插值
 
         self.inc = (DoubleConv(n_channels, 64))
         self.inca = ChannelAttention(64)
@@ -434,7 +483,65 @@ class CBAMUNet(nn.Module):
         # logits = self.activation(logits)
 
         # classification head
-        clsx = F.adaptive_avg_pool2d(x5_skip, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
+        clsx = F.adaptive_avg_pool2d(x5_skip, (1, 1))  # 维度变化为[batch_size, 1024, 1, 1]
+        clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
+        label = self.linear(clsx)
+        return label, logits
+
+
+class DialatedCBAMUNet(nn.Module):
+    def __init__(self, n_channels, n_classes, Method='maxpool', bilinear=False):
+        super(DialatedCBAMUNet, self).__init__()
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.bilinear = bilinear  # bilinear表示是否使用双线性插值
+
+        self.inc = (DoubleConv(n_channels, 64))
+        self.inca = ChannelAttention(64)
+        self.insa = SpatialAttention()
+        self.down1 = (DilatedDownwithCBAM(64, 128, method=Method))
+        self.down2 = (DilatedDownwithCBAM(128, 256, method=Method))
+        self.down3 = (DilatedDownwithCBAM(256, 512, method=Method))
+        factor = 2 if bilinear else 1
+        self.down4 = (DownwithCBAM(512, 1024 // factor, method=Method))
+
+        # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
+        self.up1 = (Up(1024, 512 // factor, bilinear))
+        self.up2 = (Up(512, 256 // factor, bilinear))
+        self.up3 = (Up(256, 128 // factor, bilinear))
+        self.up4 = (Up(128, 64, bilinear))
+        self.outc = (OutConv(64, n_classes))
+        self.activation = nn.Sigmoid()
+
+        # classification head
+        self.linear = nn.Linear(1024, 1)
+
+    def forward(self, x):
+        # encoder
+        x1 = self.inc(x)
+        x1_skip = self.inca(x1) * x1
+        x1_skip = self.insa(x1_skip) * x1_skip
+        x2, x2_skip = self.down1(x1)
+        x3, x3_skip = self.down2(x2)
+        x4, x4_skip = self.down3(x3)
+        x5, x5_skip = self.down4(x4)
+
+        # decoder
+        # decoder with attention gates
+        x = self.up1(x5_skip, x4_skip)
+
+        x = self.up2(x, x3_skip)
+
+        x = self.up3(x, x2_skip)
+
+        x = self.up4(x, x1_skip)
+
+        # segmentation head
+        logits = self.outc(x)
+        # logits = self.activation(logits)
+
+        # classification head
+        clsx = F.adaptive_avg_pool2d(x5_skip, (1, 1))  # 维度变化为[batch_size, 1024, 1, 1]
         clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
         label = self.linear(clsx)
         return label, logits
@@ -445,7 +552,7 @@ class NewCBAMUNet(nn.Module):
         super(NewCBAMUNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
-        self.bilinear = bilinear    # bilinear表示是否使用双线性插值
+        self.bilinear = bilinear  # bilinear表示是否使用双线性插值
 
         self.inc = (DoubleConv(n_channels, 64))
         self.inca = ChannelAttention(64)
@@ -492,7 +599,7 @@ class NewCBAMUNet(nn.Module):
         # logits = self.activation(logits)
 
         # classification head
-        clsx = F.adaptive_avg_pool2d(x5_skip, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
+        clsx = F.adaptive_avg_pool2d(x5_skip, (1, 1))  # 维度变化为[batch_size, 1024, 1, 1]
         clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
         label = self.linear(clsx)
         return label, logits
@@ -503,7 +610,7 @@ class SideCBAMUNet(nn.Module):
         super(SideCBAMUNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
-        self.bilinear = bilinear    # bilinear表示是否使用双线性插值
+        self.bilinear = bilinear  # bilinear表示是否使用双线性插值
 
         self.inc = (DoubleConv(n_channels, 64))
         self.inca = ChannelAttention(64)
@@ -550,7 +657,7 @@ class SideCBAMUNet(nn.Module):
         # logits = self.activation(logits)
 
         # classification head
-        clsx = F.adaptive_avg_pool2d(x5_skip, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
+        clsx = F.adaptive_avg_pool2d(x5_skip, (1, 1))  # 维度变化为[batch_size, 1024, 1, 1]
         clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
         label = self.linear(clsx)
         return label, logits
@@ -561,7 +668,7 @@ class SideAgCBAMUNet(nn.Module):
         super(SideAgCBAMUNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
-        self.bilinear = bilinear    # bilinear表示是否使用双线性插值
+        self.bilinear = bilinear  # bilinear表示是否使用双线性插值
 
         self.inc = (DoubleConv(n_channels, 64))
         self.inca = ChannelAttention(64)
@@ -608,7 +715,7 @@ class SideAgCBAMUNet(nn.Module):
         # logits = self.activation(logits)
 
         # classification head
-        clsx = F.adaptive_avg_pool2d(x5_skip, (1, 1))   # 维度变化为[batch_size, 1024, 1, 1]
+        clsx = F.adaptive_avg_pool2d(x5_skip, (1, 1))  # 维度变化为[batch_size, 1024, 1, 1]
         clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
         label = self.linear(clsx)
         return label, logits
@@ -1035,13 +1142,3 @@ if __name__ == '__main__':
 
     print(labels.shape)
     print(logits.shape)
-
-
-
-
-
-
-
-
-
-
