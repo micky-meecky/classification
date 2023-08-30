@@ -64,7 +64,7 @@ class SideSEConv2d(nn.Module):
         )
         # self.se = SEModule(out_channels)
         self.se1 = SEModule(out_channels)
-        self.se2 = SEModule(out_channels)
+        # self.se2 = SEModule(out_channels)
 
     def forward(self, x, side):
         side = self.depthwise(side)
@@ -77,7 +77,7 @@ class SideSEConv2d(nn.Module):
         # side = x + side
         side = self.sideconv2(side)
         side = self.bn_relu_2(side)
-        side = self.se2(side)
+        # side = self.se2(side)
         return side
 
 
