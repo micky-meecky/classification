@@ -43,7 +43,6 @@ def getModelSize(model):
     print(f"参数大小：{param_size_MB:.3f}MB， 参数量：{param_sum_str}， 缓存大小：{buffer_size_MB:.3f}MB， 缓存量：{buffer_sum}， 总大小：{all_size:.3f}MB")
 
 
-
 class SideSEConv2d(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
@@ -65,7 +64,7 @@ class SideSEConv2d(nn.Module):
         )
         # self.se = SEModule(out_channels)
         self.se1 = SEModule(out_channels)
-        self.se2 = SEModule(out_channels)
+        # self.se2 = SEModule(out_channels)
 
     def forward(self, x, side):
         side = self.depthwise(side)
@@ -78,7 +77,7 @@ class SideSEConv2d(nn.Module):
         # side = x + side
         side = self.sideconv2(side)
         side = self.bn_relu_2(side)
-        side = self.se2(side)
+        # side = self.se2(side)
         return side
 
 
