@@ -293,14 +293,13 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             criterion_seg = SoftDiceLossNewvar()  # -----------------------------------------------------
             criterion_cls = BCEWithLogitsLossCustom(pos_weight=pos_weight)
             mtl = utils.MultiTaskLossWrapper(model, device)
-            optimizer = optim.Adam(list(mtl.parameters()), lr,
-                                   (0.5, 0.99))  # ----------------------------------------
+            optimizer = optim.SGD(list(mtl.parameters()), lr, 0.9)  # ----------------------------------------
         else:
             criterion_cls = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
             # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
             # criterion_seg = nn.BCELoss()  # -----------------------------------------------------
             optimizer = optim.AdamW(list(model.parameters()), lr,
-                                   (0.5, 0.99))  # ----------------------------------------
+                                    (0.5, 0.99))  # ----------------------------------------
 
     lr_sch = utils.LrDecay(lr_warm_epoch, lr_cos_epoch, lr, lr_low, optimizer)  # -------------------------------
 
@@ -477,8 +476,9 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
 
                     if _have_segtask:
                         if deepsup is False:
-                            seg_loss, cls_loss, loss, log_vars = mtl(outputs, SR_flat, targets4v, GT_flat, criterion_seg,
-                                                                 criterion_cls, deepsup)
+                            seg_loss, cls_loss, loss, log_vars = mtl(outputs, SR_flat, targets4v, GT_flat,
+                                                                     criterion_seg,
+                                                                     criterion_cls, deepsup)
                             seg_running_loss += seg_loss.item()
                         else:
                             seg_loss, cls_loss, loss, log_vars = mtl(outputs,
@@ -598,7 +598,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
 
     print('Finished Training\n')
     if is_test:
-        #测试最后一epoch 的模型效果并输出
+        # 测试最后一epoch 的模型效果并输出
         test_precision, test_recall, test_f1_score, test_acc = \
             test.test('test', test_loader, model, SegImgSavePath, device, class_num,
                       _have_segtask, _only_segtask, deepsup, clsaux=True)
@@ -775,7 +775,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('DSSS2ACPvUnet_cls_seg_ch3_256_01', 6, 800, 'DSSideAgCBAMPixViTUNet', 6e-4,
+        Train_breast('DiNewCBAMUNet_cls_seg_ch3_256_00', 6, 800, 'DiNewCBAMUNet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
@@ -798,7 +798,3 @@ if __name__ == '__main__':
         print(testr[i], end=', ')
         print(testf1[i], end=', ')
         print(testacc[i])
-
-
-
-
