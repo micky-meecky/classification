@@ -775,7 +775,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('DSSS2ACPvUnet_cls_seg_ch3_256_01', 6, 800, 'DSSideAgCBAMPixViTUNet', 6e-4,
+        Train_breast('cxSideUnet_cls_seg_ch3_256_00', 6, 800, 'SideUNet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
@@ -785,8 +785,8 @@ if __name__ == '__main__':
                      size=256,
                      decayepoch=790,
                      datasc='BUSI',
-                     clsaux=False,
-                     deepsup=True)
+                     clsaux=True,
+                     deepsup=False)
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)
