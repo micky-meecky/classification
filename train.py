@@ -786,7 +786,7 @@ if __name__ == '__main__':
                      decayepoch=790,
                      datasc='BUSI',
                      clsaux=False,
-                     deepsup=True)
+                     deepsup=False)
     testp.append(test_precision)
     testr.append(test_recall)
     testf1.append(test_f1_score)
