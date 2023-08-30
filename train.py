@@ -293,7 +293,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             criterion_seg = SoftDiceLossNewvar()  # -----------------------------------------------------
             criterion_cls = BCEWithLogitsLossCustom(pos_weight=pos_weight)
             mtl = utils.MultiTaskLossWrapper(model, device)
-            optimizer = optim.AdamW(list(mtl.parameters()), lr,
+            optimizer = optim.Adam(list(mtl.parameters()), lr,
                                    (0.5, 0.99))  # ----------------------------------------
         else:
             criterion_cls = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
@@ -775,7 +775,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('NewCBAMUNet_cls_seg_ch3_256_02', 6, 800, 'NewCBAMUNet', 6e-4,
+        Train_breast('SideDiCBAMUNet_cls_seg_ch3_256_02', 6, 800, 'SideDiCBAMUNet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
