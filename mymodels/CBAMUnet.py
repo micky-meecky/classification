@@ -117,12 +117,12 @@ class DilatedDownwithCBAM(nn.Module):
             # 方法一：
             self.maxpool_conv = nn.Sequential(
                 nn.MaxPool2d(2),
-                nn.Conv2d(in_channels, in_channels, kernel_size=1),
-                nn.BatchNorm2d(in_channels),
-                nn.SiLU(inplace=True),
+                # nn.Conv2d(in_channels, in_channels, kernel_size=1),
+                # nn.BatchNorm2d(in_channels),
+                # nn.SiLU(inplace=True),
                 DoubleConv(in_channels, out_channels),
                 MultiDilatedConv(out_channels, out_channels),
-                nn.Dropout(0.1)
+                # nn.Dropout(0.1)
             )
         elif method == 'convpool':
             # 方法二：
