@@ -9,7 +9,7 @@ from mymodels.models import Net
 from mymodels.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 from mymodels.unetr import UNETR, UNETRcls, UNETRseg, UNETRclsz12, UNETRclstoken
 from mymodels.Unet import UNet, UNetcls, UNetseg, Res101UNet, AgUNet, AgUNetseg, ResUNet, InDilatedUNet, SideUNet, \
-    CasDilatedUNet, M_UNet_seg
+    CasDilatedUNet, M_UNet_seg, SideDiUNet
 from mymodels.testsmp import UNet as ResUnet
 from mymodels.ViT import ViT_model, ViTseg, ViTcls
 from mymodels.swinunet import SwinUnet
@@ -391,6 +391,8 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
             model = CasDilatedUNet(channel, 1, 'maxpool')
         elif modelname == 'SideUNet':
             model = SideUNet(channel, 1, 'NoSE')
+        elif modelname == 'SideDiUNet':
+            model = SideDiUNet(channel, 1, 'NoSE', 'maxpool')
         elif modelname == 'SideconvUNet':
             model = SideUNet(channel, 1, 'NoSE', 'convpool')
         elif modelname == 'SideSEUNet':

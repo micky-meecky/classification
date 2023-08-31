@@ -183,6 +183,59 @@ class SideDown(nn.Module):
         return downsample, side
 
 
+class SideDiDown(nn.Module):
+    """Downscaling with maxpool then double conv
+       Param：
+           in_channels：输入通道数
+           out_channels：输出通道数
+           method：下采样方法，有两种：'maxpool'和'convpool'
+           sidemode：侧边模块，有两种：'SE'和'Conv'
+           layernum：当前层数，用于判断是否为第一层， 如果是第一层，侧边模块的输入通道数为3，否则为in_channels
+    """
+
+    def __init__(self, in_channels, out_channels, sidemode='SE', method='maxpool', layernum=222):
+        super().__init__()
+        self.method = method
+        if layernum == 1:
+            side_in_channels = 3
+        else:
+            side_in_channels = in_channels
+        if sidemode == 'SE':
+            self.sideconv = SideSEConv2d(side_in_channels, out_channels)
+        else:
+            self.sideconv = SideConv2d(side_in_channels, out_channels)
+        if method == 'maxpool':
+            # 方法一：
+            self.maxpool_conv = nn.Sequential(
+                nn.MaxPool2d(2),
+                nn.Conv2d(in_channels, in_channels, kernel_size=1),
+                nn.BatchNorm2d(in_channels),
+                nn.SiLU(inplace=True),
+                DoubleConv(in_channels, out_channels),
+                MultiDilatedConv(out_channels, out_channels),
+                nn.Dropout(0.1)
+            )
+        elif method == 'convpool':
+            # 方法二：
+            self.convpool_conv = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1),
+                nn.BatchNorm2d(out_channels),
+                nn.SiLU(inplace=True),
+                DoubleConv(out_channels, out_channels),
+                MultiDilatedConv(out_channels, out_channels),
+                nn.Dropout(0.1)
+            )
+
+    def forward(self, x, side):
+        if self.method == 'maxpool':
+            downsample = self.maxpool_conv(x)
+        else:
+            downsample = self.convpool_conv(x)
+
+        side = self.sideconv(downsample, side)
+        return downsample, side
+
+
 class Down(nn.Module):
     """Downscaling with maxpool then double conv"""
 
@@ -414,6 +467,57 @@ class SideUNet(nn.Module):
         x5, side_x5 = self.down4(x4, side_x4)
         # x5 就没用了，清除掉
         del x5
+
+        # decoder
+        x = self.up1(side_x5, x4)
+
+        x = self.up2(x, x3)
+
+        x = self.up3(x, x2)
+
+        x = self.up4(x, x1)
+
+        # segmentation head
+        logits = self.outc(x)
+        # logits = self.activation(logits)
+
+        # classification head
+        clsx = F.adaptive_avg_pool2d(side_x5, (1, 1))  # 维度变化为[batch_size, 1024, 1, 1]
+        clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
+        label = self.linear(clsx)
+        return label, logits
+
+
+class SideDiUNet(nn.Module):
+    def __init__(self, n_channels, n_classes, sidemode='SE', Method='maxpool', bilinear=False):
+        super(SideDiUNet, self).__init__()
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.bilinear = bilinear  # bilinear表示是否使用双线性插值
+
+        self.inc = (DoubleConv(n_channels, 64))
+        self.down1 = (SideDiDown(64, 128, sidemode, Method, layernum=1))
+        self.down2 = (SideDiDown(128, 256, sidemode, Method))
+        self.down3 = (SideDiDown(256, 512, sidemode, Method))
+        factor = 2 if bilinear else 1
+        self.down4 = (SideDiDown(512, 1024 // factor, sidemode, Method))
+        # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
+        self.up1 = (Up(1024, 512 // factor, bilinear))
+        self.up2 = (Up(512, 256 // factor, bilinear))
+        self.up3 = (Up(256, 128 // factor, bilinear))
+        self.up4 = (Up(128, 64, bilinear))
+        self.outc = (OutConv(64, n_classes))
+
+        # classification head
+        self.linear = nn.Linear(1024, 1)
+
+    def forward(self, x):
+        # encoder
+        x1 = self.inc(x)
+        x2, side_x2 = self.down1(x1, x)
+        x3, side_x3 = self.down2(x2, side_x2)
+        x4, side_x4 = self.down3(x3, side_x3)
+        _, side_x5 = self.down4(x4, side_x4)
 
         # decoder
         x = self.up1(side_x5, x4)

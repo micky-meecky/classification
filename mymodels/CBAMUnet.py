@@ -738,7 +738,6 @@ class DiNewCBAMUNet(nn.Module):
         return label, logits
 
 
-
 class SideDiCBAMUNet(nn.Module):
     def __init__(self, n_channels, n_classes, Method='maxpool', bilinear=False):
         super(SideDiCBAMUNet, self).__init__()
@@ -771,10 +770,14 @@ class SideDiCBAMUNet(nn.Module):
         x1 = self.inc(x)
         x1_skip = self.inca(x1) * x1
         x1_skip = self.insa(x1_skip) * x1_skip
-        x2, x2_skip, side_x2 = self.down1(x1, x)
-        x3, x3_skip, side_x3 = self.down2(x2, side_x2)
-        x4, x4_skip, side_x4 = self.down3(x3, side_x3)
-        _, x5_skip, side_x5 = self.down4(x4, side_x4)
+        # x2, x2_skip, side_x2 = self.down1(x1, x)
+        # x3, x3_skip, side_x3 = self.down2(x2, side_x2)
+        # x4, x4_skip, side_x4 = self.down3(x3, side_x3)
+        # _, x5_skip, side_x5 = self.down4(x4, side_x4)
+        _, x2_skip, side_x2 = self.down1(x1_skip, x)
+        _, x3_skip, side_x3 = self.down2(x2_skip, side_x2)
+        _, x4_skip, side_x4 = self.down3(x3_skip, side_x3)
+        _, x5_skip, _ = self.down4(x4_skip, side_x4)
 
         # decoder
         # decoder with attention gates
