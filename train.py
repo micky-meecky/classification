@@ -559,7 +559,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                                                     _have_segtask,
                                                     _only_segtask,
                                                     deepsup,
-                                                    clsaux=True)
+                                                    clsaux=False)
                         valid_score = valid_iou
                     else:
                         valid_acc, valid_iou = test.trainvalid('valid', valid_loader, model, device, writer, Iter,
@@ -567,7 +567,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                                                                _have_segtask,
                                                                _only_segtask,
                                                                deepsup,
-                                                               clsaux=True
+                                                               clsaux=False
                                                                )
                         valid_score = valid_acc + valid_iou
                     if valid_score > best_valid_score:
@@ -607,7 +607,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         # 测试最后一epoch 的模型效果并输出
         test_precision, test_recall, test_f1_score, test_acc = \
             test.test('test', test_loader, model, SegImgSavePath, device, class_num,
-                      _have_segtask, _only_segtask, deepsup, clsaux=True)
+                      _have_segtask, _only_segtask, deepsup, clsaux=False)
         print('test_precision, test_recall, test_f1_score, test_acc:', test_precision, test_recall, test_f1_score,
               test_acc)
         print('最后一epoch的模型效果测试完毕')
@@ -615,110 +615,11 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         model.load_state_dict(torch.load(mini_loss_model, map_location=device))
         test_precision, test_recall, test_f1_score, test_acc = \
             test.test('test', test_loader, model, SegImgSavePath, device, class_num,
-                      _have_segtask, _only_segtask, deepsup, clsaux=True)
+                      _have_segtask, _only_segtask, deepsup, clsaux=False)
     print('\nFinished Testing\n')
     # test(model)
 
     return test_precision, test_recall, test_f1_score, test_acc
-
-
-def Train_Mnist():
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = utils.InitModel('swin-vit', False, class_num=3, _have_segtask=False, _only_segtask=False)
-    print(getModelSize(model))
-
-    if torch.cuda.is_available():
-        print("Using GPU")
-        model = DataParallel(model)
-        model.to(device)
-    else:
-        print("Using CPU")
-        # model = DataParallel(model)
-        model.to(device)
-
-    train_loader, val_loader, test_loader = mnist_loader()
-
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.AdamW(model.parameters(), lr=0.0002)
-
-    is_train = True
-    is_test = True
-    is_continue_train = False
-
-    if is_continue_train:
-        model.load_state_dict(torch.load('model.pth'))
-        print('load model')
-
-    if is_train:
-        for epoch in range(100):
-            correct = 0
-            total = 0
-            running_loss = 0.0
-            for i, data in tqdm(enumerate(train_loader, 0), total=len(train_loader)):
-                inputs, labels = data
-                if torch.cuda.is_available():
-                    inputs, labels = inputs.to(device), labels.to(device)
-                optimizer.zero_grad()
-                outputs = model(inputs)
-                # 对outputs进行激活，然后计算损失，使用softmax激活
-                outputs = F.softmax(outputs, dim=1)
-                loss = criterion(outputs, labels)
-                loss.backward()
-                optimizer.step()
-                running_loss += loss.item()
-                if i % 100 == 99:
-                    print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 100))  # i + 1代表第几个batch
-                    running_loss = 0.0
-                if i == 0 and epoch % 5 == 0:
-                    torch.save(model.state_dict(), 'model.pth')
-                    print('save model')
-
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-
-            print('Accuracy of the network on the 50000 train images: %.4f %%' % (100 * correct / total))
-
-        torch.save(model.state_dict(), 'model.pth')
-
-    model.load_state_dict(torch.load('model.pth'))
-
-    if is_test:
-        # 训练集上测试
-        correct = 0
-        total = 0
-        with torch.no_grad():
-            print('train set testing...')
-            for data in train_loader:
-                images, labels = data
-                if torch.cuda.is_available():
-                    images, labels = images.to(device), labels.to(device)
-                outputs = model(images)
-                _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
-
-        print('Accuracy of the network on the 50000 train images: %.4f %%' % (100 * correct / total))
-
-        print('testing...')
-        # 测试模型
-        correct = 0
-        total = 0
-        with torch.no_grad():
-            print('testing...')
-            for i, data in enumerate(test_loader, 0):
-                images, labels = data
-                if torch.cuda.is_available():
-                    images, labels = images.to(device), labels.to(device)
-                outputs = model(images)
-                _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
-                # print('测试集上的准确率: %.3f %%' % (100 * correct / total))
-
-        # 计算准确率
-        accuracy = correct / total
-        print('Accuracy of the network on the test images: %.4f %%' % (100 * accuracy))
 
 
 def main():
