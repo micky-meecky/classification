@@ -71,7 +71,7 @@ def Device(model):
         # device_ids = [i for i in range(torch.cuda.device_count())]
         if torch.cuda.device_count() > 1:
             # 设置为使用1,2,3号GPU
-            device_ids = [1]  # 使用的是3个GPU，1,2,3号
+            device_ids = [0, 1]  # 使用的是3个GPU，1,2,3号
             print("\n Using GPU device: {}".format(device_ids))
         else:
             device_ids = [0]  # 使用的是1个GPU，0号
@@ -364,7 +364,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
         elif modelname == 'SideAgCBAMPixViTUNet':
             model = SideAgCBAMPixViTUNet(img_size, channel, 1, Method='maxpool')
         elif modelname == 'DSSideAgCBAMPixViTUNet':
-            model = DSSideAgCBAMPixViTUNet(img_size, channel, 1, Method='maxpool')
+            model = DSSideAgCBAMPixViTUNet(img_size, channel, 1, Method='convpool')
         elif modelname == 'PixViTUNet':
             model = PixViTUNet(img_size, channel, 1)
         elif modelname == 'CBAMUNet':
