@@ -100,9 +100,9 @@ class JaccardLoss(nn.Module):
             loss += 1 - score
 
 
-class BCEWithLogitsLossCustomcls(nn.Module):
+class BCEWithLogitsLossfocal(nn.Module):
     def __init__(self, gamma=2, weight=None, reduction='mean', pos_weight=None):
-        super(BCEWithLogitsLossCustomcls, self).__init__()
+        super(BCEWithLogitsLossfocal, self).__init__()
         self.weight = weight
         self.reduction = reduction
         self.pos_weight = pos_weight
@@ -159,6 +159,7 @@ class BCEWithLogitsLossCustom(nn.Module):
             # 计算总和
             loss = torch.sum(loss)
         return loss
+
 
 class SoftDiceLossNewvar(nn.Module):
     def __init__(self, weight=None, size_average=True):
@@ -234,6 +235,7 @@ class SoftDiceLossNew(nn.Module):
             loss = loss + 1 - score
         loss = loss / num
         return loss
+
 
 class MTLModel(torch.nn.Module):
     def __init__(self, n_hidden, n_output):

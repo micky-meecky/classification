@@ -71,7 +71,7 @@ def Device(model):
         # device_ids = [i for i in range(torch.cuda.device_count())]
         if torch.cuda.device_count() > 1:
             # 设置为使用1,2,3号GPU
-            device_ids = [2, 3]  # 使用的是3个GPU，1,2,3号
+            device_ids = [1]  # 使用的是3个GPU，1,2,3号
             print("\n Using GPU device: {}".format(device_ids))
         else:
             device_ids = [0]  # 使用的是1个GPU，0号
@@ -129,8 +129,6 @@ class MultiTaskLossWrapper(nn.Module):
             cls_loss = cls_loss / num
             loss = loss / num / 2  # 除以2是因为有两个loss
             return seg_loss0, cls_loss, loss, self.log_vars
-
-
 
 
 class CustomGoogLeNet(GoogLeNet):
