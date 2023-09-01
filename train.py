@@ -440,9 +440,9 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                         if deepsup is False:
                             # 根据分类的结果，分类为1的代表的是没有结节的样本，而分类为0的代表的是有结节的样本。
                             # 没有结节的话，则将segout乘以0，有结节的话，则将segout乘以1
-                            if clsaux:
-                                cls_predicted = 1 - predicted  # 这里的predicted是0或者1，所以1-predicted就是1或者0
-                                segout = segout * cls_predicted.view(-1, 1, 1, 1)  # 要转换成bs x 1 x 1 x 1
+                            # if clsaux:
+                            #     cls_predicted = 1 - predicted  # 这里的predicted是0或者1，所以1-predicted就是1或者0
+                            #     segout = segout * cls_predicted.view(-1, 1, 1, 1)  # 要转换成bs x 1 x 1 x 1
                             SR_flat = segout.view(segout.size(0), -1)
                             GT_flat = targets1.view(targets1.size(0), -1)
                             # seg_loss = criterion_seg(SR_flat, GT_flat, device)
@@ -559,7 +559,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                                                     _have_segtask,
                                                     _only_segtask,
                                                     deepsup,
-                                                    clsaux=False)
+                                                    clsaux=True)
                         valid_score = valid_iou
                     else:
                         valid_acc, valid_iou = test.trainvalid('valid', valid_loader, model, device, writer, Iter,
@@ -567,7 +567,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                                                                _have_segtask,
                                                                _only_segtask,
                                                                deepsup,
-                                                               clsaux=False
+                                                               clsaux=True
                                                                )
                         valid_score = valid_acc + valid_iou
                     if valid_score > best_valid_score:
@@ -607,7 +607,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         # 测试最后一epoch 的模型效果并输出
         test_precision, test_recall, test_f1_score, test_acc = \
             test.test('test', test_loader, model, SegImgSavePath, device, class_num,
-                      _have_segtask, _only_segtask, deepsup, clsaux=False)
+                      _have_segtask, _only_segtask, deepsup, clsaux=True)
         print('test_precision, test_recall, test_f1_score, test_acc:', test_precision, test_recall, test_f1_score,
               test_acc)
         print('最后一epoch的模型效果测试完毕')
@@ -615,7 +615,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         model.load_state_dict(torch.load(mini_loss_model, map_location=device))
         test_precision, test_recall, test_f1_score, test_acc = \
             test.test('test', test_loader, model, SegImgSavePath, device, class_num,
-                      _have_segtask, _only_segtask, deepsup, clsaux=False)
+                      _have_segtask, _only_segtask, deepsup, clsaux=True)
     print('\nFinished Testing\n')
     # test(model)
 
