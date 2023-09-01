@@ -290,13 +290,13 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         else:
             pos_weight = torch.tensor([500 / 122]).to(device)
         if _have_segtask:
-            # criterion_seg = SoftDiceLossNewvar()  # -----------------------------------------------------
-            # criterion_cls = BCEWithLogitsLossCustom(pos_weight=pos_weight)
-            # mtl = utils.MultiTaskLossWrapper(model, device)
-            # optimizer = optim.Adam(list(mtl.parameters()), lr, (0.5, 0.99))  # -------------------------------------
-            criterion_cls = BCEWithLogitsLossfocal(pos_weight=pos_weight)
-            criterion_seg = SoftDiceLossNew()
-            optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))
+            criterion_seg = SoftDiceLossNewvar()  # -----------------------------------------------------
+            criterion_cls = BCEWithLogitsLossCustom(pos_weight=pos_weight)
+            mtl = utils.MultiTaskLossWrapper(model, device)
+            optimizer = optim.Adam(list(mtl.parameters()), lr, (0.5, 0.99))  # -------------------------------------
+            # criterion_cls = BCEWithLogitsLossfocal(pos_weight=pos_weight)
+            # criterion_seg = SoftDiceLossNew()
+            # optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))
         else:
             criterion_cls = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
             # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
@@ -479,18 +479,18 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
 
                     if _have_segtask:
                         if deepsup is False:
-                            # seg_loss, cls_loss, loss, log_vars = mtl(outputs, SR_flat, targets4v, GT_flat,
-                            #                                          criterion_seg,
-                            #                                          criterion_cls, deepsup)
-                            cls_loss = criterion_cls(outputs, targets4v)
-                            seg_loss = criterion_seg(SR_flat, GT_flat, device)
-                            loss = (1 - L) * cls_loss + L * seg_loss
+                            seg_loss, cls_loss, loss, log_vars = mtl(outputs, SR_flat, targets4v, GT_flat,
+                                                                     criterion_seg,
+                                                                     criterion_cls, deepsup)
+                            # cls_loss = criterion_cls(outputs, targets4v)
+                            # seg_loss = criterion_seg(SR_flat, GT_flat, device)
+                            # loss = (1 - L) * cls_loss + L * seg_loss
                             seg_running_loss += seg_loss.item()
                         else:
-                            # seg_loss, cls_loss, loss, log_vars = mtl(outputs,
-                            #                                          [segout0_1, segout0_2, segout0_3, segout0_4],
-                            #                                          targets4v, GT_flat, criterion_seg, criterion_cls,
-                            #                                          deepsup)
+                            seg_loss, cls_loss, loss, log_vars = mtl(outputs,
+                                                                     [segout0_1, segout0_2, segout0_3, segout0_4],
+                                                                     targets4v, GT_flat, criterion_seg, criterion_cls,
+                                                                     deepsup)
                             seg_running_loss += seg_loss.item()
                     else:
                         cls_loss = criterion_cls(outputs, targets4v)
