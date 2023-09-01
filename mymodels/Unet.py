@@ -247,7 +247,7 @@ class Down(nn.Module):
             self.maxpool_conv = nn.Sequential(
                 nn.MaxPool2d(2),
                 DoubleConv(in_channels, out_channels),
-                nn.Dropout(0.5)
+                nn.Dropout(0.1)
             )
         elif method == 'convpool':
             # 方法二：
