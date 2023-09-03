@@ -294,7 +294,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             criterion_cls = BCEWithLogitsLossCustom(pos_weight=pos_weight)
             mtl = utils.MultiTaskLossWrapper(model, device)
             # optimizer = optim.Adam(list(mtl.parameters()), lr, (0.5, 0.99))
-            optimizer = optim.SGD(list(mtl.parameters()), lr, momentum=0.99, weight_decay=1e-4)
+            optimizer = optim.SGD(list(mtl.parameters()), lr, momentum=0.99, weight_decay=1e-5)
             # criterion_cls = BCEWithLogitsLossfocal(pos_weight=pos_weight)
             # criterion_seg = SoftDiceLossNew()
             # optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))
@@ -623,58 +623,6 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     return test_precision, test_recall, test_f1_score, test_acc
 
 
-def main():
-    # Train_Mnist()
-    # Train_breast('unetRcls_ocls2_5', 30, 200, 'unetr', 1e-4, False, False, False, is_continue_train=False)
-    # Train_breast('UNet_olseg_0', 10, 600, 'unet', 1e-2, False, True, True, False)
-    # Train_breast('unetRseg_cls_seg_8', 5, 100, 'unetr', 9.63366620781354e-14, False, True, _only_segtask=False,
-    #              is_continue_train=True)
-
-    base_name1 = 'Unet_ocls_3'
-    base_name2 = 'Unet_ocls_4'
-    # 从A到Z
-    name_order = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-                  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
-                  'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-                  'U', 'V', 'W', 'X', 'Y', 'Z']
-
-    lr_list = (1e-1, 4e-2, 1e-2, 8e-3, 6e-3, 4e-3, 2e-3, 1e-3, 8e-4, 6e-4,
-               4e-4, 2e-4, 1e-4, 8e-5, 6e-5, 4e-5, 2e-5, 1e-5, 8e-6, 6e-6,
-               4e-6, 2e-6, 1e-6)  # lr_list是学习率元组。目前设置了23个学习率
-
-    testp = []
-    testr = []
-    testf1 = []
-    testacc = []
-
-    # 尝试不同的学习率，分两个批次，一次是奇数，一次是偶数，奇数的使用仅含有z12的，偶数的使用仅含有cls_token的。
-    for j in range(len(lr_list)):
-        test_precision, test_recall, test_f1_score, test_acc = \
-            Train_breast(base_name2 + name_order[j], 16, 400, 'unet', lr_list[j],
-                         Use_pretrained=False,
-                         _have_segtask=False,
-                         _only_segtask=False,
-                         is_continue_train=False,
-                         use_clip=False)
-        testp.append(test_precision)
-        testr.append(test_recall)
-        testf1.append(test_f1_score)
-        testacc.append(test_acc)
-
-        for i in range(len(testp)):
-            print('第' + str(i + 1) + '个实验结果：', end=', ')
-            print(testp[i], end=', ')
-            print(testr[i], end=', ')
-            print(testf1[i], end=', ')
-            print(testacc[i])
-
-    print(testp)
-    print(testr)
-    print(testf1)
-    print(testacc)
-    print('end')
-
-
 if __name__ == '__main__':
     # main(   )
     testp = []
@@ -682,33 +630,8 @@ if __name__ == '__main__':
     testf1 = []
     testacc = []
 
-    # test_precision, test_recall, test_f1_score, test_acc = \
-    #     Train_breast('SideDiUnet_cls_seg_ch3_256_00', 6, 800, 'SideDiUNet', 6e-4,
-    #                  Use_pretrained=False,
-    #                  _have_segtask=True,
-    #                  _only_segtask=False,
-    #                  is_continue_train=False,
-    #                  use_clip=False,
-    #                  channel=3,
-    #                  size=256,
-    #                  decayepoch=790,
-    #                  datasc='BUSI',
-    #                  clsaux=False,
-    #                  deepsup=False)
-    # testp.append(test_precision)
-    # testr.append(test_recall)
-    # testf1.append(test_f1_score)
-    # testacc.append(test_acc)
-    #
-    # for i in range(len(testp)):
-    #     print('第' + str(i + 1) + '个实验结果：', end=', ')
-    #     print(testp[i], end=', ')
-    #     print(testr[i], end=', ')
-    #     print(testf1[i], end=', ')
-    #     print(testacc[i])
-
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('SideSE2AgCBAMUNet_cls_seg_ch3_256_03', 8, 800, 'SideAgCBAMUNet', 1e-2,
+        Train_breast('SideSE2AgCBAMUNet_cls_seg_ch3_256_04', 8, 800, 'SideAgCBAMUNet', 1e-3,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
