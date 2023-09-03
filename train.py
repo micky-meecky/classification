@@ -294,7 +294,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             criterion_cls = BCEWithLogitsLossCustom(pos_weight=pos_weight)
             mtl = utils.MultiTaskLossWrapper(model, device)
             # optimizer = optim.Adam(list(mtl.parameters()), lr, (0.5, 0.99))
-            optimizer = optim.SGD(list(mtl.parameters()), lr, momentum=0.9, weight_decay=1e-4)
+            optimizer = optim.SGD(list(mtl.parameters()), lr, momentum=0.99, weight_decay=1e-4)
             # criterion_cls = BCEWithLogitsLossfocal(pos_weight=pos_weight)
             # criterion_seg = SoftDiceLossNew()
             # optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))
