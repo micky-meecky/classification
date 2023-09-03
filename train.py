@@ -650,7 +650,7 @@ def main():
     # 尝试不同的学习率，分两个批次，一次是奇数，一次是偶数，奇数的使用仅含有z12的，偶数的使用仅含有cls_token的。
     for j in range(len(lr_list)):
         test_precision, test_recall, test_f1_score, test_acc = \
-            Train_breast(base_name2 + name_order[j], 6, 400, 'unet', lr_list[j],
+            Train_breast(base_name2 + name_order[j], 16, 400, 'unet', lr_list[j],
                          Use_pretrained=False,
                          _have_segtask=False,
                          _only_segtask=False,
@@ -708,7 +708,7 @@ if __name__ == '__main__':
     #     print(testacc[i])
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('SideSE2AgCBAMUNet_cls_seg_ch3_256_02', 6, 800, 'SideAgCBAMUNet', 6e-4,
+        Train_breast('SideSE2AgCBAMUNet_cls_seg_ch3_256_03', 16, 800, 'SideAgCBAMUNet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
