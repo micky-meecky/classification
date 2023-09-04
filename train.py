@@ -640,7 +640,7 @@ if __name__ == '__main__':
                      use_clip=False,
                      channel=3,
                      size=256,
-                     decayepoch=790,
+                     decayepoch=1190,
                      datasc='BUSI',
                      clsaux=False,
                      deepsup=False)
