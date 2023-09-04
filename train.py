@@ -294,7 +294,8 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             criterion_cls = BCEWithLogitsLossCustom(pos_weight=pos_weight)
             mtl = utils.MultiTaskLossWrapper(model, device)
             # optimizer = optim.Adam(list(mtl.parameters()), lr, (0.5, 0.99))
-            optimizer = optim.SGD(list(mtl.parameters()), lr, momentum=0.99, weight_decay=1e-5)
+            # optimizer = optim.SGD(list(mtl.parameters()), lr, momentum=0.99, weight_decay=1e-5)
+            optimizer = optim.NAdam(list(mtl.parameters()), lr=0.001, betas=(0.9, 0.999), weight_decay=1e-4)
             # criterion_cls = BCEWithLogitsLossfocal(pos_weight=pos_weight)
             # criterion_seg = SoftDiceLossNew()
             # optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))
@@ -631,7 +632,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('SideSE2AgCBAMUNet_cls_seg_ch3_256_06', 4, 1000, 'SideAgCBAMUNet', 6e-4,
+        Train_breast('SideSE2AgCBAMUNet_cls_seg_ch3_256_07', 6, 800, 'SideAgCBAMUNet', 6e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
@@ -639,7 +640,7 @@ if __name__ == '__main__':
                      use_clip=False,
                      channel=3,
                      size=256,
-                     decayepoch=990,
+                     decayepoch=790,
                      datasc='BUSI',
                      clsaux=False,
                      deepsup=False)
