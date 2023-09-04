@@ -632,7 +632,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('SideSE2AgCBAMUNet_cls_seg_ch3_256_09', 32, 1200, 'SideAgCBAMUNet', 8e-4,
+        Train_breast('SideSE2AgCBAMUNet_cls_seg_ch3_256_10', 5, 800, 'SideAgCBAMUNet', 1e-3,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
@@ -640,7 +640,7 @@ if __name__ == '__main__':
                      use_clip=False,
                      channel=3,
                      size=256,
-                     decayepoch=1190,
+                     decayepoch=790,
                      datasc='BUSI',
                      clsaux=False,
                      deepsup=False)
