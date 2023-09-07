@@ -632,7 +632,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('SideSE2AgCBAMUNet_cls_seg_ch3_256_27', 6, 800, 'SideAgCBAMUNet', 4e-3,
+        Train_breast('SideSE2AgCBAMUNet_cls_seg_ch3_256_28', 6, 800, 'SideAgCBAMUNet', 6e-3,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
