@@ -232,7 +232,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     class_num = 1  # class_num -----------------------------------------------------
     lr = lr  # 学习率  -----------------------------------------------------
     validate_flag = True  # 是否使用验证集 -----------------------------------------------------
-    lr_low = 1e-15  # 学习率下限  ------------------------------------------------------
+    lr_low = 1e-16  # 学习率下限  ------------------------------------------------------
     lr_warm_epoch = 10  # warm up 的 epoch 数 -----------------------------------------------------
     lr_cos_epoch = decayepoch  # 学习率下降的epoch数 -----------------------------------------------------
     num_epochs_decay = 100  # 学习率下降的epoch数 -----------------------------------------------------
@@ -632,7 +632,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('SS2ACPvUnet_cls_seg_ch3_256_16', 6, 1800, 'SideAgCBAMPixViTUNet', 1e-6,
+        Train_breast('SS2ACPvUnet_cls_seg_ch3_256_17', 6, 1600, 'SideAgCBAMPixViTUNet', 2e-6,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
