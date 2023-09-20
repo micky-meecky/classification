@@ -632,15 +632,15 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('Unet_oseg_ch1_256_00', 10, 500, 'unet', 4e-4,
+        Train_breast('SwinUnet_seg_cls_ch3_256_00', 6, 600, 'swin_unet', 4e-4,
                      Use_pretrained=False,
-                     _have_segtask=False,
-                     _only_segtask=True,
+                     _have_segtask=True,
+                     _only_segtask=False,
                      is_continue_train=False,
                      use_clip=False,
-                     channel=1,
-                     size=256,
-                     decayepoch=490,
+                     channel=3,
+                     size=224,
+                     decayepoch=590,
                      datasc='BUSI',
                      clsaux=False,
                      deepsup=False)

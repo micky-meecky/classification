@@ -698,6 +698,7 @@ class SwinTransformerSys(nn.Module):
             self.output = nn.Conv2d(in_channels=embed_dim, out_channels=self.num_classes, kernel_size=1, bias=False)
 
         self.apply(self._init_weights)
+        self.classification_head = nn.Linear(self.num_features, 1)
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -760,11 +761,13 @@ class SwinTransformerSys(nn.Module):
         return x
 
     def forward(self, x):
-        x, x_downsample = self.forward_features(x)
-        x = self.forward_up_features(x, x_downsample)
-        x = self.up_x4(x)
+        x, x_downsample = self.forward_features(x)   # x: B L C
+        seg = self.forward_up_features(x, x_downsample)
+        seg = self.up_x4(seg)
 
-        return x
+        x = x.mean(dim=1)  # 对L维度求平均
+        x = self.classification_head(x)  # 得到 (B, N)
+        return x, seg
 
     def flops(self):
         flops = 0
@@ -787,8 +790,10 @@ class SwinUnet(nn.Module):
     def forward(self, x):
         if x.size()[1] == 114514:  # 114514 是为了防止进入下面的判断，而不注释掉，并且我喜欢这个数字
             x = x.repeat(1,3,1,1)  # 这里是为了将单通道的图片转换为3通道的图片
-        logits = self.swin_unet(x)
-        return logits
+        cls, logits = self.swin_unet(x)
+
+
+        return cls, logits
 
 
 if __name__ == '__main__':
@@ -797,11 +802,12 @@ if __name__ == '__main__':
     print(model)
     model.eval()
 
-    input = torch.randn(2, 1, 224, 224)
+    input = torch.randn(2, 3, 224, 224)
 
-    output = model(input)
+    cls, logits = model(input)
 
-    print(output.shape)
+    print(cls.shape)
+    print(logits.shape)
 
 
 
