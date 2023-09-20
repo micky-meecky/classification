@@ -766,7 +766,9 @@ class SwinTransformerSys(nn.Module):
         seg = self.forward_up_features(x, x_downsample)
         seg = self.up_x4(seg)
 
-        x = x.view(2, 768, 7, 7)  # B x C x H x W
+        # 获取bs
+        bs = x.size()[0]
+        x = x.view(bs, 768, 7, 7)  # B x C x H x W
         x = self.gap(x)  # 输出尺寸：B x C x 1 x 1
         x = x.squeeze(-1).squeeze(-1)  # B x C
         x = self.classification_head(x)  # 得到 (B, N)
@@ -804,7 +806,7 @@ if __name__ == '__main__':
     print(model)
     model.eval()
 
-    input = torch.randn(2, 3, 224, 224)
+    input = torch.randn(3, 3, 224, 224)
 
     cls, logits = model(input)
 
