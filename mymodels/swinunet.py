@@ -698,6 +698,7 @@ class SwinTransformerSys(nn.Module):
             self.output = nn.Conv2d(in_channels=embed_dim, out_channels=self.num_classes, kernel_size=1, bias=False)
 
         self.apply(self._init_weights)
+        self.gap = nn.AdaptiveAvgPool2d(1)
         self.classification_head = nn.Linear(self.num_features, 1)
 
     def _init_weights(self, m):
@@ -765,7 +766,9 @@ class SwinTransformerSys(nn.Module):
         seg = self.forward_up_features(x, x_downsample)
         seg = self.up_x4(seg)
 
-        x = x.mean(dim=1)  # 对L维度求平均
+        x = x.view(2, 768, 7, 7)  # B x C x H x W
+        x = self.gap(x)  # 输出尺寸：B x C x 1 x 1
+        x = x.squeeze(-1).squeeze(-1)  # B x C
         x = self.classification_head(x)  # 得到 (B, N)
         return x, seg
 
@@ -780,31 +783,34 @@ class SwinTransformerSys(nn.Module):
 
 
 class SwinUnet(nn.Module):
-    def __init__(self, img_size=224, num_classes=1, zero_head=False, vis=False):
+    def __init__(self, img_size=224, in_chans=1, num_classes=1, zero_head=False, vis=False):
         super(SwinUnet, self).__init__()
         self.num_classes = num_classes
         self.zero_head = zero_head
 
-        self.swin_unet = SwinTransformerSys()
+        self.swin_unet = SwinTransformerSys(img_size=img_size, in_chans=in_chans, num_classes=self.num_classes)
 
     def forward(self, x):
         if x.size()[1] == 114514:  # 114514 是为了防止进入下面的判断，而不注释掉，并且我喜欢这个数字
             x = x.repeat(1,3,1,1)  # 这里是为了将单通道的图片转换为3通道的图片
         cls, logits = self.swin_unet(x)
 
-
         return cls, logits
 
 
 if __name__ == '__main__':
 
-    model = SwinUnet()
+    model = SwinUnet(in_chans=3, num_classes=1)
     print(model)
     model.eval()
 
     input = torch.randn(2, 3, 224, 224)
 
     cls, logits = model(input)
+
+    # sigmoid
+    cls = torch.sigmoid(cls)
+    logits = torch.sigmoid(logits)
 
     print(cls.shape)
     print(logits.shape)
