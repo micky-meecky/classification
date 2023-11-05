@@ -13,6 +13,7 @@ import os
 
 import numpy as np
 import torch
+import pandas as pd
 from PIL import Image
 from torch.utils.data import DataLoader
 import utils.evaluation as ue
@@ -201,6 +202,9 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
     IOUlist = []
     Acclist = []
 
+    # 准备保存结果的列表
+    sample_info = []
+
     with torch.no_grad():
         epoch_tp, epoch_fp, epoch_tn, epoch_fn = 0, 0, 0, 0
         for data in dataloader:
@@ -259,6 +263,9 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
                 else:  # 如果是二分类，就用sigmoid
                     labels = torch.sigmoid(labels)
                     predicted = torch.round(labels.data)
+
+                    # 将标签和预测概率添加到列表中
+                    sample_info.extend(zip(targets4.cpu().numpy(), labels.data.cpu().numpy().flatten()))
 
                 if _have_segtask:
                     if deepsup is False:
@@ -350,5 +357,9 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
                 sum(SElist) / len(SElist), sum(PClist) / len(PClist), sum(F1list) / len(F1list),
                 sum(JSlist) / len(JSlist),
                 sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))
+
+    # 将结果保存到CSV文件
+    df = pd.DataFrame(sample_info, columns=['TrueLabel', 'PredictedProbability'])
+    df.to_csv('/model_predictions.csv', index=False)
 
     return precision, recall, f1_score, acc
