@@ -228,7 +228,7 @@ def breast_loader(batch_size, testbs, device, validate_flag, use_clip, channel, 
 
 def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segtask, _only_segtask,
                  is_continue_train,
-                 use_clip, channel, size, decayepoch, datasc, clsaux, deepsup=False
+                 use_clip, channel, size, decayepoch, datasc, clsaux, last_epoch=True, deepsup=False
                  ):
     project = Project  # project name-----------------------------------------------------
     epoch_num = epoch  # epoch_num -----------------------------------------------------
@@ -260,7 +260,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     contenttotal = "----total cost: "
     is_train = False
     is_test = True  # False
-    last_epoch = False
+    last_epoch = last_epoch
     best_valid_acc = 0
     best_valid_score = 0
     is_continue_train = is_continue_train
@@ -650,6 +650,7 @@ if __name__ == '__main__':
                      decayepoch=790,
                      datasc='BUSI',
                      clsaux=False,
+                     last_epoch=True,
                      deepsup=False)
     testp.append(test_precision)
     testr.append(test_recall)
