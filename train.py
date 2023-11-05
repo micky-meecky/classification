@@ -621,7 +621,16 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         else:
             pass
         mini_loss_model = save_model_dir + '/best' + '.pth'
-        model.load_state_dict(torch.load(mini_loss_model, map_location=device))
+        if torch.cuda.is_available():
+            model.load_state_dict(torch.load(mini_loss_model))
+        else:
+            # 如果只有 CPU，将所有的模型权重映射到 CPU
+            state_dict = torch.load(mini_loss_model, map_location=torch.device('cpu'))
+            # 创建一个新的状态字典，其中所有的键名都没有 'module.' 前缀
+            new_state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
+
+            model.load_state_dict(new_state_dict)
+        # model.load_state_dict(torch.load(mini_loss_model, map_location=device))
         test_precision, test_recall, test_f1_score, test_acc = \
             test.test('test', test_loader, model, SegImgSavePath, device, class_num,
                       _have_segtask, _only_segtask, deepsup, clsaux=True)
@@ -639,7 +648,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('M_UNet_cls_seg_ch3_256_00', 6, 800, 'M_UNet_seg', 1e-4,
+        Train_breast('SideSE2AgCBAMUNet_cls_seg_ch3_256_24', 6, 800, 'SideAgCBAMUNet', 1e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,

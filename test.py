@@ -191,8 +191,10 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
     printcontent = mode + 'set testing...'
     print(printcontent)
     segoutputcontent = mode + ' segmentation output'
+    # 将模型设置为评估模式
+    model.eval()
 
-    # 训练集上测试
+    # 测试集上测试
     i = 0
     SElist = []
     PClist = []
