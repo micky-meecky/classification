@@ -258,7 +258,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     contentvalid = "----per epoch training&vlidation test Time: "
     contentwholeepoch = "----whole epoch Time: "
     contenttotal = "----total cost: "
-    is_train = False
+    is_train = True
     is_test = True  # False
     last_epoch = last_epoch
     best_valid_acc = 0
