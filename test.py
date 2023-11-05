@@ -327,6 +327,7 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
                     segout = segout * 255
                     segout = Image.fromarray(segout)
                     # 获取图片名字, ./class_out/stage1/p_image\\86.png
+                    print('img_file_name = ', img_file_name)
                     img_file_name = img_file_name[0].split('\\')[1].split('.')  # ['86', 'png']
                     img_file_name = img_file_name[0]  # '86'
                     # 将分类的结果predicted转为str
