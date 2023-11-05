@@ -359,7 +359,7 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
                 sum(DClist) / len(DClist), sum(IOUlist) / len(IOUlist), sum(Acclist) / len(Acclist)))
 
     # 将结果保存到CSV文件
-    df = pd.DataFrame(sample_info, columns=['TrueLabel', 'PredictedProbability'])
-    df.to_csv('./model_predictions.csv', index=False)
+    # df = pd.DataFrame(sample_info, columns=['TrueLabel', 'PredictedProbability'])
+    # df.to_csv('./model_predictions.csv', index=False)
 
     return precision, recall, f1_score, acc
