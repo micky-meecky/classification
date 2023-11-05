@@ -202,6 +202,7 @@ class SoftDiceLossNewvar(nn.Module):
 
 
 class SoftDiceLossNew(nn.Module):
+    # 这里求acc，本来以为在完全预测正确的情况下会出现的问题，结果后来发现，并不会有什么问题啊
     def __init__(self, weight=None, size_average=True):
         super(SoftDiceLossNew, self).__init__()
 

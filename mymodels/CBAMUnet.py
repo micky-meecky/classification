@@ -1314,9 +1314,10 @@ class PixViTUNet(nn.Module):
 
 if __name__ == '__main__':
     img_size = 256
-    model = SideAgCBAMPixViTUNet(img_size, 3, 1)
+    # model = SideAgCBAMPixViTUNet(img_size, 3, 1)
+    model = SideAgCBAMUNet(3, 1)
+    print(model)
     getModelSize(model)
-    # model = SideCBAMUNet(3, 1)
     model.eval()
     input = torch.randn(2, 3, img_size, img_size)
     label = torch.randn(2, 1, img_size, img_size)

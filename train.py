@@ -117,6 +117,8 @@ def getdataset(device, csv_file, fold_K, fold_idx, image_size, batch_size, testb
             if datasc == 'BUSI':
                 filepath_img = './class_out/stage1/p_image'
                 filepath_mask = './class_out/stage1/p_mask'
+                # filepath_img = './class_out/stage1_dataset/stage1/p_image'
+                # filepath_mask = './class_out/stage1_dataset/stage1/p_mask'
             # filepath_contour = './class_out/512/p_contour'
             # filepath_dist = './class_out/512/p_distance_D1'
 
@@ -204,6 +206,7 @@ def breast_loader(batch_size, testbs, device, validate_flag, use_clip, channel, 
             csv_path = './class_out/2_preprocessed_data/train.csv'
         if datasc == 'BUSI':
             csv_path = './class_out/train.csv'
+            # csv_path = './class_out/stage1_dataset/train.csv'
 
     fold_k = 5
     fold_idx = 1
@@ -255,8 +258,9 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     contentvalid = "----per epoch training&vlidation test Time: "
     contentwholeepoch = "----whole epoch Time: "
     contenttotal = "----total cost: "
-    is_train = True
+    is_train = False
     is_test = True  # False
+    last_epoch = False
     best_valid_acc = 0
     best_valid_score = 0
     is_continue_train = is_continue_train
@@ -606,13 +610,16 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
 
     print('Finished Training\n')
     if is_test:
-        # 测试最后一epoch 的模型效果并输出
-        test_precision, test_recall, test_f1_score, test_acc = \
-            test.test('test', test_loader, model, SegImgSavePath, device, class_num,
-                      _have_segtask, _only_segtask, deepsup, clsaux=True)
-        print('test_precision, test_recall, test_f1_score, test_acc:', test_precision, test_recall, test_f1_score,
-              test_acc)
-        print('最后一epoch的模型效果测试完毕')
+        if last_epoch is True:
+            # 测试最后一epoch 的模型效果并输出
+            test_precision, test_recall, test_f1_score, test_acc = \
+                test.test('test', test_loader, model, SegImgSavePath, device, class_num,
+                          _have_segtask, _only_segtask, deepsup, clsaux=True)
+            print('test_precision, test_recall, test_f1_score, test_acc:', test_precision, test_recall, test_f1_score,
+                  test_acc)
+            print('最后一epoch的模型效果测试完毕')
+        else:
+            pass
         mini_loss_model = save_model_dir + '/best' + '.pth'
         model.load_state_dict(torch.load(mini_loss_model, map_location=device))
         test_precision, test_recall, test_f1_score, test_acc = \
@@ -632,15 +639,15 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('Unet_oseg_ch1_256_00', 10, 500, 'unet', 4e-4,
+        Train_breast('SideSE2AgCBAMUNet_cls_seg_ch3_256_24', 6, 800, 'SideAgCBAMUNet', 1e-4,
                      Use_pretrained=False,
-                     _have_segtask=False,
-                     _only_segtask=True,
+                     _have_segtask=True,
+                     _only_segtask=False,
                      is_continue_train=False,
                      use_clip=False,
-                     channel=1,
+                     channel=3,
                      size=256,
-                     decayepoch=490,
+                     decayepoch=790,
                      datasc='BUSI',
                      clsaux=False,
                      deepsup=False)

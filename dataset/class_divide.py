@@ -10,7 +10,7 @@ def readCsv(csvfname):
     return csvlines
 
 
-def get_fold_filelist(csv_file, K=3, fold=1, random_state=2020, validation=False, validation_r=0.2):
+def get_fold_filelist(csv_file, K=3, fold=1, random_state=2023, validation=False, validation_r=0.2):
     """
     获取分折结果的API（基于size分3层的类别平衡分折）
     :param csv_file: 带有ID、CATE、size的文件
