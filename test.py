@@ -289,10 +289,10 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
 
                 # 计算TP, FP, TN, FN
                 predicted = predicted.squeeze().long()
-                tp = torch.sum((predicted == 0) & (targets4 == 0)).item()
-                fp = torch.sum((predicted == 0) & (targets4 == 1)).item()
-                tn = torch.sum((predicted == 1) & (targets4 == 1)).item()
-                fn = torch.sum((predicted == 1) & (targets4 == 0)).item()
+                tp = torch.sum((predicted == 1) & (targets4 == 1)).item()
+                fp = torch.sum((predicted == 1) & (targets4 == 0)).item()
+                tn = torch.sum((predicted == 0) & (targets4 == 0)).item()
+                fn = torch.sum((predicted == 0) & (targets4 == 1)).item()
 
                 epoch_tp += tp
                 epoch_fp += fp
