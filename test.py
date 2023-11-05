@@ -316,22 +316,22 @@ def test(mode: str, dataloader: DataLoader, model, SegImgSavePath, device: torch
 
                 # 输出并保存分割图像
                 if _have_segtask:
-                    pass
-                    # segout = segout.squeeze()
-                    # segout = segout.cpu()
-                    # segout = segout.detach().numpy()
-                    # segout = np.round(segout)
-                    # segout = segout.astype(np.uint8)
-                    # segout = segout * 255
-                    # segout = Image.fromarray(segout)
-                    # # 获取图片名字, ./class_out/stage1/p_image\\86.png
-                    # img_file_name = img_file_name[0].split('\\')[1].split('.')  # ['86', 'png']
-                    # img_file_name = img_file_name[0]  # '86'
-                    # # 将分类的结果predicted转为str
-                    # predicted = str(predicted.item())
-                    # # 将predicted添加到图片名字后面没比如86_0.png
-                    # img_file_name = img_file_name + '_' + predicted
-                    # segout.save(SegImgSavePath + '/' + img_file_name + '.png')
+                    # pass
+                    segout = segout.squeeze()
+                    segout = segout.cpu()
+                    segout = segout.detach().numpy()
+                    segout = np.round(segout)
+                    segout = segout.astype(np.uint8)
+                    segout = segout * 255
+                    segout = Image.fromarray(segout)
+                    # 获取图片名字, ./class_out/stage1/p_image\\86.png
+                    img_file_name = img_file_name[0].split('\\')[1].split('.')  # ['86', 'png']
+                    img_file_name = img_file_name[0]  # '86'
+                    # 将分类的结果predicted转为str
+                    predicted = str(predicted.item())
+                    # 将predicted添加到图片名字后面没比如86_0.png
+                    img_file_name = img_file_name + '_' + predicted
+                    segout.save(SegImgSavePath + '/' + img_file_name + '.png')
 
         print('epoch_tp = ', epoch_tp, 'epoch_fp = ', epoch_fp, 'epoch_tn = ', epoch_tn, 'epoch_fn = ', epoch_fn)
         if not _only_segtask:
