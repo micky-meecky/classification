@@ -71,7 +71,7 @@ def Device(model):
         # device_ids = [i for i in range(torch.cuda.device_count())]
         if torch.cuda.device_count() > 1:
             # 设置为使用1,2,3号GPU
-            device_ids = [3]  # 使用的是3个GPU，1,2,3号
+            device_ids = [2]  # 使用的是3个GPU，1,2,3号
             print("\n Using GPU device: {}".format(device_ids))
         else:
             device_ids = [0]  # 使用的是1个GPU，0号
@@ -160,7 +160,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
     model = None
     if use_pretrained:
         if modelname == 'res101UNetsmp':
-            model = ResUnet(encoder_name='resnet101', in_channels=channel, oseg=True)
+            model = ResUnet(encoder_name='resnet50', in_channels=channel, oseg=False)
         if modelname == 'res101UNet':
             model = Res101UNet(channel, 1)
         if modelname == 'preswin_vit_segc':
@@ -382,7 +382,7 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
         elif modelname == 'SideAgCBAMUNet':
             model = SideAgCBAMUNet(channel, 1)
         elif modelname == 'ResUNet':
-            model = ResUNet(channel, 1, 'convpool')
+            model = ResUNet(channel, 1, 'maxpool')
         elif modelname == 'InDilatedUNet':
             model = InDilatedUNet(channel, 1, 'maxpool')
         elif modelname == 'CasDilatedUNet':

@@ -40,8 +40,8 @@ class ResidualDown(nn.Module):
             # 方法一：
             self.maxpool_conv = nn.Sequential(
                 nn.MaxPool2d(2),
-                nn.Conv2d(in_channels, in_channels, kernel_size=1),
-                nn.BatchNorm2d(in_channels),
+                nn.Conv2d(in_channels, out_channels, kernel_size=1),
+                nn.BatchNorm2d(out_channels),
                 nn.SiLU(inplace=True),
                 *res_blocks,
                 nn.Dropout(0.1)
