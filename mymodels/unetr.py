@@ -351,7 +351,7 @@ class UNETR(nn.Module):
         dropout (float): dropout rate
         batch_size (int): batch size
     """
-    def __init__(self, img_shape=(224, 224), input_dim=3, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
+    def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=768, patch_size=16, num_heads=12,
                  dropout=0.1, batch_size=10):
         super().__init__()
         self.input_dim = input_dim
@@ -403,9 +403,9 @@ class UNETR(nn.Module):
         z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)   # shape: (batch_size, 768, 14, 14)
 
         # 将z12用nn.AdaptiveAvgPool2d(1)降维
-        z12c = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
-        z12c = z12c.view(z12c.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
-        z12c = F.dropout(z12c, p=self.dropout, training=self.training)
+        # z12c = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
+        # z12c = z12c.view(z12c.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
+        # z12c = F.dropout(z12c, p=self.dropout, training=self.training)
 
         # 将z12c和cls_token拼接
         # z12c = torch.cat((z12c, cls_token), dim=1)  # shape: (batch_size, 768*2)

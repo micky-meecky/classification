@@ -658,7 +658,7 @@ if __name__ == '__main__':
                      _only_segtask=False,
                      is_continue_train=False,
                      use_clip=False,
-                     channel=3,
+                     channel=1,
                      size=224,
                      decayepoch=190,
                      datasc='BUSI',
