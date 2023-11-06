@@ -258,7 +258,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     contentvalid = "----per epoch training&vlidation test Time: "
     contentwholeepoch = "----whole epoch Time: "
     contenttotal = "----total cost: "
-    is_train = False
+    is_train = True
     is_test = True  # False
     last_epoch = last_epoch
     best_valid_acc = 0
@@ -633,7 +633,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         # model.load_state_dict(torch.load(mini_loss_model, map_location=device))
         test_precision, test_recall, test_f1_score, test_acc = \
             test.test('test', test_loader, model, SegImgSavePath, device, class_num,
-                      _have_segtask, _only_segtask, deepsup, clsaux=True)
+                      _have_segtask, _only_segtask, deepsup, clsaux=clsaux)
     print('\nFinished Testing\n')
     # test(model)
 
@@ -648,7 +648,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('SideSE2AgCBAMUNet_cls_seg_ch3_256_24', 6, 800, 'SideAgCBAMUNet', 1e-4,
+        Train_breast('AgUnet_cls_seg_ch3_256_10', 6, 800, 'agunet', 1e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
