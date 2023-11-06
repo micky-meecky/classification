@@ -103,9 +103,9 @@ class UNetPlusPlusSeg(nn.Module):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.f_ch = [64, 128, 256, 512, 1024]  # feature channels
+        self.f_ch = [16, 32, 64, 128, 256]  # , 512, 1024]  # feature channels
 
-        self.inc = nn.Conv2d(in_channels, 64, kernel_size=3, stride=1, padding=1)
+        self.inc = nn.Conv2d(in_channels, 16, kernel_size=3, stride=1, padding=1)
         self.down0_0 = Down(self.f_ch[0], self.f_ch[1])
         self.down1_0 = Down(self.f_ch[1], self.f_ch[2])
         self.down2_0 = Down(self.f_ch[2], self.f_ch[3])
