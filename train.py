@@ -648,7 +648,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('AgUnet_cls_seg_ch3_256_10', 6, 800, 'agunet', 1e-4,
+        Train_breast('AgUnet_cls_seg_ch3_256_10', 6, 300, 'agunet', 1e-3,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
@@ -656,7 +656,7 @@ if __name__ == '__main__':
                      use_clip=False,
                      channel=3,
                      size=256,
-                     decayepoch=790,
+                     decayepoch=290,
                      datasc='BUSI',
                      clsaux=False,
                      last_epoch=False,
