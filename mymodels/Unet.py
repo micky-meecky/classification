@@ -389,23 +389,25 @@ class UNet(nn.Module):
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear  # bilinear表示是否使用双线性插值
+        self.chushu = 4
 
-        self.inc = (DoubleConv(n_channels, 64))
-        self.down1 = (Down(64, 128, method))
-        self.down2 = (Down(128, 256, method))
-        self.down3 = (Down(256, 512, method))
+
+        self.inc = (DoubleConv(n_channels, int(64 / self.chushu)))
+        self.down1 = (Down(int(64 / self.chushu), int(128 / self.chushu), method))
+        self.down2 = (Down(int(128 / self.chushu), int(256 / self.chushu), method))
+        self.down3 = (Down(int(256 / self.chushu), int(512 / self.chushu), method))
         factor = 2 if bilinear else 1
-        self.down4 = (Down(512, 1024 // factor, method))
+        self.down4 = (Down(int(512 / self.chushu), int(1024 / self.chushu) // factor, method))
         # self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=True)
-        self.up1 = (Up(1024, 512 // factor, bilinear))
-        self.up2 = (Up(512, 256 // factor, bilinear))
-        self.up3 = (Up(256, 128 // factor, bilinear))
-        self.up4 = (Up(128, 64, bilinear))
-        self.outc = (OutConv(64, n_classes))
+        self.up1 = (Up(int(1024 / self.chushu), int(512 / self.chushu) // factor, bilinear))
+        self.up2 = (Up(int(512 / self.chushu), int(256 / self.chushu) // factor, bilinear))
+        self.up3 = (Up(int(256 / self.chushu), int(128 / self.chushu) // factor, bilinear))
+        self.up4 = (Up(int(128 / self.chushu), int(64 / self.chushu), bilinear))
+        self.outc = (OutConv(int(64 / self.chushu), n_classes))
         self.activation = nn.Sigmoid()
 
         # classification head
-        self.linear = nn.Linear(1024, 1)
+        self.linear = nn.Linear(int(1024 / self.chushu), 1)
 
     def forward(self, x):
         # encoder
@@ -431,7 +433,7 @@ class UNet(nn.Module):
 
         # classification head
         clsx = F.adaptive_avg_pool2d(x5, (1, 1))  # 维度变化为[batch_size, 1024, 1, 1]
-        clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
+        clsx = clsx.view(-1, int(1024 / self.chushu))  # [batch_size, 1024]
         label = self.linear(clsx)
         return label, logits
 
