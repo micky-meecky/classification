@@ -243,7 +243,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     decay_ratio = 0.952  # 学习率下降的比例 -----------------------------------------------------
     bs = Bs  # batch_size -----------------------------------------------------
     testbs = 1  # test_batch_size -----------------------------------------------------
-    L = 0.8  # 代表的是seg_loss的权重[现已作废，已有自适应调整策略] -----------------------------------------------------
+    L = 0.5  # 代表的是seg_loss的权重[现已作废，已有自适应调整策略] -----------------------------------------------------
     use_pretrained = Use_pretrained  # 是否使用预训练模型 -----------------------------------------------------
     model_name = Model_name  # 模型名字 ------------------------------------------------------
     log_dir = './log/log'
@@ -294,15 +294,15 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         else:
             pos_weight = torch.tensor([500 / 122]).to(device)
         if _have_segtask:
-            criterion_seg = SoftDiceLossNewvar()  # -----------------------------------------------------
-            criterion_cls = BCEWithLogitsLossCustom(pos_weight=pos_weight)
-            mtl = utils.MultiTaskLossWrapper(model, device)
+            # criterion_seg = SoftDiceLossNewvar()  # -----------------------------------------------------
+            # criterion_cls = BCEWithLogitsLossCustom(pos_weight=pos_weight)
+            # mtl = utils.MultiTaskLossWrapper(model, device)
             # optimizer = optim.Adam(list(mtl.parameters()), lr, (0.5, 0.99))
             # optimizer = optim.SGD(list(mtl.parameters()), lr, momentum=0.99, weight_decay=1e-5)
-            optimizer = optim.AdamW(list(mtl.parameters()), lr=0.001, betas=(0.9, 0.999), weight_decay=1e-4)
-            # criterion_cls = BCEWithLogitsLossfocal(pos_weight=pos_weight)
-            # criterion_seg = SoftDiceLossNew()
-            # optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))
+            # optimizer = optim.AdamW(list(mtl.parameters()), lr=0.001, betas=(0.9, 0.999), weight_decay=1e-4)
+            criterion_cls = BCEWithLogitsLossfocal(pos_weight=pos_weight)
+            criterion_seg = SoftDiceLossNew()
+            optimizer = optim.Adam(list(model.parameters()), lr, (0.5, 0.99))
         else:
             criterion_cls = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
             # criterion_cls = nn.NLLLoss()    # -----------------------------------------------------
@@ -463,12 +463,12 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                             IOUlist.append(IOU)
                             Acclist.append(Acc)
                         else:
-                            if clsaux:
-                                cls_predicted = 1 - predicted
-                                segout0_1 = segout0_1 * cls_predicted.view(-1, 1, 1, 1)
-                                segout0_2 = segout0_2 * cls_predicted.view(-1, 1, 1, 1)
-                                segout0_3 = segout0_3 * cls_predicted.view(-1, 1, 1, 1)
-                                segout0_4 = segout0_4 * cls_predicted.view(-1, 1, 1, 1)
+                            # if clsaux:
+                            #     cls_predicted = 1 - predicted
+                            #     segout0_1 = segout0_1 * cls_predicted.view(-1, 1, 1, 1)
+                            #     segout0_2 = segout0_2 * cls_predicted.view(-1, 1, 1, 1)
+                            #     segout0_3 = segout0_3 * cls_predicted.view(-1, 1, 1, 1)
+                            #     segout0_4 = segout0_4 * cls_predicted.view(-1, 1, 1, 1)
                             segout0_1 = segout0_1.view(segout0_1.size(0), -1)
                             segout0_2 = segout0_2.view(segout0_2.size(0), -1)
                             segout0_3 = segout0_3.view(segout0_3.size(0), -1)
@@ -485,18 +485,22 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
 
                     if _have_segtask:
                         if deepsup is False:
-                            seg_loss, cls_loss, loss, log_vars = mtl(outputs, SR_flat, targets4v, GT_flat,
-                                                                     criterion_seg,
-                                                                     criterion_cls, deepsup)
-                            # cls_loss = criterion_cls(outputs, targets4v)
-                            # seg_loss = criterion_seg(SR_flat, GT_flat, device)
-                            # loss = (1 - L) * cls_loss + L * seg_loss
+                            # seg_loss, cls_loss, loss, log_vars = mtl(outputs, SR_flat, targets4v, GT_flat,
+                            #                                          criterion_seg,
+                            #                                          criterion_cls, deepsup)
+                            cls_loss = criterion_cls(outputs, targets4v)
+                            seg_loss = criterion_seg(SR_flat, GT_flat, device)
+                            loss = (1 - L) * cls_loss + L * seg_loss
                             seg_running_loss += seg_loss.item()
                         else:
-                            seg_loss, cls_loss, loss, log_vars = mtl(outputs,
-                                                                     [segout0_1, segout0_2, segout0_3, segout0_4],
-                                                                     targets4v, GT_flat, criterion_seg, criterion_cls,
-                                                                     deepsup)
+                            # seg_loss, cls_loss, loss, log_vars = mtl(outputs,
+                            #                                          [segout0_1, segout0_2, segout0_3, segout0_4],
+                            #                                          targets4v, GT_flat, criterion_seg, criterion_cls,
+                            #                                          deepsup)
+                            # seg_running_loss += seg_loss.item()
+                            cls_loss = criterion_cls(outputs, targets4v)
+                            seg_loss = criterion_seg(SR_flat, GT_flat, device)
+                            loss = (1 - L) * cls_loss + L * seg_loss
                             seg_running_loss += seg_loss.item()
                     else:
                         cls_loss = criterion_cls(outputs, targets4v)
@@ -565,7 +569,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                                                     _have_segtask,
                                                     _only_segtask,
                                                     deepsup,
-                                                    clsaux=True)
+                                                    clsaux=clsaux)
                         valid_score = valid_iou
                     else:
                         valid_acc, valid_iou = test.trainvalid('valid', valid_loader, model, device, writer, Iter,
@@ -573,7 +577,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
                                                                _have_segtask,
                                                                _only_segtask,
                                                                deepsup,
-                                                               clsaux=True
+                                                               clsaux=clsaux
                                                                )
                         valid_score = valid_acc + valid_iou
                     if valid_score > best_valid_score:
@@ -614,7 +618,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
             # 测试最后一epoch 的模型效果并输出
             test_precision, test_recall, test_f1_score, test_acc = \
                 test.test('test', test_loader, model, SegImgSavePath, device, class_num,
-                          _have_segtask, _only_segtask, deepsup, clsaux=True)
+                          _have_segtask, _only_segtask, deepsup, clsaux=clsaux)
             print('test_precision, test_recall, test_f1_score, test_acc:', test_precision, test_recall, test_f1_score,
                   test_acc)
             print('最后一epoch的模型效果测试完毕')
@@ -648,7 +652,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('AgUnet_cls_seg_ch3_256_10', 6, 300, 'agunet', 1e-3,
+        Train_breast('AgUnet_cls_seg_ch3_256_10', 10, 300, 'agunet', 1e-3,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
