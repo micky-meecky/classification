@@ -363,7 +363,7 @@ class UNETR(nn.Module):
         self.num_heads = num_heads
         self.dropout = dropout
         self.num_layers = 4
-        self.ext_layers = [0, 1, 2, 3]
+        self.ext_layers = [1, 2, 3, 4]
         # self.linear = nn.Linear(embed_dim * 1, self.output_dim, bias=True)
         self.fc1 = nn.Linear(embed_dim * 2, self.head_hidden_dim)
         self.dropout1 = nn.Dropout(dropout)
