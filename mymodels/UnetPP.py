@@ -111,6 +111,9 @@ class UNetPlusPlusSeg(nn.Module):
         self.down2_0 = Down(self.f_ch[2], self.f_ch[3])
         self.down3_0 = Down(self.f_ch[3], self.f_ch[4])
 
+        # classificator
+        self.classificator = nn.Linear(self.f_ch[4], 1)
+
         self.up4_0 = Up(self.f_ch[4] + self.f_ch[3] * 0, self.f_ch[3], self.f_ch[3])
         self.up3_1 = Up(self.f_ch[3] + self.f_ch[2] * 1, self.f_ch[2], self.f_ch[2])
         self.up2_2 = Up(self.f_ch[2] + self.f_ch[1] * 2, self.f_ch[1], self.f_ch[1])
@@ -135,6 +138,11 @@ class UNetPlusPlusSeg(nn.Module):
         x3_0 = self.down2_0(x2_0)  # [bs, 512, 32, 32]
         x4_0 = self.down3_0(x3_0)  # [bs, 1024, 16, 16]
 
+        # classifier
+        clsout = F.adaptive_avg_pool2d(x4_0, (1, 1))
+        clsout = clsout.view(clsout.size(0), -1)
+        clsout = self.classificator(clsout)
+
         # decoder
         x3_1, _ = self.up4_0(x4_0, x3_0)
         x2_1, forskip2_0 = self.up3_0(x3_0, x2_0)
@@ -152,7 +160,7 @@ class UNetPlusPlusSeg(nn.Module):
 
         x = self.outc(x0_4)
 
-        return x
+        return clsout, x
 
 
 # deep supervision
