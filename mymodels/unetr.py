@@ -357,13 +357,13 @@ class UNETR(nn.Module):
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.embed_dim = embed_dim
-        self.head_hidden_dim = 128
+        self.head_hidden_dim = 32
         self.img_shape = img_shape
         self.patch_size = patch_size
         self.num_heads = num_heads
         self.dropout = dropout
-        self.num_layers = 16
-        self.ext_layers = [4, 8, 12, 16]
+        self.num_layers = 4
+        self.ext_layers = [0, 1, 2, 3]
         # self.linear = nn.Linear(embed_dim * 1, self.output_dim, bias=True)
         self.fc1 = nn.Linear(embed_dim * 2, self.head_hidden_dim)
         self.dropout1 = nn.Dropout(dropout)
