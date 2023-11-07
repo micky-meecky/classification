@@ -339,18 +339,6 @@ class Transformer(nn.Module):
 
 
 class UNETR(nn.Module):
-    r""" Transformer Unet
-
-    Args:
-        img_shape (tuple): shape of the image
-        input_dim (int): number of input channels
-        output_dim (int): number of output channels
-        embed_dim (int): number of embedding dimensions
-        patch_size (int): size of the patch
-        num_heads (int): number of heads
-        dropout (float): dropout rate
-        batch_size (int): batch size
-    """
     def __init__(self, img_shape=(224, 224), input_dim=1, output_dim=1, embed_dim=256, patch_size=16, num_heads=4,
                  dropout=0.1, batch_size=10):
         super().__init__()
@@ -362,6 +350,8 @@ class UNETR(nn.Module):
         self.patch_size = patch_size
         self.num_heads = num_heads
         self.dropout = dropout
+        self.features = None
+        self.gradients = None
         self.num_layers = 4
         self.ext_layers = [1, 2, 3, 4]
         # self.linear = nn.Linear(embed_dim * 1, self.output_dim, bias=True)
@@ -391,6 +381,9 @@ class UNETR(nn.Module):
         self.decoder0_header = nn.Sequential(Conv2DBlock(128, 64), Conv2DBlock(64, 64),
                                              SingleConv2DBlock(64, output_dim, 1))
 
+    def activations_hook(self, grad):
+        self.gradients = grad
+
     def forward(self, x):
         if self.is_cls_token:
             z, cls_token = self.transformer(x)
@@ -401,29 +394,14 @@ class UNETR(nn.Module):
         z6 = z6.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)  # 相当于把196个patch的768维的向量变成了14 * 14的矩阵
         z9 = z9.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)
         z12 = z12.transpose(-1, -2).view(-1, self.embed_dim, *self.patch_dim)   # shape: (batch_size, 768, 14, 14)
-
-        # 将z12用nn.AdaptiveAvgPool2d(1)降维
-        # z12c = nn.AdaptiveAvgPool2d(1)(z12)  # shape: (batch_size, 768, 1, 1)
-        # z12c = z12c.view(z12c.size(0), -1)  # shape: (batch_size, 768),-1表示自动计算
-        # z12c = F.dropout(z12c, p=self.dropout, training=self.training)
-
-        # 将z12c和cls_token拼接
-        # z12c = torch.cat((z12c, cls_token), dim=1)  # shape: (batch_size, 768*2)
-
         z12c = self.fc1(cls_token)
         z12c = self.dropout1(z12c)
         cls_out = self.fc2(z12c)
-
-        # z3 = torch.mean(z3.view(z3.size(0), z3.size(1), -1), dim=2)  # shape: (batch_size, 768)
-        # z6 = torch.mean(z6.view(z6.size(0), z6.size(1), -1), dim=2)  # shape: (batch_size, 768)
-        # z9 = torch.mean(z9.view(z9.size(0), z9.size(1), -1), dim=2)  # shape: (batch_size, 768)
-        # z12 = torch.mean(z12.view(z12.size(0), z12.size(1), -1), dim=2)  # shape: (batch_size, 768)
-        # features = torch.cat((z3, z6, z9, z12), dim=1)  # shape: (batch_size, 768*4)
-        # input_size = features.size(1)
-        # print('input_size is ', input_size)
-
         z12 = self.decoder12_upsampler(z12)
         z9 = self.decoder9(z9)
+        self.features = z9  # 保存特征图
+        if z9.requires_grad:
+            h = z9.register_hook(self.activations_hook)
         z9 = self.decoder9_upsampler(torch.cat([z9, z12], dim=1))
         z6 = self.decoder6(z6)
         z6 = self.decoder6_upsampler(torch.cat([z6, z9], dim=1))
@@ -433,6 +411,12 @@ class UNETR(nn.Module):
         output = self.decoder0_header(torch.cat([z0, z3], dim=1))
 
         return cls_out, output
+
+    def get_activations_gradient(self):
+        return self.gradients
+
+    def get_activations(self):
+        return self.features
 
 
 class UNETRcls(nn.Module):

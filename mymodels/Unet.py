@@ -390,6 +390,8 @@ class UNet(nn.Module):
         self.n_classes = n_classes
         self.bilinear = bilinear  # bilinear表示是否使用双线性插值
         self.chushu = 4
+        self.features = None
+        self.gradients = None
 
 
         self.inc = (DoubleConv(n_channels, int(64 / self.chushu)))
@@ -409,6 +411,10 @@ class UNet(nn.Module):
         # classification head
         self.linear = nn.Linear(int(1024 / self.chushu), 1)
 
+    # 注册hook来获取特征和梯度
+    def activations_hook(self, grad):
+        self.gradients = grad
+
     def forward(self, x):
         # encoder
         x1 = self.inc(x)
@@ -426,6 +432,9 @@ class UNet(nn.Module):
         x = self.up3(x, x2)
 
         x = self.up4(x, x1)
+        self.features = x  # 保存特征图
+        if x.requires_grad:
+            h = x.register_hook(self.activations_hook)
 
         # segmentation head
         logits = self.outc(x)
@@ -436,6 +445,12 @@ class UNet(nn.Module):
         clsx = clsx.view(-1, int(1024 / self.chushu))  # [batch_size, 1024]
         label = self.linear(clsx)
         return label, logits
+
+    def get_activations_gradient(self):
+        return self.gradients
+
+    def get_activations(self):
+        return self.features
 
 
 class SideUNet(nn.Module):
@@ -650,6 +665,8 @@ class ResUNet(nn.Module):
         super(ResUNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
+        self.features = None
+        self.gradients = None
         self.bilinear = bilinear  # bilinear表示是否使用双线性插值
         self.num_res_blocks = [1, 3, 6, 12]
         self.inc = (DoubleConv(n_channels, 64))
@@ -669,11 +686,18 @@ class ResUNet(nn.Module):
         # classification head
         self.linear = nn.Linear(1024, 1)
 
+    # 注册hook来获取特征和梯度
+    def activations_hook(self, grad):
+        self.gradients = grad
+
     def forward(self, x):
         # encoder
         x1 = self.inc(x)
         x2 = self.down1(x1)
         x3 = self.down2(x2)
+        self.features = x3  # 保存特征图
+        if x3.requires_grad:
+            h = x3.register_hook(self.activations_hook)
         x4 = self.down3(x3)
         x5 = self.down4(x4)
 
@@ -697,12 +721,19 @@ class ResUNet(nn.Module):
         label = self.linear(clsx)
         return label, logits
 
+    def get_activations_gradient(self):
+        return self.gradients
+
+    def get_activations(self):
+        return self.features
 
 class AgUNet(nn.Module):
     def __init__(self, n_channels, n_classes, method='maxpool', bilinear=False):
         super(AgUNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
+        self.features = None
+        self.gradients = None
         self.bilinear = bilinear  # bilinear表示是否使用双线性插值
 
         self.inc = (DoubleConv(n_channels, 64))
@@ -722,6 +753,10 @@ class AgUNet(nn.Module):
         # classification head
         self.linear = nn.Linear(1024, 1)
 
+    # 注册hook来获取特征和梯度
+    def activations_hook(self, grad):
+        self.gradients = grad
+
     def forward(self, x):
         # encoder
         x1 = self.inc(x)
@@ -738,7 +773,12 @@ class AgUNet(nn.Module):
 
         x = self.up3(x, x2)
 
+        self.features = x  # 保存特征图
+        if x.requires_grad:
+            h = x.register_hook(self.activations_hook)
+
         x = self.up4(x, x1)
+
 
         # segmentation head
         logits = self.outc(x)
@@ -749,6 +789,12 @@ class AgUNet(nn.Module):
         clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
         label = self.linear(clsx)
         return label, logits
+
+    def get_activations_gradient(self):
+        return self.gradients
+
+    def get_activations(self):
+        return self.features
 
 
 class AgUNetseg(nn.Module):
@@ -976,6 +1022,8 @@ class M_UNet_seg(nn.Module):
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear  # bilinear表示是否使用双线性插值
+        self.features = None
+        self.gradients = None
 
         self.inc1 = nn.Sequential(
             nn.Conv2d(n_channels, 16, kernel_size=(3, 3), padding=1),
@@ -1010,6 +1058,10 @@ class M_UNet_seg(nn.Module):
 
         self.outc = nn.Conv2d(64 + 48 + 32 + 16, n_classes, kernel_size=(1, 1))
 
+    # 注册hook来获取特征和梯度
+    def activations_hook(self, grad):
+        self.gradients = grad
+
     def forward(self, x):
         # encoder
         x1 = self.inc1(x)  # x: 256, 256, 3 ---- x1: 256, 256, 16
@@ -1042,9 +1094,19 @@ class M_UNet_seg(nn.Module):
         x = self.up3(x, x1)  # x: 256, 256, 16
         xr3 = torch.cat([xr3, x], dim=1)  # xr3: 256, 256, 64 + 48 + 32 + 16
 
+        self.features = xr3  # 保存特征图
+        if xr3.requires_grad:
+            h = xr3.register_hook(self.activations_hook)
+
         logits = self.outc(xr3)  # logits: 256, 256, 1
 
         return clsout, logits
+
+    def get_activations_gradient(self):
+        return self.gradients
+
+    def get_activations(self):
+        return self.features
 
 
 if __name__ == '__main__':

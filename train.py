@@ -258,7 +258,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
     contentvalid = "----per epoch training&vlidation test Time: "
     contentwholeepoch = "----whole epoch Time: "
     contenttotal = "----total cost: "
-    is_train = True
+    is_train = False
     is_test = True  # False
     last_epoch = last_epoch
     best_valid_acc = 0
@@ -652,14 +652,14 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('Unet_cls_seg_ch3_256_10', 6, 200, 'unet', 1e-3,
+        Train_breast('AgUnet_cls_seg_ch3_256_10', 6, 200, 'agunet', 1e-3,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=False,
                      is_continue_train=False,
                      use_clip=False,
                      channel=3,
-                     size=224,
+                     size=256,
                      decayepoch=190,
                      datasc='BUSI',
                      clsaux=False,

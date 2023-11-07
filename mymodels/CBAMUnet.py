@@ -864,6 +864,8 @@ class SideAgCBAMUNet(nn.Module):
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear  # bilinear表示是否使用双线性插值
+        self.features = None
+        self.gradients = None
 
         self.inc = (DoubleConv(n_channels, 64))
         self.inca = ChannelAttention(64)
@@ -885,6 +887,10 @@ class SideAgCBAMUNet(nn.Module):
         # classification head
         self.linear = nn.Linear(1024, 1)
 
+    # 注册hook来获取特征和梯度
+    def activations_hook(self, grad):
+        self.gradients = grad
+
     def forward(self, x):
         # encoder
         x1 = self.inc(x)
@@ -893,7 +899,11 @@ class SideAgCBAMUNet(nn.Module):
         x2, x2_skip, side_x2 = self.down1(x1, x)
         x3, x3_skip, side_x3 = self.down2(x2, side_x2)
         x4, x4_skip, side_x4 = self.down3(x3, side_x3)
+        self.features = x4_skip  # 保存特征图
+        if x4_skip.requires_grad:
+            h = x4_skip.register_hook(self.activations_hook)
         _, x5_skip, side_x5 = self.down4(x4, side_x4)
+
 
         # decoder
         # decoder with attention gates
@@ -914,6 +924,12 @@ class SideAgCBAMUNet(nn.Module):
         clsx = clsx.view(-1, 1024)  # [batch_size, 1024]
         label = self.linear(clsx)
         return label, logits
+
+    def get_activations_gradient(self):
+        return self.gradients
+
+    def get_activations(self):
+        return self.features
 
 
 class AgCBAMPixViTUNet(nn.Module):

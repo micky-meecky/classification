@@ -103,6 +103,8 @@ class UNetPlusPlusSeg(nn.Module):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
+        self.features = None
+        self.gradients = None
         self.f_ch = [16, 32, 64, 128, 256]  # , 512, 1024]  # feature channels
 
         self.inc = nn.Conv2d(in_channels, 16, kernel_size=3, stride=1, padding=1)
@@ -129,6 +131,10 @@ class UNetPlusPlusSeg(nn.Module):
         self.up1_0 = Up(self.f_ch[1], self.f_ch[0], self.f_ch[0])
 
         self.outc = OutConv(self.f_ch[0], out_channels)
+
+    # 注册hook来获取特征和梯度
+    def activations_hook(self, grad):
+        self.gradients = grad
 
     def forward(self, x):
         # encoder
@@ -158,9 +164,19 @@ class UNetPlusPlusSeg(nn.Module):
 
         x0_4, _ = self.up1_3(x1_3, x0_3, torch.cat([forskip0_0, forskip0_1, forskip0_2], dim=1))
 
+        self.features = x0_4  # 保存特征图
+        if x0_4.requires_grad:
+            h = x0_4.register_hook(self.activations_hook)
+
         x = self.outc(x0_4)
 
         return clsout, x
+
+    def get_activations_gradient(self):
+        return self.gradients
+
+    def get_activations(self):
+        return self.features
 
 
 # deep supervision
