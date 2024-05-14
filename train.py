@@ -613,6 +613,7 @@ def Train_breast(Project, Bs, epoch, Model_name, lr, Use_pretrained, _have_segta
         # torch.save(model.state_dict(), 'model.pth ')
 
     print('Finished Training\n')
+
     if is_test:
         if last_epoch is True:
             # 测试最后一epoch 的模型效果并输出
@@ -652,10 +653,10 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('test', 6, 200, 'agunet', 1e-3,
+        Train_breast('train', 1, 200, 'DyUnet', 1e-3,
                      Use_pretrained=False,
                      _have_segtask=True,
-                     _only_segtask=False,
+                     _only_segtask=True,
                      is_continue_train=False,
                      use_clip=False,
                      channel=3,

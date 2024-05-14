@@ -111,25 +111,27 @@ class DynamicUNet(nn.Module):
         final_output = self.final_conv(dec1)
         return final_output
 
-# 检查是否有可用的GPU
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# 创建模型实例并移动到GPU
-model = DynamicUNet(in_channels=3, out_channels=1, base_channels=32).to(device)  # 这里可以调整base_channels
+if __name__ == '__main__':
+    # 检查是否有可用的GPU
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# 创建输入张量并移动到GPU
-input_tensor = torch.randn(1, 3, 256, 256).to(device)
+    # 创建模型实例并移动到GPU
+    model = DynamicUNet(in_channels=3, out_channels=1, base_channels=16).to(device)  # 这里可以调整base_channels
 
-# 运行模型
-output_tensor = model(input_tensor)
+    # 创建输入张量并移动到GPU
+    input_tensor = torch.randn(1, 3, 256, 256).to(device)
 
-# 打印输出张量的形状
-print(output_tensor.shape)  # 输出形状应该是 (1, 1, 256, 256)
+    # 运行模型
+    output_tensor = model(input_tensor)
 
-# 打印模型参数量
-num_params = sum(p.numel() for p in model.parameters())
-print(f'Number of model parameters: {num_params}')
+    # 打印输出张量的形状
+    print(output_tensor.shape)  # 输出形状应该是 (1, 1, 256, 256)
 
-# 计算模型大小
-model_size = num_params * 4 / (1024 ** 2)  # assuming 32-bit (4 bytes) floats
-print(f'Model size: {model_size:.2f} MB')
+    # 打印模型参数量
+    num_params = sum(p.numel() for p in model.parameters())
+    print(f'Number of model parameters: {num_params}')
+
+    # 计算模型大小
+    model_size = num_params * 4 / (1024 ** 2)  # assuming 32-bit (4 bytes) floats
+    print(f'Model size: {model_size:.2f} MB')

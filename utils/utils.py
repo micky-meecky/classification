@@ -6,6 +6,7 @@ import torch.nn as nn
 from torch.nn.parallel import DataParallel
 import pretrainedmodels
 from mymodels.models import Net
+from mymodels.dyUnet import DynamicUNet
 from mymodels.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 from mymodels.unetr import UNETR, UNETRcls, UNETRseg, UNETRclsz12, UNETRclstoken
 from mymodels.Unet import UNet, UNetcls, UNetseg, Res101UNet, AgUNet, AgUNetseg, ResUNet, InDilatedUNet, SideUNet, \
@@ -403,6 +404,8 @@ def InitModel(modelname, use_pretrained: bool = False, class_num=3, _have_segtas
             model = DSUNetPlusPlusSeg(channel, 1)
         elif modelname == 'DSUNetPlusPlus':
             model = DSUNetPlusPlus(channel, 1)
+        elif modelname == 'DyUnet':
+            model = DynamicUNet(in_channels=3, out_channels=1, base_channels=64)
         else:
             assert False, 'model name error'
     return model
