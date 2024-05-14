@@ -653,7 +653,7 @@ if __name__ == '__main__':
     testacc = []
 
     test_precision, test_recall, test_f1_score, test_acc = \
-        Train_breast('train', 1, 200, 'DyUnet', 1e-3,
+        Train_breast('train', 5, 800, 'DyUnet', 1e-4,
                      Use_pretrained=False,
                      _have_segtask=True,
                      _only_segtask=True,
@@ -661,7 +661,7 @@ if __name__ == '__main__':
                      use_clip=False,
                      channel=3,
                      size=256,
-                     decayepoch=190,
+                     decayepoch=790,
                      datasc='BUSI',
                      clsaux=False,
                      last_epoch=False,

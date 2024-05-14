@@ -75,12 +75,15 @@ class DynamicUNet(nn.Module):
         self.dec1 = self.conv_block(self.base_channels * 2, self.base_channels)
 
         self.final_conv = nn.Conv2d(self.base_channels, out_channels, kernel_size=1)
+        # self.activation = nn.Sigmoid()
 
     def conv_block(self, in_channels, out_channels):
         return nn.Sequential(
             DynamicDepthwiseSeparableConv(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),  # 添加批量归一化层
             nn.ReLU(inplace=True),
             nn.Conv2d(out_channels, out_channels, kernel_size=1, padding=0),  # 使用1x1卷积
+            nn.BatchNorm2d(out_channels),  # 添加批量归一化层
             nn.ReLU(inplace=True)
         )
 
@@ -109,6 +112,7 @@ class DynamicUNet(nn.Module):
         dec1 = self.dec1(dec1)
 
         final_output = self.final_conv(dec1)
+        # final_output = self.activation(final_output)
         return final_output
 
 
